@@ -1,0 +1,648 @@
+In file included from example/canparareadwrt.c:16:0:
+example/Fun.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/canparareadwrt.c:17:0:
+example/GPS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/canparareadwrt.c:18:0:
+example/GSM_GPRS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/canparareadwrt.c:19:0:
+example/SEND_DATA.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/canparareadwrt.c:20:0:
+example/TCP_IP.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+example/canparareadwrt.c: In function 'tw_updatedCanParaRead':
+example/canparareadwrt.c:87:2: warning: implicit declaration of function 'Ql_SendToUart' [-Wimplicit-function-declaration]
+  OUT_D1EBUG(textBuf,"tw_CanParaRead Ql_FileOpenEx ret = %d\r\n",ret);
+  ^
+example/canparareadwrt.c:82:6: warning: unused variable 'CanCount' [-Wunused-variable]
+  u16 CanCount;
+      ^
+example/canparareadwrt.c: In function 'SIM_Apn':
+example/canparareadwrt.c:171:2: warning: pointer targets in passing argument 1 of 'Ql_FileOpenEx' differ in signedness [-Wpointer-sign]
+  ret1 = Ql_FileOpenEx((char*)Remote_Para,QL_FS_CREATE);
+  ^
+In file included from example/canparareadwrt.c:24:0:
+qlinc/Ql_filesystem.h:269:5: note: expected 'u8 *' but argument is of type 'char *'
+ s32 Ql_FileOpenEx(u8* asciifilename, u32 Flag);
+     ^
+example/canparareadwrt.c:169:8: warning: unused variable 'ptr' [-Wunused-variable]
+  char *ptr;
+        ^
+example/canparareadwrt.c: In function 'remote_pararead_APN':
+example/canparareadwrt.c:206:2: warning: pointer targets in passing argument 1 of 'Ql_FileOpenEx' differ in signedness [-Wpointer-sign]
+  ret1 = Ql_FileOpenEx((char*)Remote_Para,QL_FS_CREATE);
+  ^
+In file included from example/canparareadwrt.c:24:0:
+qlinc/Ql_filesystem.h:269:5: note: expected 'u8 *' but argument is of type 'char *'
+ s32 Ql_FileOpenEx(u8* asciifilename, u32 Flag);
+     ^
+example/canparareadwrt.c:202:7: warning: unused variable 'mprevtxtime' [-Wunused-variable]
+  char mprevtxtime[40]="\0";
+       ^
+example/canparareadwrt.c:200:33: warning: unused variable 'FirstFlag' [-Wunused-variable]
+  u32 writeedlen,wcnt,readedlen1,FirstFlag=0;
+                                 ^
+example/canparareadwrt.c:200:6: warning: unused variable 'writeedlen' [-Wunused-variable]
+  u32 writeedlen,wcnt,readedlen1,FirstFlag=0;
+      ^
+example/canparareadwrt.c:199:8: warning: unused variable 'ptr' [-Wunused-variable]
+  char *ptr;
+        ^
+example/canparareadwrt.c:198:11: warning: variable 'ret' set but not used [-Wunused-but-set-variable]
+  s32 ret1,ret,filehandle;
+           ^
+example/canparareadwrt.c: In function 'newunit_id':
+example/canparareadwrt.c:242:7: warning: unused variable 'tempuid' [-Wunused-variable]
+  char tempuid[8];
+       ^
+example/canparareadwrt.c:238:5: warning: unused variable 'i' [-Wunused-variable]
+  u8 i;
+     ^
+example/canparareadwrt.c: In function 'FunSIMProvider':
+example/canparareadwrt.c:292:17: warning: unused variable 'wcnt' [-Wunused-variable]
+  u32 writeedlen,wcnt;
+                 ^
+example/canparareadwrt.c:292:6: warning: unused variable 'writeedlen' [-Wunused-variable]
+  u32 writeedlen,wcnt;
+      ^
+example/canparareadwrt.c:291:11: warning: unused variable 'filehandle' [-Wunused-variable]
+  s32 ret1,filehandle;
+           ^
+example/canparareadwrt.c:291:6: warning: unused variable 'ret1' [-Wunused-variable]
+  s32 ret1,filehandle;
+      ^
+example/canparareadwrt.c: In function 'SI_TI':
+example/canparareadwrt.c:377:5: warning: unused variable 'k' [-Wunused-variable]
+  u8 k;
+     ^
+example/canparareadwrt.c: In function 'OS_Lmt_wrt':
+example/canparareadwrt.c:403:5: warning: unused variable 'k' [-Wunused-variable]
+  u8 k;
+     ^
+example/canparareadwrt.c: In function 'tw_updatedCanParaRead':
+example/canparareadwrt.c:31:13: warning: 'ret' is used uninitialized in this function [-Wuninitialized]
+   Ql_sprintf((x),__VA_ARGS__);   \
+             ^
+example/canparareadwrt.c:80:6: note: 'ret' was declared here
+  s32 ret;
+      ^
+example/fota.c:102:1: warning: function declaration isn't a prototype [-Wstrict-prototypes]
+ void H2F_SendCMDCtrl();
+ ^
+example/fota.c: In function 'H2F_StateMachine':
+example/fota.c:268:9: warning: unused variable 'iRet' [-Wunused-variable]
+     int iRet = -1;
+         ^
+example/fota.c: In function 'H2F_SendCMDCtrl':
+example/fota.c:536:13: warning: unused variable 'off' [-Wunused-variable]
+         int off = 0;
+             ^
+example/fota.c: At top level:
+example/fota.c:98:13: warning: 'APP_NAME' defined but not used [-Wunused-variable]
+ static char APP_NAME[MAX_NAME_LENGTH];
+             ^
+example/Fun.c:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/Fun.c:19:0:
+example/GSM_GPRS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/Fun.c:20:0:
+example/TCP_IP.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/Fun.c:21:0:
+example/GPS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/Fun.c:22:0:
+example/SEND_DATA.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/Fun.c:24:0:
+example/Fun.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+example/Fun.c:31:0: warning: "OUT_DEBUG" redefined [enabled by default]
+ #define OUT_DEBUG(x,...)  \
+ ^
+In file included from example/Fun.c:21:0:
+example/GPS.h:15:0: note: this is the location of the previous definition
+ #define OUT_DEBUG(x,...)  \
+ ^
+example/Fun.c: In function 'atofd':
+example/Fun.c:126:38: warning: value computed is not used [-Wunused-value]
+  for(c = *s++;c!='\0' && isdigita(c);*s++)
+                                      ^
+example/Fun.c:134:39: warning: value computed is not used [-Wunused-value]
+   for(c = *s++;c!='\0' && isdigita(c);*s++)
+                                       ^
+example/Fun.c:164:5: warning: statement with no effect [-Wunused-value]
+     for(e;e >= 0;e--);
+     ^
+example/Fun.c:169:5: warning: statement with no effect [-Wunused-value]
+     for(e;e <= 0;e++) 
+     ^
+example/Fun.c: In function 'ix_Ftoa':
+example/Fun.c:191:6: warning: unused variable 'tot' [-Wunused-variable]
+  int tot=0;
+      ^
+example/Fun.c:188:6: warning: unused variable 'i' [-Wunused-variable]
+  int i=0;
+      ^
+example/GPRMC.c:6:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/GPRMC.c:26:0:
+example/Fun.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/GPRMC.c:28:0:
+example/GSM_GPRS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/GPRMC.c:29:0:
+example/SEND_DATA.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/GPRMC.c:30:0:
+example/TCP_IP.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/GPRMC.c:37:0:
+example/SIM_lock.h:2:1: warning: function declaration isn't a prototype [-Wstrict-prototypes]
+ u8 ReadSimPin();
+ ^
+example/GPRMC.c: In function 'createandwrite':
+example/GPRMC.c:110:2: warning: implicit declaration of function 'Ql_SendToUart' [-Wimplicit-function-declaration]
+  OUT_D1EBUG(textBuf,"Write settings .....\r\n");
+  ^
+example/GPRMC.c:111:6: warning: unused variable 'filehandl' [-Wunused-variable]
+  u32 filehandl=-1;
+      ^
+example/GPRMC.c: In function 'set_info':
+example/GPRMC.c:134:6: warning: unused variable 'i' [-Wunused-variable]
+  int i;
+      ^
+example/GPRMC.c:133:6: warning: unused variable 'CanCount' [-Wunused-variable]
+  u16 CanCount;
+      ^
+example/GPRMC.c: In function 'trackfile_gen':
+example/GPRMC.c:248:6: warning: unused variable 'TR_imei_len' [-Wunused-variable]
+  u16 TR_imei_len;
+      ^
+example/GPRMC.c:247:7: warning: unused variable 'TR_ptr_imei' [-Wunused-variable]
+  char TR_ptr_imei[20];
+       ^
+example/GPRMC.c:238:6: warning: unused variable 'ret' [-Wunused-variable]
+  s32 ret;
+      ^
+example/GPRMC.c: In function 'ATcommand':
+example/GPRMC.c:482:4: warning: implicit declaration of function 'Ql_SendToModem' [-Wimplicit-function-declaration]
+    Ql_SendToModem(ql_md_port1,(u8*)modem_str, Ql_strlen((char *)modem_str));
+    ^
+example/GPRMC.c: At top level:
+example/GPRMC.c:52:6: warning: array 'pfilecamflag' assumed to have one element [enabled by default]
+ char pfilecamflag[];
+      ^
+In file included from example/GPS.c:30:0:
+example/Fun.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/GPS.c:31:0:
+example/GPS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/GPS.c:32:0:
+example/GSM_GPRS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/GPS.c:33:0:
+example/TCP_IP.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/GPS.c:35:0:
+example/SEND_DATA.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+example/GPS.c:41:0: warning: "OUT_DEBUG" redefined [enabled by default]
+ #define OUT_DEBUG(x,...)  \
+ ^
+In file included from example/GPS.c:31:0:
+example/GPS.h:15:0: note: this is the location of the previous definition
+ #define OUT_DEBUG(x,...)  \
+ ^
+example/GSM_GPRS.c:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/GSM_GPRS.c:19:0:
+example/GSM_GPRS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/GSM_GPRS.c:20:0:
+example/TCP_IP.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+example/GSM_GPRS.c: In function 'CallBack_network_actived':
+example/GSM_GPRS.c:72:5: warning: implicit declaration of function 'Ql_SendToUart' [-Wimplicit-function-declaration]
+     OUT_DEBUG(textBuf,"Ql_GetLocalIpAddress(contexid=%d)=%d, ip=%d.%d.%d.%d\r\n",contexid, ret,ip_addr[0],ip_addr[1],ip_addr[2],ip_addr[3]);    
+     ^
+example/GSM_GPRS.c: In function 'CallBack_network_deactived':
+example/GSM_GPRS.c:78:8: warning: unused variable 'g_count' [-Wunused-variable]
+     u8 g_count=0;
+        ^
+example/GSM_GPRS.c: In function 'CallBack_GprsAPNSet':
+example/GSM_GPRS.c:96:5: warning: unused variable 'ip_addr' [-Wunused-variable]
+  u8 ip_addr[4];
+     ^
+example/GSM_GPRS.c: In function 'GSMGPRS':
+example/GSM_GPRS.c:148:9: warning: unused variable 'GSM' [-Wunused-variable]
+     int GSM;
+         ^
+example/main.c:19:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/main.c:54:0:
+example/Fun.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/main.c:55:0:
+example/GPS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/main.c:56:0:
+example/GSM_GPRS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/main.c:57:0:
+example/SEND_DATA.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/main.c:58:0:
+example/TCP_IP.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+example/main.c:72:0: warning: "OUT_DEBUG" redefined [enabled by default]
+ #define OUT_DEBUG(x,...)  \
+ ^
+In file included from example/main.c:55:0:
+example/GPS.h:15:0: note: this is the location of the previous definition
+ #define OUT_DEBUG(x,...)  \
+ ^
+example/main.c:103:13: warning: 'uFlag' initialized and declared 'extern' [enabled by default]
+ extern bool uFlag=FALSE;  
+             ^
+example/main.c:167:6: warning: function declaration isn't a prototype [-Wstrict-prototypes]
+ void ql_entry()
+      ^
+example/main.c: In function 'ql_entry':
+example/main.c:195:2: warning: implicit declaration of function 'readcreated' [-Wimplicit-function-declaration]
+  readcreated();
+  ^
+example/main.c:210:2: warning: implicit declaration of function 'H2F_Init' [-Wimplicit-function-declaration]
+  H2F_Init();
+  ^
+example/main.c:286:6: warning: implicit declaration of function 'SIM_LockRoutines' [-Wimplicit-function-declaration]
+      SIM_LockRoutines(1);
+      ^
+example/main.c:324:5: warning: pointer targets in passing argument 1 of 'Ql_strstr' differ in signedness [-Wpointer-sign]
+     if(Ql_strstr(pPortEvt->data,("AT+CPIN=")))
+     ^
+In file included from example/main.c:41:0:
+qlinc/ql_stdlib.h:38:7: note: expected 'const char *' but argument is of type 's8 *'
+ char* Ql_strstr(const char* s1, const char* s2);
+       ^
+example/main.c:269:3: warning: enumeration value 'EVENT_NULL' not handled in switch [-Wswitch]
+   switch(flSignalBuffer.eventType)
+   ^
+example/main.c:269:3: warning: enumeration value 'EVENT_INTR' not handled in switch [-Wswitch]
+example/main.c:269:3: warning: enumeration value 'EVENT_KEY' not handled in switch [-Wswitch]
+example/main.c:269:3: warning: enumeration value 'EVENT_UARTREADY' not handled in switch [-Wswitch]
+example/main.c:269:3: warning: enumeration value 'EVENT_SERIALSTATUS' not handled in switch [-Wswitch]
+example/main.c:269:3: warning: enumeration value 'EVENT_MSG' not handled in switch [-Wswitch]
+example/main.c:269:3: warning: enumeration value 'EVENT_POWERKEY' not handled in switch [-Wswitch]
+example/main.c:269:3: warning: enumeration value 'EVENT_HEADSET' not handled in switch [-Wswitch]
+example/main.c:269:3: warning: enumeration value 'EVENT_UARTESCAPE' not handled in switch [-Wswitch]
+example/main.c:269:3: warning: enumeration value 'EVENT_UARTFE' not handled in switch [-Wswitch]
+example/main.c:269:3: warning: enumeration value 'EVENT_MEDIA_FINISH' not handled in switch [-Wswitch]
+example/main.c:269:3: warning: enumeration value 'EVENT_MAX' not handled in switch [-Wswitch]
+example/main.c:179:13: warning: unused variable 'pinlevel' [-Wunused-variable]
+  QlPinLevel pinlevel;
+             ^
+example/main.c:176:6: warning: unused variable 'fileSize' [-Wunused-variable]
+  u32 fileSize=0;
+      ^
+example/main.c:172:6: warning: variable 'ret' set but not used [-Wunused-but-set-variable]
+  s32 ret;
+      ^
+example/main.c:171:8: warning: unused variable 'p' [-Wunused-variable]
+  char *p = &copy_of_buffer[0];
+        ^
+example/main.c:170:5: warning: unused variable 'j' [-Wunused-variable]
+  u8 j=2;
+     ^
+In file included from example/MRW.c:17:0:
+example/Fun.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/MRW.c:19:0:
+example/GSM_GPRS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/MRW.c:20:0:
+example/TCP_IP.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+example/MRW.c: In function 'tw_checkconnection':
+example/MRW.c:69:7: warning: implicit declaration of function 'Ql_SendToUart' [-Wimplicit-function-declaration]
+       OUT_DEBUG(textBuf,"creg before=%d\r\n",creg);          
+       ^
+example/MRW.c:90:14: warning: implicit declaration of function 'transfer_tcp_data' [-Wimplicit-function-declaration]
+              transfer_tcp_data();
+              ^
+example/MRW.c:62:11: warning: variable 'ret' set but not used [-Wunused-but-set-variable]
+       s32 ret;
+           ^
+In file included from example/para_read.c:15:0:
+example/Fun.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/para_read.c:16:0:
+example/GPS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/para_read.c:17:0:
+example/GSM_GPRS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/para_read.c:18:0:
+example/SEND_DATA.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/para_read.c:19:0:
+example/TCP_IP.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+example/para_read.c:28:0: warning: "OUT_DEBUG" redefined [enabled by default]
+ #define OUT_DEBUG(x,...)  \
+ ^
+In file included from example/para_read.c:16:0:
+example/GPS.h:15:0: note: this is the location of the previous definition
+ #define OUT_DEBUG(x,...)  \
+ ^
+example/para_read.c: In function 'tw_CanUpdate_flag_read':
+example/para_read.c:76:2: warning: implicit declaration of function 'Ql_SendToUart' [-Wimplicit-function-declaration]
+  OUT_DEBUG(textBuf,"Ql_FileOpenEx ret = %d\r\n",ret);
+  ^
+example/para_read.c: In function 'readcreated':
+example/para_read.c:108:4: warning: pointer targets in passing argument 2 of 'Ql_FileRead' differ in signedness [-Wpointer-sign]
+    ret = Ql_FileRead(filehandle, strBuf,1, &readedlen);
+    ^
+In file included from example/para_read.c:23:0:
+qlinc/Ql_filesystem.h:298:6: note: expected 'u8 *' but argument is of type 'char *'
+ s32  Ql_FileRead(s32 filehandle, u8* readbuffer, u32 readlength, u32* readedlen);
+      ^
+example/para_read.c:100:7: warning: unused variable 'writeedlen' [-Wunused-variable]
+   u32 writeedlen;
+       ^
+example/para_read.c: In function 'mainsettings':
+example/para_read.c:135:8: warning: implicit declaration of function 'set_info' [-Wimplicit-function-declaration]
+        set_info();
+        ^
+example/para_read.c:136:8: warning: implicit declaration of function 'createandwrite' [-Wimplicit-function-declaration]
+        createandwrite();
+        ^
+example/para_read.c: At top level:
+example/para_read.c:48:6: warning: array 'DATE' assumed to have one element [enabled by default]
+ char DATE[], TIME[], nLAT[], LONG[], eLONG[], STAT[], SPEED[], COURSE[];
+      ^
+example/para_read.c:48:14: warning: array 'TIME' assumed to have one element [enabled by default]
+ char DATE[], TIME[], nLAT[], LONG[], eLONG[], STAT[], SPEED[], COURSE[];
+              ^
+example/para_read.c:48:22: warning: array 'nLAT' assumed to have one element [enabled by default]
+ char DATE[], TIME[], nLAT[], LONG[], eLONG[], STAT[], SPEED[], COURSE[];
+                      ^
+example/para_read.c:48:30: warning: array 'LONG' assumed to have one element [enabled by default]
+ char DATE[], TIME[], nLAT[], LONG[], eLONG[], STAT[], SPEED[], COURSE[];
+                              ^
+example/para_read.c:48:38: warning: array 'eLONG' assumed to have one element [enabled by default]
+ char DATE[], TIME[], nLAT[], LONG[], eLONG[], STAT[], SPEED[], COURSE[];
+                                      ^
+example/para_read.c:48:47: warning: array 'STAT' assumed to have one element [enabled by default]
+ char DATE[], TIME[], nLAT[], LONG[], eLONG[], STAT[], SPEED[], COURSE[];
+                                               ^
+example/para_read.c:48:55: warning: array 'SPEED' assumed to have one element [enabled by default]
+ char DATE[], TIME[], nLAT[], LONG[], eLONG[], STAT[], SPEED[], COURSE[];
+                                                       ^
+example/para_read.c:48:64: warning: array 'COURSE' assumed to have one element [enabled by default]
+ char DATE[], TIME[], nLAT[], LONG[], eLONG[], STAT[], SPEED[], COURSE[];
+                                                                ^
+example/SEND_DATA.c:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/SEND_DATA.c:20:0:
+example/Fun.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/SEND_DATA.c:21:0:
+example/GPS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/SEND_DATA.c:22:0:
+example/GSM_GPRS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/SEND_DATA.c:23:0:
+example/SEND_DATA.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/SEND_DATA.c:24:0:
+example/TCP_IP.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+example/SEND_DATA.c:32:0: warning: "OUT_DEBUG" redefined [enabled by default]
+ #define OUT_DEBUG(x,...)  \
+ ^
+In file included from example/SEND_DATA.c:21:0:
+example/GPS.h:15:0: note: this is the location of the previous definition
+ #define OUT_DEBUG(x,...)  \
+ ^
+In file included from example/SIM_lock.c:14:0:
+example/Fun.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/SIM_lock.c:16:0:
+example/GSM_GPRS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/SIM_lock.c:17:0:
+example/SEND_DATA.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/SIM_lock.c:18:0:
+example/TCP_IP.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/SIM_lock.c:25:0:
+example/SIM_lock.h:2:1: warning: function declaration isn't a prototype [-Wstrict-prototypes]
+ u8 ReadSimPin();
+ ^
+example/SIM_lock.c: In function 'SIM_LockRoutines':
+example/SIM_lock.c:51:2: warning: implicit declaration of function 'Ql_SendToUart' [-Wimplicit-function-declaration]
+  OUT_DEBUG(textBuf,"In simlockunlock function\r\n");
+  ^
+example/SIM_lock.c: In function 'ATcommandSIM':
+example/SIM_lock.c:156:3: warning: implicit declaration of function 'Ql_SendToModem' [-Wimplicit-function-declaration]
+   Ql_SendToModem(ql_md_port1,(u8*)modem_str, Ql_strlen((char *)modem_str));
+   ^
+example/SIM_lock.c: In function 'WriteSimPin':
+example/SIM_lock.c:224:6: warning: unused variable 'CanCount' [-Wunused-variable]
+  u16 CanCount;
+      ^
+example/SIM_lock.c: At top level:
+example/SIM_lock.c:259:4: warning: function declaration isn't a prototype [-Wstrict-prototypes]
+ u8 ReadSimPin()
+    ^
+example/SIM_lock.c: In function 'ReadSimPin':
+example/SIM_lock.c:266:6: warning: unused variable 'CanCount' [-Wunused-variable]
+  u16 CanCount;
+      ^
+example/SIM_lock.c:297:2: warning: 'val' is used uninitialized in this function [-Wuninitialized]
+  return val;
+  ^
+example/sms_handle.c:43:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+example/sms_handle.c: In function 'CallBack_ReadTextSMS':
+example/sms_handle.c:228:17: warning: pointer targets in passing argument 1 of 'read_sms' differ in signedness [-Wpointer-sign]
+                 read_sms(sms->data,sms->data_len);
+                 ^
+In file included from example/sms_handle.c:75:0:
+example/sms_handle.h:2:6: note: expected 'char *' but argument is of type 'u8 *'
+ void read_sms(char* buffer, u16 length);
+      ^
+example/sms_handle.c:223:21: warning: unused variable 'ret' [-Wunused-variable]
+                 s16 ret;
+                     ^
+example/sms_handle.c: In function 'Change_RemoteParameter':
+example/sms_handle.c:88:15: warning: 'CanCount' may be used uninitialized in this function [-Wmaybe-uninitialized]
+     Ql_sprintf((char*)(x),__VA_ARGS__);   \
+               ^
+example/sms_handle.c:488:10: note: 'CanCount' was declared here
+      u16 CanCount;
+          ^
+example/Stamps.c:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/Stamps.c:22:0:
+example/Fun.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/Stamps.c:23:0:
+example/GPS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/Stamps.c:24:0:
+example/GSM_GPRS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/Stamps.c:25:0:
+example/TCP_IP.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/Stamps.c:27:0:
+example/SEND_DATA.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+example/Stamps.c:31:0: warning: "OUT_DEBUG" redefined [enabled by default]
+ #define OUT_DEBUG(x,...)  \
+ ^
+In file included from example/Stamps.c:23:0:
+example/GPS.h:15:0: note: this is the location of the previous definition
+ #define OUT_DEBUG(x,...)  \
+ ^
+example/Stamps.c: In function 'Gen_NGSM':
+example/Stamps.c:66:5: warning: implicit declaration of function 'Ql_SendToUart' [-Wimplicit-function-declaration]
+     OUT_DEBUG(textBuf,"NGSMstring=%s:\r\n",NGSMstring);
+     ^
+example/TCP_IP.c:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/TCP_IP.c:19:0:
+example/GPS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/TCP_IP.c:21:0:
+example/GSM_GPRS.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/TCP_IP.c:22:0:
+example/TCP_IP.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/TCP_IP.c:23:0:
+example/SEND_DATA.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+In file included from example/TCP_IP.c:25:0:
+example/Fun.h:4:1: warning: "/*" within comment [-Wcomment]
+ /*-------------------------------------------------------------------------*/
+ ^
+example/TCP_IP.c:34:0: warning: "OUT_DEBUG" redefined [enabled by default]
+ #define OUT_DEBUG(x,...)  \
+ ^
+In file included from example/TCP_IP.c:19:0:
+example/GPS.h:15:0: note: this is the location of the previous definition
+ #define OUT_DEBUG(x,...)  \
+ ^
+example/TCP_IP.c: In function 'CallBack_socket_close':
+example/TCP_IP.c:134:9: warning: unused variable 'ret' [-Wunused-variable]
+     s32 ret;
+         ^
+example/TCP_IP.c: In function 'CallBack_socket_read':
+example/TCP_IP.c:214:9: warning: unused variable 'port_peer' [-Wunused-variable]
+     u16 port_peer;
+         ^
+example/TCP_IP.c:213:8: warning: unused variable 'address_peer' [-Wunused-variable]
+     u8 address_peer[4];
+        ^
+example/TCP_IP.c:212:9: warning: unused variable 'dataLen' [-Wunused-variable]
+     s32 dataLen;
+         ^
+example/TCP_IP.c: In function 'transfer_tcp_data':
+example/TCP_IP.c:497:9: warning: unused variable 'writeedlen' [-Wunused-variable]
+     u32 writeedlen;
+         ^
+example/TCP_IP.c:495:6: warning: unused variable 'filehandle' [-Wunused-variable]
+  u32 filehandle;
+      ^
+example/TCP_IP.c:494:10: warning: unused variable 'str1' [-Wunused-variable]
+     char str1[30];
+          ^
+example/TCP_IP.c:493:10: warning: variable 'str' set but not used [-Wunused-but-set-variable]
+     char str[20];
+          ^
+example/TCP_IP.c:492:15: warning: unused variable 'i' [-Wunused-variable]
+  unsigned int i;
+               ^
+example/TCP_IP.c:491:8: warning: unused variable 'ptr' [-Wunused-variable]
+  char *ptr;
+        ^
+example/TCP_IP.c:490:8: warning: unused variable 'ptr1' [-Wunused-variable]
+  char *ptr1;
+        ^
+example/TCP_IP.c:488:7: warning: unused variable 'readbuffertemp' [-Wunused-variable]
+  char readbuffertemp[400];
+       ^
+example/TCP_IP.c:486:5: warning: unused variable 'ps_status' [-Wunused-variable]
+  u8 ps_status = 0;
+     ^

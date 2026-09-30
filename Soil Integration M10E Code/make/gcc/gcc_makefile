@@ -1,0 +1,71 @@
+##==========================================================================
+ #                   Quectel OpenCPU
+ #
+ #              Copyright(c) 2012-2013 Quectel Ltd. All rights reserved.
+ #
+ #--------------------------------------------------------------------------
+ # File Description
+ # ----------------
+ #      OpenCPU makefile for GCC.
+ #
+ #--------------------------------------------------------------------------
+ #==========================================================================
+
+#-------------------------------------------------------------------------------
+# Configure GCC installation path, and GCC version.
+# To execute "arm-none-eabi-gcc -v" in command line can get the current gcc version 
+#-------------------------------------------------------------------------------
+GCC_INSTALL_PATH=F:\jagrutee
+GCC_VERSION=4.7.2
+
+C_PREDEF=-D__EXAMPLE_MAIN__
+
+#-------------------------------------------------------------------------------
+# Configure version and out target
+#-------------------------------------------------------------------------------
+PLATFORM = APPGS2MD
+MEMORY   = M64
+VERSION  = A01
+TARGET   = $(strip $(PLATFORM))$(strip $(MEMORY))$(strip $(VERSION))_GCC
+
+#-------------------------------------------------------------------------------
+# Configure the include directories
+#-------------------------------------------------------------------------------
+INCS =  -I $(ENV_INC) 
+INCS += -I ./           \
+        -I qlinc        \
+
+
+#-------------------------------------------------------------------------------
+# Configure source code dirctories
+#-------------------------------------------------------------------------------
+SRC_DIRS=customer \
+	 customer\customerconfig \
+         example  \
+
+#-------------------------------------------------------------------------------
+# Configure source code files to compile in the source code directories
+#-------------------------------------------------------------------------------
+SRC_CUS=$(wildcard customer/*.c)
+SRC_SYS=$(wildcard customer/customerconfig/*.c)
+SRC_EXAMPLE=$(wildcard example/*.c)
+
+OBJS=\
+	 $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRC_SYS))        \
+	 $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRC_EXAMPLE))    \
+	 $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRC_CUS))        \
+
+
+#-------------------------------------------------------------------------------
+# Configure user reference library
+#-------------------------------------------------------------------------------
+USERLIB=libs/gcc/app_start.lib
+
+.PHONY: all
+all:
+#	$(warning <-- make all, C_PREDEF=$(C_PREDEF) -->)
+	@$(MAKE) new -f make/gcc/gcc_makefile
+
+include make\gcc\gcc_makefiledef
+
+export GCC_INSTALL_PATH C_PREDEF OBJS USERLIB SRC_DIRS

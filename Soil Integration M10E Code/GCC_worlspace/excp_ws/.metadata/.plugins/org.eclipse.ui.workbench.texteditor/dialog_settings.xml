@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
+		<item value="false" key="isRegEx"/>
+		<item value="**Jrm_Zone_Deviation**" key="selection"/>
+		<item value="false" key="casesensitive"/>
+		<item value="false" key="incremental"/>
+		<item value="true" key="wrap"/>
+		<item value="false" key="wholeword"/>
+		<list key="findhistory">
+			<item value="**Jrm_Zone_Deviation**"/>
+			<item value="JRMOF"/>
+			<item value="JRM"/>
+			<item value="chk_file_compltnV2"/>
+			<item value="JRMOn"/>
+			<item value="JRM_JD_stamp"/>
+			<item value="JRM_ROUT_chk"/>
+			<item value="trackfile"/>
+		</list>
+		<list key="replacehistory">
+			<item value="OUT_D1EBUG(textBuf"/>
+			<item value="OUT_D1EBUG(textBuf,"/>
+			<item value="OUT_D1EBUG(debug_buffer"/>
+			<item value="OUT_D1EBUG(textBuf,&quot;"/>
+			<item value="OUT_D1EBUG(debug_buffer,&quot;"/>
+			<item value="OUT_DEBUG(&quot;"/>
+			<item value="//EXCP//OUT_D1EBUG(textBuf,"/>
+			<item value="//EXCP//OUT_D1EBUG(textBuf,&quot;"/>
+		</list>
+	</section>
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
+		<item value="571" key="DIALOG_WIDTH"/>
+		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
+		<item value="349" key="DIALOG_HEIGHT"/>
+		<item value="614" key="DIALOG_X_ORIGIN"/>
+		<item value="77" key="DIALOG_Y_ORIGIN"/>
+	</section>
+</section>

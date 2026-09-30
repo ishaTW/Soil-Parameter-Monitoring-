@@ -1,0 +1,6 @@
+void tw_updatedCanParaRead(void);
+void newunit_id(char *);
+void type_gps(char *);
+void type_unit(char *);
+void SI_TI(char *,char *);
+void OS_Lmt_wrt(char *OS_L)

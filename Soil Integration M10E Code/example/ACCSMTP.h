@@ -1,0 +1,21 @@
+void tw_writeAccData(char *AccBuffer);
+void tw_ReadAcc_Data(void);
+void wrACCSMTPwrt_cnt(void);
+void SMTP_modemdata(char *smtp_modem_readbuffer);
+void SMTP_connect(void);
+void Accdata_wrtcnt(void);
+void Accdata_wrtcnt_read(void);
+void test_write (void);
+void write_in_file(char *);
+
+void Accdata_wrtrdcnt(void);
+void send_accd_whole_data_rd(void);
+void send_accd_whole_data_wrt(void);
+void write_in_accsmtp_rou(void);
+void read_in_accsmtp_rou(void);
+void write_stop_acc_capt(void);
+void read_stop_acc_capt(void);
+void tw_read_accd_file(void);
+void Gen_ICA(void);
+void Gen_IDC(void);
+void Gen_ICD(void);

@@ -1,0 +1,1115 @@
+/*-------------------------------------------------------------------------*/
+/*  File       : main.c                 
+-------------------------------------------------------------------------*/
+
+/*-------------------------------------------------------------------------*/
+/*								Headers									   */
+/*-------------------------------------------------------------------------*/
+
+#include<stdio.h>
+#include<string.h>
+#include<math.h>
+
+#include "ql_trace.h"
+#include "ql_timer.h"
+#include "ql_type.h"
+#include "ql_stdlib.h"
+#include "ql_appinit.h"
+#include "ql_interface.h"
+#include "ql_audio.h"
+#include "ql_pin.h"
+#include "Ql_multitask.h"
+#include "Ql_tcpip.h"
+#include "ql_filesystem.h"
+#include "ql_trace.h"
+#include "ql_error.h"
+#include "ql_fcm.h"
+#include "Ql_error.h"
+#include "Ql_sms.h"
+#include "fota.h"
+#include "Fun.h"
+#include "GPS.h"
+#include "GSM_GPRS.h"
+#include "SEND_DATA.h"
+#include "TCP_IP.h"
+#include "MRW.h"  
+#include "para_read.h" 
+#include "ql_fcm.h"
+#include "GPRMC.h" 
+#include "fota.h"
+#include "camera.h"
+#include "ftp2.h"
+#include "ftp.h"
+#include "camera2.h"
+#include "sms_handle.h" 
+#include "JRM.h"
+#include "JRM_RD.h"
+#include "canparareadwrt.h"
+#include "SIM_lock.h"
+#include "ACCSMTP.h"
+/*-------------------------------------------------------------------------*/
+/*								Globals									   */
+/*-------------------------------------------------------------------------*/
+//Variables for traces
+
+#define OUT_D1EBUG(x,...)  \
+    Ql_memset((x),0,100);  \
+    Ql_sprintf((x),__VA_ARGS__);   \
+    Ql_SendToUart(ql_uart_port2,(u8 *)(x),Ql_strlen(x));
+ 
+
+char textBuf[100];
+int mGSMRegister = 0;
+extern unsigned char CCID;
+extern unsigned char GSN;
+extern u8 data_p[];
+extern char UID[8];
+char *pData, *p;
+//Variables for Tx & St - Shweta 22-Nov-2011
+
+u8 CanUpdate_flag=0;
+u16 OneMinTimer = 0, MS500timer = 0;
+extern u8 mSocketClose;
+//Variabes for GPS data - Atul 21-Nov-2011
+char buffer[250];
+//char pPortEvt->data[250];
+//char pPortEvt->data[];
+u16 datalen=0;
+u16 ucamdatalen=0;
+u16 ucamdatalen2=0;
+extern int uCount;
+extern char modem_str[];
+//u16 datalen;
+//u32 query_dns_number = 0;
+extern u32 readedlen; 
+//extern bool uFlag=FALSE;  
+extern int uwrt_cnt;
+extern int uread_cnt;
+int track_gen=0;
+bool rec_flag=0;
+int NGcount=0;
+//u8 CanUpdate_flag=0;
+extern char STI[8];
+extern char TXI[8];
+//u32 fileSize;
+s32 hd_file=0;
+PortData_Event* pPortEvt;
+//PortData_Event* pDataEvt;
+extern bool SIM_Flag;
+extern bool camdumpflag;
+//Variables for GSM-GPRS registeration - Shweta 22-Nov-2011
+//int powerStamp = 0; 
+int onesectimerflag=0;       //counter for one second
+extern bool Synchronise_cmd;
+extern bool Synchronise_cmd2;
+extern u32 cam_datalen;
+bool cam_bDoNexAT = TRUE;
+char cam_buffer[100];
+bool cam_fl_up_flag=0;
+
+//camera stuck flag
+extern int cam1_stk_flg;
+extern int cam2_stk_flg;
+
+//cam timer flags
+bool synctimer=0;
+bool firsttimer=0;
+bool timer_tm=0;
+bool stucktimer=0;
+bool imageget=0;
+bool in_cam_rou=0;
+
+//cam2 flags
+bool synctimer2=0;
+bool firsttimer2=0;
+bool timer_tm2=0;
+bool stucktimer2=0;
+bool imageget2=0;
+bool in_cam_rou2=0;
+
+extern char Unit_Type[35];
+bool cam1dump=0;
+bool cam2dump=0;
+int onestuck1=0;
+int onestuck2=0;
+//bool cam_bDoNexAT;
+//u8 cam_cmd_type;
+u16  cam_cmd_idx=0;
+bool cam_cap_time=0;
+bool cam_connect_success=0;
+char cam_uart_readbuffer[3000];
+char cam_uart_readbuffer2[3000];
+extern bool getdata_cmd_fire;
+extern bool stop_img_capt;
+extern u32 readcount;
+extern u32 dump_cam_wrt_cnt;
+extern char DATE[7];
+extern char TIME[7];
+extern u16  cam_cmd_idx;
+extern  char gps_type[10];
+extern bool onoff_buzz;
+extern int BUZZ_COUNTER;
+s32 tm_ret=0;
+bool send_accd_whole_data = 0;  //RAHMAN
+extern u32 writecnt1;
+bool start_accd_data = 0,earlier_sending =0;
+extern bool read_complete;
+s32 fileret1;
+u32 dump_accd_wrtn_cnt = 0,dump_read_cnt = 0;
+//extern int acc_rd_cnt;
+
+extern u32 acc_rd_cnt;
+char check_response[50];
+bool trackfile_accd,reset_sending = 0;
+extern char current_rt_scan[30];
+
+extern char str13[50];
+extern u32 writeedlen1;
+char FTPFILENAME[20];
+s32 fileret3,ret4;
+extern u32 jrm_route_id;
+// char  PATH_JRM[30];
+extern char ftp_buf_cmd[100];
+
+
+extern int in_route_ftp;
+bool dwn_finished =0, ftp_cmd_check =0;
+extern u16  ftp_rt_cmd_idx;
+extern bool ftp_rt_data;
+extern route_id[10];
+extern QlTimer ftp_route_start,jrm_rt_reset;
+char uart3_buffer[100];
+//QlSysTimer SysTime;
+//QlTimer WD_MyTimer;
+//WD_MyTimer.timerId = 0;
+
+u32 NGSM_reset_cnt = 1;
+u8 NGSM_flag = 0;
+
+extern u32 Data_send_count;
+u32 size_4hr_accd_file = 0;
+extern bool FTP_TX_Flag;
+extern bool cam_fl_up_flag;
+///////fota
+extern int doing_fota;
+///JRM_DL
+extern int in_route_ftp;
+extern char jrmstatus[10];
+u8 rt_dwnld_fail_flag = 0,rt_jrm_incmp_flag = 0;
+extern u8 rt_dwnld_fail_flag_cnt;
+u32 rt_dwnld_fail_cnt = 0;
+//////mrw
+extern int wrt_cnt;
+extern int read_cnt;
+////
+int jrm_cntr=0;
+extern double mCurrSpeed;
+extern int mOverSpeedLimit;
+/////acc data
+extern u16 smtp_cmd_idx;
+extern int in_accsmtp_rou;
+extern bool smtp_bDoNexAT;
+extern bool stop_acc_capt;
+extern int osbuzzer_flg;
+extern u8 Fota_http_Flag;
+extern bool camcaptureflag;
+extern int camindicatorflag;
+extern bool timerstarted;
+extern bool datareading;
+extern int trackflsent;
+extern u32 cam_wrt_cnt;
+
+char ICacpTI[8];          	    //Image capture time interval
+char ITxTI[8];					//Image Transmission time interval
+///sms
+u8 current_mem=0;
+u8 used_mem=0;
+u8 total_mem=0;
+
+void CallBack_NewSMS(u16 index,QlSMSStorage storage);
+void CallBack_SendSMS(bool result, s16 cause, u8 msg_ref);
+void CallBack_DeleteSMS(bool result, s16 cause,u16 index);
+void CallBack_ReadPDUSMS(bool result, s16 cause,u16 index, u8 status, u8* data, u16 length);
+void CallBack_NewFlashPDUSMS(u16 length, u8* pdu_string);
+void CallBack_PDUStatusReport(u16 length, u8* pdu_string);
+void CallBack_ReadTextSMS(bool result, s16 cause,u16 index, u8 status, QlSMSTextMsg* sms);
+void CallBack_NewFlashTextSMS(QlSMSTextMsg* sms);
+void CallBack_TextStatusReport(u8 fo,u8 msg_ref, u8* phone_num, QlSysTimer* scts, QlSysTimer* dt, u8 st);
+    
+///Timers    
+QlTimer tm,tm2,TX_tmr,jrm_nextstation,jrm_delayripit,onoff,cap_intv,cam_tx;
+QlTimer tm11,get_img,get_img2,jrm,zone_scanning,osbuzzer,timer_sendmail,timer_sendmail_1;
+QlTimer timer_1,JRM_timer,timer_stuck,timer_sync,timer_ftp,timer_sync2,timer_12,timer_stuck2,GC_ftp_stuck;
+QlTimer onemintmr,timersimflg;
+QlTimer onesecdummy;
+/*-------------------------------------------------------------------------*/
+/*								Main task								   */
+/*-------------------------------------------------------------------------*/
+
+QlEventBuffer flSignalBuffer; //Set flSignalBuffer to global variables  may as well, otherwise it will occupy stack space
+QlEventBuffer flSignalBuffer_subtask1;
+
+
+void ql_entry(void)
+{    
+    s32 ret;
+    // QlTimer onemintmr,timersimflg;
+    u32 fileSize=0;
+    //    u32 writtenlen;
+ 
+   	Ql_SMS_Callback cb_func={CallBack_NewSMS,CallBack_SendSMS,CallBack_DeleteSMS,                 //public
+                                       CallBack_ReadPDUSMS,CallBack_NewFlashPDUSMS,CallBack_PDUStatusReport,               //pdu
+                                       CallBack_ReadTextSMS,CallBack_NewFlashTextSMS,CallBack_TextStatusReport};           //text
+ 	ret=Ql_SMSInitialize(&cb_func);
+    
+ 	//OUT_D1EBUG(textBuf,"\r\nQl_SMSInitialize=%d\r\n",ret);
+ 
+     bool keepGoing = TRUE;
+    Ql_SetDebugMode(BASIC_MODE);
+    Ql_UartClrRxBuffer(ql_uart_port1); 
+    //   Ql_UartClrRxBuffer(ql_uart_port2);
+    // Ql_UartClrRxBuffer(ql_uart_port2);
+    OUT_D1EBUG(textBuf,"Embedded Application: LITE2_1.7IGC2 \r\n");
+    //Open UART1
+    Ql_OpenModemPort(ql_md_port1);    
+    //    Ql_OpenModemPort(ql_md_port2);
+    //Set baud rate of Port1 to 4800
+    //  Ql_SetUartBaudRate(ql_uart_port1,115200);
+    Ql_SetUartBaudRate(ql_uart_port2,115200);
+    Ql_SetUartBaudRate(ql_uart_port3,115200);
+    Ql_UartSetGenericThreshold(ql_uart_port2,TRUE,1024,50);  
+    //Ql_SMSInitialize();
+
+	JRM_GPIO_reset();				//fot JRM 
+	JRM_DATA_READ();               ///for JRM DATA
+    //tw_CanParaRead();	
+    tw_updatedCanParaRead();			//to read parameters
+    H2F_Init();						//for FOTA
+	tw_para_read();
+	cam_mem_loc_read();				////for camera memory locations
+	
+	OUT_D1EBUG(textBuf,"memory locations done... \r\n");
+
+	if(Ql_strstr((char *)gps_type,"L80") != NULL)
+	{
+		OUT_D1EBUG(textBuf,"GPS is L80.... \r\n");	
+		//Ql_SetUartBaudRate(ql_uart_port1,9600);
+		Ql_SetUartBaudRate(ql_uart_port1,115200);
+	}
+	else
+	{ 
+	 Ql_SetUartBaudRate(ql_uart_port1,4800);
+	}
+	
+	//Disable other NMEA strings received from GR301 mouse - Atul 21-Nov-2011
+	Ql_SendToUart(ql_uart_port1,(u8 *)"$PSRF103,00,00,00,01*24\r\n",25);
+    Ql_SendToUart(ql_uart_port1,(u8 *)"$PSRF103,01,00,00,01*25\r\n",25);
+    Ql_SendToUart(ql_uart_port1,(u8 *)"$PSRF103,03,00,00,01*27\r\n",25);
+    Ql_SendToUart(ql_uart_port1,(u8 *)"$PSRF103,05,00,00,01*21\r\n",25);
+    Ql_SendToUart(ql_uart_port1,(u8 *)"$PSRF103,06,00,00,01*22\r\n",25);
+    Ql_SendToUart(ql_uart_port1,(u8 *)"$PSRF103,08,00,00,01*2C\r\n",25);
+    Ql_SendToUart(ql_uart_port1,(u8 *)"$PMTK397,0.7*3A\r\n",17);	
+	Ql_SendToUart(ql_uart_port1,(u8 *)"$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n",53);   
+	  
+	
+	//timer.timeoutPeriod = Ql_SecondToTicks(NORMAL_TIMER);
+	//OUT_D1EBUG(textBuf,"STIinteger =%d\r\n",Ql_atoi(TXI));
+   
+    
+	//timer.timeoutPeriod = Ql_SecondToTicks(Ql_atoi(TXI));
+    timersimflg.timeoutPeriod = Ql_SecondToTicks(30);
+	timersimflg.timerId =0;
+	tm_ret= Ql_StartTimer(&timersimflg);
+	OUT_D1EBUG(textBuf,"\r\timersimflg with timer ID in main=%d\r\n", tm_ret);
+	// onemintmr.timeoutPeriod = Ql_MillisecondToTicks((Ql_atoi(STI))*100);
+	/////camera timers////////////////////
+	//Synchronise_cmd=1;
+	//Synchronise_cmd2=1;
+	//Ql_StartTimer(&GC_ftp_stuck);
+	//ICacpTI
+	//onesectimer.timeoutPeriod = Ql_MillisecondToTicks(2000);
+	//onesectimer.timeoutPeriod = Ql_MillisecondToTicks(2000);
+	onemintmr.timerId =0;
+
+/*	if((Ql_strstr((char *)Unit_Type,"SCAM") != NULL)||(Ql_strstr((char *)Unit_Type,"scam") != NULL))
+	{
+		//cap_intv.timeoutPeriod = Ql_SecondToTicks(30);
+		cap_intv.timeoutPeriod = Ql_SecondToTicks((Ql_atoi(ICacpTI))/10);
+		cap_intv.timerId =0;
+		//cam_tx.timeoutPeriod = Ql_SecondToTicks(180);
+		cam_tx.timeoutPeriod = Ql_SecondToTicks((Ql_atoi(ITxTI))/10);
+		cam_tx.timerId =0;
+
+		GC_ftp_stuck.timeoutPeriod = Ql_SecondToTicks(600);
+		GC_ftp_stuck.timerId =0;
+	}
+*/
+	GC_ftp_stuck.timeoutPeriod = Ql_SecondToTicks(600);
+	GC_ftp_stuck.timerId =0;
+
+	onesecdummy.timeoutPeriod = Ql_MillisecondToTicks(2000);
+	onesecdummy.timerId =0;
+
+	timer_sync.timeoutPeriod = Ql_MillisecondToTicks(500);
+	timer_sync.timerId =0;
+	//Ql_StartTimer(&timer_sync);
+	timer_sendmail.timeoutPeriod = Ql_SecondToTicks(3);
+	timer_sendmail.timerId =0;
+	timer_sendmail_1.timeoutPeriod = Ql_SecondToTicks(10);
+	timer_sendmail_1.timerId =0;
+
+	JRM_timer.timeoutPeriod = Ql_MillisecondToTicks(60);
+	JRM_timer.timerId =0;
+
+	///only for JRM
+	if(((Ql_strstr((char *)Unit_Type,"JRM") != NULL)||(Ql_strstr((char *)Unit_Type,"jrm") != NULL)) && (Ql_strstr((char *)jrmstatus,"JRMON") != NULL))
+	{
+		JRM_timer.timerId =0;
+		Ql_StartTimer(&JRM_timer);
+		OUT_D1EBUG(textBuf,"\r\nStarted timer JRM_timer \n");
+	}
+	else
+	{
+		OUT_D1EBUG(textBuf,"This is not a JRM device... \r\n");
+	}
+
+	tm.timeoutPeriod = Ql_SecondToTicks(8);
+	tm.timerId =0;
+
+	jrm.timeoutPeriod = Ql_MillisecondToTicks(1000);
+	jrm.timerId =0;
+
+	onoff.timeoutPeriod = Ql_MillisecondToTicks(2000);
+	onoff.timerId =0;
+
+	jrm_delayripit.timeoutPeriod = Ql_MillisecondToTicks(1000);
+	jrm_delayripit.timerId =0;
+
+	jrm_nextstation.timeoutPeriod = Ql_MillisecondToTicks(1000);
+	jrm_nextstation.timerId =0;
+
+	zone_scanning.timeoutPeriod = Ql_MillisecondToTicks(1000);
+	zone_scanning.timerId =0;
+
+	osbuzzer.timeoutPeriod = Ql_MillisecondToTicks(500);
+	osbuzzer.timerId =0;
+	//Ql_StartTimer(&osbuzzer);
+   
+	get_img.timeoutPeriod = Ql_MillisecondToTicks(4000);
+	get_img.timerId =0;
+	tm2.timerId =0;
+	timer_1.timerId =0;
+	timer_ftp.timerId =0;
+	timer_sync2.timerId =0;
+	get_img2.timerId =0;
+	timer_12.timerId =0;
+	tm11.timerId =0;
+	//timer_1.timeoutPeriod = Ql_SecondToTicks(180-onesectimerflag);
+	//Ql_StartTimer(&timer_1);
+	///////timer_stuck.timeoutPeriod = Ql_SecondToTicks(2);
+
+	//timer_ftp.timeoutPeriod = Ql_SecondToTicks(20);
+	//Ql_StartTimer(&timer_ftp);
+
+	/*
+	/////camera2 timers////////////////////
+	tm2.timeoutPeriod = Ql_SecondToTicks(8);
+	tm2.timerId =0;
+	//Ql_StartTimer(&tm);
+ 	
+	timer_sync2.timeoutPeriod = Ql_MillisecondToTicks(600);
+	timer_sync2.timerId =0;
+	//Ql_StartTimer(&timer_sync2);
+    
+	get_img2.timeoutPeriod = Ql_MillisecondToTicks(2000);
+	get_img2.timerId =0;
+	//timer_12.timeoutPeriod = Ql_SecondToTicks(180-onesectimerflag);
+	//Ql_StartTimer(&timer_1);
+	///timer_stuck2.timeoutPeriod = Ql_SecondToTicks(2);
+
+	//timer_ftp2.timeoutPeriod = Ql_SecondToTicks(20);
+	 */
+	//////////////////////////////////
+ Accdata_wrtcnt_read();  //RAHMAN
+ Accdata_flags_read();
+ read_stop_acc_capt();
+ dump_cnt_read();
+
+    
+            
+    while(keepGoing)
+    {    
+        Ql_GetEvent(&flSignalBuffer);
+
+        switch(flSignalBuffer.eventType)
+        {          
+			case EVENT_TIMER:
+			{
+ 				OUT_D1EBUG(textBuf,"In EVENT_TIMER.... \r\n");
+				OUT_D1EBUG(textBuf,"In Event TIMER because of timer ID=%d\r\n",flSignalBuffer.eventData.timer_evt.timer_id);
+
+				if(flSignalBuffer.eventData.timer_evt.timer_id == onesecdummy.timerId)
+			      {
+			      //  OUT_D1EBUG(textBuf,"one sec timer timer up\r\n");
+					onesecdummy.timerId =0;
+			    //	if( onesectimerflag>=3600)
+						if( onesectimerflag >= 180)
+			     	   {
+			     		onesectimerflag=0;
+			    		// Ql_StopTimer(&onesectimer);
+				 		firsttimer=1;
+						// onesectimerflag=0;
+				 		cam_timer(); 
+			     	   }
+			     	if((onestuck1==2)&&(cam1_stk_flg==1)&&(datareading==0)&&(camdumpflag==0))
+			     	{
+			     		//DC//OUT_D1EBUG(textBuf,"onestuck1_up_camera 1 stuck\r\n");
+			     		Synchronise_cmd=1;
+			     		onestuck1=0;
+						//timer_sync.timeoutPeriod = Ql_MillisecondToTicks(500);
+						OUT_D1EBUG(textBuf,"\r\nStarting timer timer_sync 2\n"); 
+						timer_sync.timerId =0;
+			        	Ql_StartTimer(&timer_sync); 
+						OUT_D1EBUG(textBuf,"\r\n Started timer timer_sync1 \n"); 
+			     	}
+					/////second camera
+					/*
+			     	if((onestuck2==2)&&(cam2_stk_flg==1)&&(datareading==0)&&(camdumpflag==0))
+			     	{
+			     		onestuck2=0;
+						Synchronise_cmd2=1;
+					//	timer_sync2.timerId =0;
+			        	Ql_StartTimer(&timer_sync2); 
+			     	}   
+
+					*/
+			     	cam1_stk_flg=1;
+			     //	cam2_stk_flg=1;
+			     	onestuck1=onestuck1+1;
+			     //	onestuck2=onestuck2+1;
+			        onesectimerflag=onesectimerflag+2;
+			        OUT_D1EBUG(textBuf,"one sec timer flag=%d\r\n",onesectimerflag);	
+					//Ql_StartTimer(&onesectimer);
+			        fun_onesec_cnt();
+					onesecdummy.timerId =0;
+					tm_ret=Ql_StartTimer(&onesecdummy);
+					OUT_D1EBUG(textBuf,"\r\n onesectimer with timer ID in main=%d\r\n", tm_ret);
+				//	onesectimer.timeoutPeriod = Ql_SecondToTicks(2);
+				//	onesectimer.timerId =0;
+				//	Ql_StartTimer(&onesectimer);
+			      // Ql_StartTimer(&onesectimer);
+			     }
+
+
+				///Timer for camera capture interval
+				/*if(((Ql_strstr((char *)Unit_Type,"SCAM") != NULL)||(Ql_strstr((char *)Unit_Type,"scam") != NULL)) && (cap_intv.timerId== flSignalBuffer.eventData.timer_evt.timer_id))
+				{
+					OUT_D1EBUG(textBuf,"cap_intv timer up\r\n");
+					camindicatorflag=2;
+					timerstarted=0;
+					Synchronise_cmd=1;
+					//Synchronise_cmd2=1;
+					Ql_StopTimer(&timer_sync);
+					timer_sync.timerId =0;
+					tm_ret=Ql_StartTimer(&timer_sync);
+					OUT_D1EBUG(textBuf,"timer_sync with timer ID in main=%d\r\n", tm_ret);
+					Ql_StopTimer(&cap_intv);
+					cap_intv.timerId =0;
+					tm_ret=Ql_StartTimer(&cap_intv);
+					OUT_D1EBUG(textBuf,"cap_intv with timer ID in main=%d\r\n", tm_ret);
+
+				}*/
+
+				///Timwr for camera transmission interval
+				/*if(((Ql_strstr((char *)Unit_Type,"SCAM") != NULL)||(Ql_strstr((char *)Unit_Type,"scam") != NULL)) && (cam_tx.timerId== flSignalBuffer.eventData.timer_evt.timer_id))
+				{
+					OUT_D1EBUG(textBuf,"camera transmission timer up\r\n");
+					if((FTP_TX_Flag==0) && (doing_fota!=1))
+					{
+						tw_fileread();				//read file for transmission
+					}
+					else
+					{
+						OUT_D1EBUG(textBuf,"Camera Image transmission is in progress with FTP_TX_Flag=%d\r\n", FTP_TX_Flag);
+					}
+					Ql_StopTimer(&cam_tx);
+					cam_tx.timerId =0;
+					tm_ret=Ql_StartTimer(&cam_tx);   //start it for transmission
+					OUT_D1EBUG(textBuf,"started camera tx with timer ID in main 2 =%d\r\n", tm_ret);
+				}*/
+
+				if( flSignalBuffer.eventData.timer_evt.timer_id == timersimflg.timerId)
+				//if( timersimflg.timerId == flSignalBuffer.eventData.timer_evt.timer_id)
+				{
+					OUT_D1EBUG(textBuf,"In timersimflg.... \r\n");	
+					Ql_StopTimer(&timersimflg);
+					timersimflg.timerId =0;
+
+					if(SIM_Flag == 0)
+					{
+						OUT_D1EBUG(textBuf,"Go for SIM Lock \r\n");
+						//GSMGPRS();
+						SIM_LockRoutines(1);
+						//timer.timeoutPeriod = Ql_MillisecondToTicks(30);
+						//Ql_StartTimer(&timer);
+					}
+
+					//OUT_D1EBUG(textBuf,"STI___=====%s \r\n",STI);
+					//OUT_D1EBUG(textBuf,"STI___=Ql_atoi====%d \r\n",(Ql_atoi(STI)));
+					//onemintmr.timeoutPeriod = Ql_MillisecondToTicks(1000);
+					onemintmr.timeoutPeriod = Ql_MillisecondToTicks((Ql_atoi(STI))*100);
+					onemintmr.timerId =0;
+			    	tm_ret=Ql_StartTimer(&onemintmr);
+					OUT_D1EBUG(textBuf,"onemintmr with timer ID in main=%d\r\n", tm_ret);
+					//TX_tmr.timeoutPeriod = Ql_MillisecondToTicks((Ql_atoi(TXI))*100);
+					//TX_tmr.timerId =0;
+			    	//tm_ret=Ql_StartTimer(&TX_tmr);
+			    	//OUT_D1EBUG(textBuf,"TX_tmr with timer ID in main=%d\r\n", tm_ret);
+
+			    	//camera transmission timer
+			    	if((Ql_strstr((char *)Unit_Type,"SCAM") != NULL)||(Ql_strstr((char *)Unit_Type,"scam") != NULL))
+			    	{
+			    		Ql_StopTimer(&cam_tx);
+			    		cam_tx.timerId =0;
+			    		FTP_TX_Flag=0;
+			    		tm_ret=Ql_StartTimer(&cam_tx);
+			    		OUT_D1EBUG(textBuf,"Started camera transmission timer ID in main=%d\r\n", tm_ret);
+			    	}
+					OneMinTimer=OneMinTimer+1;
+				}
+
+				/*if(flSignalBuffer.eventData.timer_evt.timer_id == TX_tmr.timerId)
+				{
+					TX_tmr.timerId =0;
+					tm_ret=Ql_StartTimer(&TX_tmr);
+			    	OUT_D1EBUG(textBuf,"In Transmission timer.... \r\n");	
+			    	OUT_D1EBUG(textBuf,"TX_tmr with timer ID in main=%d\r\n", tm_ret);
+			    	tw_fileread_mrw();
+				}*/
+
+				//if( onemintmr.timerId  == flSignalBuffer.eventData.timer_evt.timer_id)
+				if(flSignalBuffer.eventData.timer_evt.timer_id == onemintmr.timerId)
+				{
+					onemintmr.timerId =0;
+					tm_ret=Ql_StartTimer(&onemintmr);
+			    	OUT_D1EBUG(textBuf,"onemintmr with timer ID in main=%d\r\n", tm_ret);
+			    	OUT_D1EBUG(textBuf,"In onemintmr.... \r\n");	
+			    	
+					if(mGSMRegister == 0 && SIM_Flag == 1)
+					{
+						OUT_D1EBUG(textBuf,"Go for GSM GPRS registeration_0\r\n");
+						GSMGPRS();
+					}
+					timer_handler_stamping();
+				//	OneMinTimer=OneMinTimer+1;
+					
+			    	/*if(OneMinTimer == 2)
+					{
+						OUT_D1EBUG(textBuf,"OneMinTimer = 2\r\n");
+						OneMinTimer = 1;
+						MS500timer=MS500timer+1;
+						//Stamp GPS data
+						timer_handler_stamping();
+
+						if(MS500timer == 2)
+						{
+							OUT_D1EBUG(textBuf,"MS500timer = 2\r\n");
+							MS500timer = 0;
+						
+							//if(wrt_cnt>read_cnt)
+							//	{
+			     				 	 tw_fileread_mrw();
+			     			//	}
+											
+						}
+						else
+						{
+							OUT_D1EBUG(textBuf,"MS500timer=%d\r\n",MS500timer);
+						}							
+					}
+					else
+					{
+						OUT_D1EBUG(textBuf,"OneMinTimer=%d\r\n",OneMinTimer);
+					}*/
+				}
+				
+				if(((Ql_strstr((char *)Unit_Type,"SCAM") != NULL)||(Ql_strstr((char *)Unit_Type,"scam") != NULL)) && (flSignalBuffer.eventData.timer_evt.timer_id == timer_sync.timerId))
+			    {
+					OUT_D1EBUG(textBuf,"timer_sync timer up\r\n");
+					timer_sync.timerId =0;
+					//camindicatorflag=0;
+					synctimer=1;
+					//Synchronise_cmd=1;
+					cam_timer();
+			    }
+			    
+				//if(jrm.timerId== flSignalBuffer.eventData.timer_evt.timer_id)
+				if(((Ql_strstr((char *)Unit_Type,"JRM") != NULL)||(Ql_strstr((char *)Unit_Type,"jrm") != NULL)) && (flSignalBuffer.eventData.timer_evt.timer_id == jrm.timerId))
+				{
+				   OUT_D1EBUG(textBuf,"jrm timer up\r\n");
+				   jrm.timerId =0;
+				   // jrm_rout_scanning();
+				   //reas_zone_stamp();
+				   // Ql_StartTimer(&jrm); 
+				}
+				
+				//if(GC_ftp_stuck.timerId== flSignalBuffer.eventData.timer_evt.timer_id)
+				if((flSignalBuffer.eventData.timer_evt.timer_id == GC_ftp_stuck.timerId) && ((Ql_strstr((char *)Unit_Type,"SCAM") != NULL)||(Ql_strstr((char *)Unit_Type,"scam") != NULL)))
+				{
+					Ql_StopTimer(&GC_ftp_stuck);
+					GC_ftp_stuck.timerId =0;
+					OUT_D1EBUG(textBuf,"GC_ftp_stuck timer up\r\n");
+
+					/*if(doing_fota==1)
+					{
+						fota_Set_url();
+					}
+					else
+					{*/
+					FTP_TX_Flag=0;
+						//cam_fl_up_flag=1;
+						//cam_bDoNexAT = TRUE;
+						//FTP_TX_Flag=1;
+						//cam_cmd_idx = 1;
+						//SendAtCmd();
+					//}
+				}
+
+				//if(onoff.timerId== flSignalBuffer.eventData.timer_evt.timer_id)
+				if(((Ql_strstr((char *)Unit_Type,"JRM") != NULL)||(Ql_strstr((char *)Unit_Type,"jrm") != NULL)) && (flSignalBuffer.eventData.timer_evt.timer_id == onoff.timerId))
+				{
+				   OUT_D1EBUG(textBuf,"onoff timer up\r\n");
+				   onoff.timerId =0;
+
+				   if(onoff_buzz==TRUE)
+				   {
+					   OUT_D1EBUG(textBuf,"onoff timer up  onoff_buzz==TRUE=====%d\r\n",BUZZ_COUNTER);
+					   onoff_buzz=FALSE;
+
+					   if(BUZZ_COUNTER==3)
+					   {
+						   OUT_D1EBUG(textBuf,"onoff timer up BUZZ_COUNTER==3=====%d\r\n",BUZZ_COUNTER);
+						   onoff.timeoutPeriod = Ql_MillisecondToTicks(1000);
+						   onoff.timerId =0;
+						   Ql_StartTimer(&onoff);
+						   OUT_D1EBUG(textBuf,"Started timer onoff m1 \n");
+						   JRM_GPIO_buzzer_unsub();
+						   JRM_GPIO_BUZZER_low();
+						   //Ql_StartTimer(&onoff);
+					   }
+					   else if(BUZZ_COUNTER==6)
+					   {
+						   OUT_D1EBUG(textBuf,"onoff timer up BUZZ_COUNTER==6=====%d\r\n",BUZZ_COUNTER);
+						   Ql_StopTimer(&onoff);
+						   onoff.timerId =0;
+						   JRM_GPIO_buzzer_unsub();
+						   JRM_GPIO_BUZZER_low();
+					   }
+					   else
+					   {
+						   OUT_D1EBUG(textBuf,"onoff timer up BUZZ_COUNTER in else=====%d\r\n",BUZZ_COUNTER);
+						   //onoff.timeoutPeriod = Ql_MillisecondToTicks(500);
+						   onoff.timerId =0;
+						   Ql_StartTimer(&onoff);
+						   OUT_D1EBUG(textBuf,"\r\nStarted timer onoff m2 \n");
+						   JRM_GPIO_buzzer_unsub();
+						   JRM_GPIO_BUZZER_low();
+				      }
+				   }
+				   else if(onoff_buzz==FALSE)
+				   {
+					   onoff_buzz=TRUE;
+					   OUT_D1EBUG(textBuf,"onoff timer up  onoff_buzz==FALSE=====%d\r\n",BUZZ_COUNTER);
+					   BUZZ_COUNTER++;
+					   onoff.timeoutPeriod = Ql_MillisecondToTicks(500);
+					   onoff.timerId =0;
+					   Ql_StartTimer(&onoff);
+					   OUT_D1EBUG(textBuf,"Started timer onoff m3 \n");
+					   JRM_GPIO_buzzer_unsub();
+					   JRM_GPIO_BUZZER_high();
+					   //BUZZ_COUNTER++;
+				   }
+				   // Ql_StartTimer(&onoff); 
+				}
+
+				//if(osbuzzer.timerId== flSignalBuffer.eventData.timer_evt.timer_id)
+				if(((Ql_strstr((char *)Unit_Type,"JRM") != NULL)||(Ql_strstr((char *)Unit_Type,"jrm") != NULL)) && ((flSignalBuffer.eventData.timer_evt.timer_id == osbuzzer.timerId)&&(mCurrSpeed > mOverSpeedLimit)))
+				{
+					OUT_D1EBUG(textBuf,"osbuzzer timer up\r\n");
+					osbuzzer_flg=1;
+				  	OS_buzzer();
+					osbuzzer.timerId =0;
+				    Ql_StartTimer(&osbuzzer); 
+					OUT_D1EBUG(textBuf,"Started timer osbuzzer m1 \r\n");
+				}
+				
+				//if(jrm_nextstation.timerId== flSignalBuffer.eventData.timer_evt.timer_id)
+				if(((Ql_strstr((char *)Unit_Type,"JRM") != NULL)||(Ql_strstr((char *)Unit_Type,"jrm") != NULL)) && (flSignalBuffer.eventData.timer_evt.timer_id == jrm_nextstation.timerId))
+				{
+					OUT_D1EBUG(textBuf,"jrm jrm_nextstation up\r\n");
+					jrm_nextstation.timerId =0;
+				    // jrm_rout_scanning();
+					//tw_findcurrentpos();
+					jrm_rout_scanning();
+					//Ql_StartTimer(&jrm_nextstation);
+				}
+				
+				// if(jrm_delayripit.timerId== flSignalBuffer.eventData.timer_evt.timer_id)
+				if(((Ql_strstr((char *)Unit_Type,"JRM") != NULL)||(Ql_strstr((char *)Unit_Type,"jrm") != NULL)) && (flSignalBuffer.eventData.timer_evt.timer_id == jrm_delayripit.timerId))
+				{
+					OUT_D1EBUG(textBuf,"jrm jrm_delayripit up\r\n");
+					jrm_delayripit.timerId =0;
+				    // jrm_rout_scanning();
+					timer_handler_DelayRipit();
+					// Ql_StartTimer(&jrm_delayripit);
+				}
+				
+				//if(zone_scanning.timerId== flSignalBuffer.eventData.timer_evt.timer_id)
+				if(((Ql_strstr((char *)Unit_Type,"JRM") != NULL)||(Ql_strstr((char *)Unit_Type,"jrm") != NULL)) && (flSignalBuffer.eventData.timer_evt.timer_id == zone_scanning.timerId))
+				{
+					OUT_D1EBUG(textBuf,"zone_scanning timer up\r\n");
+					zone_scanning.timerId =0;
+					// jrm_rout_scanning();
+					//after_detection();
+					jrm_rout_scanning();
+					// Ql_StartTimer(&jrm);
+				}
+
+				//if( JRM_timer.timerId  == flSignalBuffer.eventData.timer_evt.timer_id)
+				if(((Ql_strstr((char *)Unit_Type,"JRM") != NULL)||(Ql_strstr((char *)Unit_Type,"jrm") != NULL)) && (flSignalBuffer.eventData.timer_evt.timer_id == JRM_timer.timerId))
+				{
+					OUT_D1EBUG(textBuf,"jrm JRM_timer up\r\n");
+					JRM_timer.timerId =0;
+					//jrm_rout_scanning();
+					jrm_rout_readcount();
+					//Ql_StartTimer(&JRM_timer);
+				}
+				
+				//if( tm.timerId  == flSignalBuffer.eventData.timer_evt.timer_id)
+				if(((Ql_strstr((char *)Unit_Type,"SCAM") != NULL)||(Ql_strstr((char *)Unit_Type,"scam") != NULL)) && (flSignalBuffer.eventData.timer_evt.timer_id == tm.timerId))
+				{
+					OUT_D1EBUG(textBuf,"tm timer up\r\n");
+					tm.timerId =0;
+					timer_tm=1;
+					cam_timer();
+				}
+				
+				//if( timer_stuck.timerId  == flSignalBuffer.eventData.timer_evt.timer_id)
+				if(((Ql_strstr((char *)Unit_Type,"SCAM") != NULL)||(Ql_strstr((char *)Unit_Type,"scam") != NULL)) && (flSignalBuffer.eventData.timer_evt.timer_id == timer_stuck.timerId))
+				{
+					OUT_D1EBUG(textBuf,"timer_stuck timer up\r\n");
+					timer_stuck.timerId =0;
+					stucktimer=1;
+					cam_timer();
+				}
+				
+				//if( get_img.timerId  == flSignalBuffer.eventData.timer_evt.timer_id)
+				if(((Ql_strstr((char *)Unit_Type,"SCAM") != NULL)||(Ql_strstr((char *)Unit_Type,"scam") != NULL)) && (flSignalBuffer.eventData.timer_evt.timer_id == get_img.timerId))
+				{
+					OUT_D1EBUG(textBuf,"get_img timer up\r\n");
+					get_img.timerId =0;
+					imageget=1;
+					cam_timer();
+				}
+				
+				//if(timer_sendmail.timerId  == flSignalBuffer.eventData.timer_evt.timer_id)
+			    if(flSignalBuffer.eventData.timer_evt.timer_id == timer_sendmail.timerId)
+				{
+			    	//OUT_DEBUG(textBuf,"mailstr=%s\r\n",mailstr);
+			    	//Ql_SendToModem(ql_md_port1, (u8*)sendbuffer_1, Ql_strlen((char *)sendbuffer_1));
+					timer_sendmail.timerId =0;
+                  	OUT_D1EBUG(textBuf,"timer_sendmail timer up\r\n");
+                  	smtp_cmd_idx++;
+                    smtp_bDoNexAT = TRUE;
+                    SMTP_connect();
+ 			   }
+
+			   //if( timer_sendmail_1.timerId  == flSignalBuffer.eventData.timer_evt.timer_id)
+               if(flSignalBuffer.eventData.timer_evt.timer_id == timer_sendmail_1.timerId)
+			   {			   
+            	   //smtp_cmd_idx++;
+            	   OUT_D1EBUG(textBuf,"timer_sendmail_1 timer up\r\n");
+            	   timer_sendmail_1.timerId =0;
+            	   smtp_bDoNexAT = TRUE;
+            	   smtp_cmd_idx++;
+            	   SMTP_connect();
+               }
+
+               /*	if( timer_ftp2.timerId  == flSignalBuffer.eventData.timer_evt.timer_id)
+				{
+					//	OUT_D1EBUG(textBuf,"timer_ftp timer up\r\n");
+					//tw_fileread();
+						cam_cmd_idx = 12;
+                  	  SendAtCmd();
+				 
+				}*/
+			   /*
+				/////cam2 timer
+				if( timer_sync2.timerId  == flSignalBuffer.eventData.timer_evt.timer_id)
+			    {
+			    OUT_D1EBUG(textBuf,"timer_sync2 timer up\r\n"); 
+			 //   camindicatorflag=0;
+			     synctimer2=1;
+			     cam_timer2();  
+			    }
+			    
+			    if( timer_12.timerId  == flSignalBuffer.eventData.timer_evt.timer_id)
+				{
+				OUT_D1EBUG(textBuf,"timer_12 timer up\r\n"); 
+				 firsttimer2=1;
+				 cam_timer2();  
+				}
+				if( get_img2.timerId  == flSignalBuffer.eventData.timer_evt.timer_id)
+				{
+				
+				 imageget2=1;
+				 cam_timer2();
+				}
+
+				*///Dual camera disabled
+
+
+				/*if( tm2.timerId  == flSignalBuffer.eventData.timer_evt.timer_id)
+				{
+				OUT_D1EBUG(textBuf,"tm timer up\r\n"); 
+				// timer_tm2=1;
+				// cam_timer2();  
+				}
+				
+				if( timer_stuck2.timerId  == flSignalBuffer.eventData.timer_evt.timer_id)
+				{
+				OUT_D1EBUG(textBuf,"timer_stuck timer up\r\n"); 
+				 stucktimer2=1;
+				 cam_timer2();  
+				}
+				
+				if( get_img2.timerId  == flSignalBuffer.eventData.timer_evt.timer_id)
+				{
+				
+				OUT_D1EBUG(textBuf,"get_img timer up\r\n"); 
+				 imageget2=1;
+				 cam_timer2();
+				}*/
+				/*if( timer_ftp2.timerId  == flSignalBuffer.eventData.timer_evt.timer_id)
+				{
+				OUT_D1EBUG(textBuf,"timer_ftp timer up\r\n"); 
+				cam_cmd_idx = 12;
+                  SendAtCmd();
+				 
+				}*/
+				    
+				break;
+			}
+			case EVENT_MODEMDATA:
+			{
+				//OUT_D1EBUG(textBuf,"<-- EVENT_MODEMDATA event:%d... -->\r\n", flSignalBuffer.eventType);
+				//PortData_Event* pPortEvt = (PortData_Event*)&flSignalBuffer.eventData.modemdata_evt;
+				pPortEvt = (PortData_Event*)&flSignalBuffer.eventData.modemdata_evt;
+				//OUT_D1EBUG(textBuf,"in EVENT_MODEMDATA \n ");
+				OUT_D1EBUG(textBuf,"EVENT_MODEMDATA buffer = %s,port=%d\n",pPortEvt->data,pPortEvt->port);
+
+				if(doing_fota==1)
+				{
+					fota_uart();
+				}
+
+				else if((in_cam_rou==1)&&(doing_fota!=1))
+				{
+					 OUT_D1EBUG(textBuf,"cam_modemdata fired\n ");
+					 cam_modemdata((char *)pPortEvt->data);
+				}
+
+				else if((in_cam_rou2==1)&&(doing_fota!=1))
+				{
+					cam_modemdata2((char *)pPortEvt->data);
+				}
+				else if((in_accsmtp_rou==1)&&(doing_fota!=1))
+				{
+					// in_accsmtp_rou=0;
+					OUT_D1EBUG(textBuf,"ACCSMTP_modemdata fired\n ");
+					OUT_D1EBUG(textBuf,"\r\nbuffer = %s\n",pPortEvt->data);
+					SMTP_modemdata((char *)pPortEvt->data);
+		 		}
+				else if((in_route_ftp == 1)&& (doing_fota!=1))
+				{
+					 OUT_D1EBUG(textBuf,"Route FTP fired\r\n "); 
+					 JRM_FTP_AT_RES((char *)pPortEvt->data);	
+				}
+
+				else if(DATA_TCP_T == pPortEvt->type)
+				{
+					u32 writtenlen;
+					ret = Ql_FileWrite(hd_file,(u8*)pPortEvt->data, pPortEvt->len, &writtenlen);
+					//OUT_D1EBUG(textBuf,"DATA_TCP_T, len:%d\r\n", pPortEvt->len);
+					//ret = Ql_FileWrite(hd_file, (u8*)pPortEvt->data, pPortEvt->len, &writtenlen);
+					fileSize += writtenlen;
+					pPortEvt->data[0]='\0';
+					//OUT_D1EBUG(textBuf,"fileSize=%d\r\n",fileSize);
+				}
+
+				else if((Ql_strstr((u8 *)pPortEvt->data,"CMTI") == NULL))
+				{
+					OUT_D1EBUG(textBuf,"\n in checkATresponse\r\n");
+					checkATresponse();
+				}
+
+		   		/* else if(in_cam_rou2==1)
+				{
+			      OUT_D1EBUG(textBuf,"cam2_modemdata fired\n "); 
+				  cam_modemdata2((char *)pPortEvt->data);
+				
+		   		 } 	*/
+				
+				break;
+			}
+			case EVENT_UARTDATA:
+			{
+				//AT command send to BB, goto run 
+				//OUT_D1EBUG(textBuf,"<-- EVENT_UARTDATA event:%d... -->\r\n", flSignalBuffer.eventType);
+				
+		        PortData_Event* pDataEvt = (PortData_Event*)&flSignalBuffer.eventData.uartdata_evt;
+		        //pPortEvt = (PortData_Event*)&flSignalBuffer.eventData.modemdata_evt;
+		        //OUT_D1EBUG(textBuf,"Uart Data at vPort [%d]: %d\r\n",pDataEvt->port,pDataEvt->len);
+			    
+				Ql_strcpy(buffer,((char *)flSignalBuffer.eventData.modemdata_evt.data));
+				//OUT_D1EBUG(textBuf,"\r\nGPS string 1111 = %s\n",buffer);
+				datalen = Ql_strlen(buffer);
+				/*if((pDataEvt->port==3)  && (Ql_strstr(buffer,("S"))))
+				{
+					//smtp_cmd_idx=1;
+					//in_accsmtp_rou=1;
+					//SMTP_connect();
+					fota_function();
+				}
+				if(Fota_http_Flag==1)
+				{
+					//fota_function();
+				}
+				*/
+
+				if((trackflsent==1) && (send_accd_whole_data == 1))
+				{
+					trackflsent=0;
+					//Go for remaining ACCD dump
+					OUT_D1EBUG(textBuf,"\n Go for remaining ACCD dump  \r\n");
+					Ql_FileDelete((u8*)"accd_data_file.txt");
+				    tw_read_accd_file();
+
+				}
+
+				if(((Ql_strstr((char *)Unit_Type,"JRM") != NULL)||(Ql_strstr((char *)Unit_Type,"jrm") != NULL)))
+				{
+					if(rt_dwnld_fail_flag_cnt == 1)
+					{
+						OUT_D1EBUG(textBuf,"\n rt dwn fail flag up \r\n");
+						rt_dwnld_fail_cnt++;
+						///	if(rt_dwnld_fail_cnt >= 30)
+
+						if(rt_dwnld_fail_cnt >= 120)
+						{
+							rt_dwnld_fail_flag_cnt = 0;
+							rt_dwnld_fail_cnt = 0;
+							JRM_ROUT_chk();
+						}
+					}
+				}
+
+				if(((Ql_strstr((char *)Unit_Type,"JRM") != NULL)||(Ql_strstr((char *)Unit_Type,"jrm") != NULL)) && (Ql_strstr((char *)jrmstatus,"JRMON") != NULL))
+				{
+					jrm_cntr++;
+					
+					if((jrm_cntr >= 60)&& (rt_jrm_incmp_flag == 0))
+					{
+						OUT_D1EBUG(textBuf,"\r\nJRM scanning got stuck \n"); 
+						jrm_cntr=0;
+						stop_jrm_timer();
+						jrm_rout_scanning();
+					}
+				}
+
+				/* if(((Ql_strstr((char *)Unit_Type,"SCAM") != NULL)||(Ql_strstr((char *)Unit_Type,"scam") != NULL))&&(trackflsent==1) && (camdumpflag==1))
+			     {
+
+					 Gen_TC();
+					// Ql_Sleep(3000);
+			    	 trackflsent=0;
+					 tw_fileread();
+			     
+			     }*/
+
+			     if(((Ql_strstr((char *)Unit_Type,"SCAM") != NULL)||(Ql_strstr((char *)Unit_Type,"scam") != NULL))&&(camindicatorflag==1)&&(datareading==0)&&(camdumpflag==0))
+			     {
+			     	camindicatorflag=2;
+			     	timerstarted=0;
+			      	Synchronise_cmd=1;
+					//Synchronise_cmd2=1;
+					timer_sync.timerId =0;
+			        Ql_StartTimer(&timer_sync); 
+					//timer_sync2.timerId =0;
+			        Ql_StartTimer(&timer_sync2); 
+					//RR//OUT_D1EBUG(textBuf,"\r\nStarted timer timer_sync2 m1 \n");
+			     }
+			   
+				if(pDataEvt->port==2)
+				{
+					gprsformat1(buffer,datalen);
+					//OUT_D1EBUG(textBuf,"\r\nGPS string = %s\n",buffer);
+					Ql_memset((ascii *)flSignalBuffer.eventData.modemdata_evt.data,0,sizeof(flSignalBuffer.eventData.modemdata_evt.data));
+					Ql_memset((ascii *)buffer,0,sizeof(buffer));
+					//OUT_D1EBUG(textBuf,"########DATE=%s\r\n",DATE);
+					//OUT_D1EBUG(textBuf,"########TIME=%s\r\n",TIME);
+				}
+
+				if(pDataEvt->port==4)
+				{
+					ucamdatalen=pDataEvt->len;
+					//OUT_D1EBUG(textBuf,"Uart data pDataEvt->len [%d]********&*****:ucamdatalen  %d\r\n",pDataEvt->len,ucamdatalen);
+					Ql_memset((char *)cam_uart_readbuffer,0,sizeof(cam_uart_readbuffer));
+					//Ql_strcat((char *)cam_uart_readbuffer,(char *)pDataEvt->data);
+					cam_uartdata((char *)pDataEvt->data);
+					//cam_uartdata();
+				}
+
+				if(pDataEvt->port==3)
+				{
+					ucamdatalen2=pDataEvt->len;
+					//OUT_D1EBUG(textBuf,"Uart data pDataEvt->len [%d]********&*****:ucamdatalen2  %d\r\n",pDataEvt->len,ucamdatalen2);
+					Ql_memset((char *)cam_uart_readbuffer2,0,sizeof(cam_uart_readbuffer2));
+					//Ql_strcat((char *)cam_uart_readbuffer,(char *)pDataEvt->data);
+					cam_uartdata2((char *)pDataEvt->data);
+					//Ql_memset((ascii *)flSignalBuffer.eventData.modemdata_evt.data,0,sizeof(flSignalBuffer.eventData.modemdata_evt.data));
+					//Ql_memset((ascii *)buffer,0,sizeof(buffer));
+					//cam_uartdata();
+				}
+				break;
+			}
+
+            case EVENT_SERIALSTATUS:
+            {
+                PortStatus_Event* pPortStatus = (PortStatus_Event*)&flSignalBuffer.eventData.portstatus_evt;
+                
+                bool val = pPortStatus->val;
+                u8 port = pPortStatus->port;
+                u8 type = pPortStatus->type;
+                OUT_D1EBUG(textBuf,"EVENT_SERIALSTATUS port=%d type=%d val=%d\r\n",port,type,val);
+			    //OUT_D1EBUG(textBuf,"EVENT_SERIALSTATUS port=%d type=%d val=%d\r\n",port,type,val);
+                break;
+            }
+			case EVENT_MSG:
+            {
+                OUT_D1EBUG(textBuf,"EVENT_MSG\r\n");	
+                //  MyEvent.eventData.msg_evt.data1, MyEvent.eventData.msg_evt.data2);
+                break;
+            }
+			default:
+				OUT_D1EBUG(textBuf,"<-- Other event:%d... -->\r\n", flSignalBuffer.eventType);
+                break;
+            /*	default:
+			{
+			OUT_D1EBUG(textBuf,"m in default\r\n");	
+			break;          
+			}*/
+		}		
+    }    
+}
+

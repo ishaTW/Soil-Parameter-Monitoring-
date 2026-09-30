@@ -1,0 +1,382 @@
+/***************************************************************************************************
+FTP for route downloading from FTP
+ ****************************************************************************************************/
+#include "ql_appinit.h"
+#include "ql_interface.h"
+#include "ql_type.h"
+#include "ql_trace.h"
+#include "ql_audio.h"
+#include "ql_timer.h"
+#include "ql_stdlib.h"
+#include "ql_error.h"
+#include "ql_fcm.h"
+#include "ql_filesystem.h"
+#include "ql_fota.h"
+#include "ftp.h"
+#include "camera.h"
+#include "camera2.h"
+#include "Fun.h"
+#include "GPS.h"
+#include "ql_fcm.h"
+#include "GSM_GPRS.h"
+#include "SEND_DATA.h"
+#include "TCP_IP.h"
+#include "MRW.h"
+#include "para_read.h"
+#include "JRM.h"
+
+
+#define DEBUG_ENABLE 0
+#if DEBUG_ENABLE > 0
+#define OUT_D1EBUG(x,...)  \
+		Ql_memset((x),0,100);  \
+		Ql_sprintf((x),__VA_ARGS__);   \
+		Ql_SendToUart(ql_uart_port2,(u8 *)(x),Ql_strlen(x));
+
+#else
+#define OUT_D1EBUG(x,...)
+#endif
+
+typedef enum tagATCmdType {
+	AT_General,
+	AT_QISTAT,
+	AT_QFTPOPEN,
+	AT_QFTPCFG,
+	AT_QFTPPATH,
+	AT_QFTPGET,
+	AT_QFTPCLOSE,
+	AT_QIDEACT
+}ATCmdType;
+
+#define FTP_SVR_ADDR   "203.199.134.131"
+#define FTP_SVR_PORT   "21"
+//#define FTP_SVR_PATH   "/TestBulk/"
+//#define FTP_SVR_PATH   "/ImageTrack/"
+#define FTP_SVR_PATH   "/DRAGONFLY_ROUTES/"
+#define FTP_USER_NAME  "cameraimages"
+#define FTP_PASSWORD   "Cimages@123"
+
+extern PortData_Event* pPortEvt;
+char ftp_buf_cmd[100];
+u8 ftp_rt_cmd_type;
+u16  ftp_rt_cmd_idx;
+
+bool ftp_rt_DoNext;
+char textBuf[100];
+
+bool ftp_rt_data;
+
+extern char FTPFILENAME[20];
+char ftp_buf[100],current_rt_scan[30];
+
+int in_route_ftp;
+
+extern bool dwn_finished;
+u32 No_of_files,jrm_route_id;
+
+//////////////JD stamp
+extern unsigned char FtoaStr[];
+extern unsigned char ItoaStr[];
+extern char STAT[2];
+extern char GPRMC[90];
+extern char UID[];
+extern char readbuffer[];
+extern ascii mSpeedAscii[];
+extern double mTotDist;
+extern double mCurrSpeed;
+///////////////////////
+
+char read_route[25000],check_ftp_resp[50];
+extern char APN_NAME[];
+extern u8 rt_dwnld_fail_flag;
+u8 rt_dwnld_fail_flag_cnt = 0;
+//extern char PATH_JRM[30];
+extern QlTimer JRM_timer;
+extern QlTimer ftp_route_start,start_jrm_scan;
+QlTimer jrm_rt_reset={0,0};
+u32 rt_retry_cnt = 1;
+extern char route_id[10];
+
+
+/////////////   JRM Rout Download Functions   //////////////////// 
+
+void JRM_FTP_DL(void)
+{
+	in_route_ftp = 1;
+
+	switch (ftp_rt_cmd_idx)
+	{
+	OUT_D1EBUG(textBuf,"In FTP switch\r\n");
+	case 1:
+		Ql_sprintf((char *)ftp_buf_cmd, "ATE0\n");
+		ftp_rt_cmd_type = AT_General;
+		//Ql_StartTimer(&ftp_stuck);    ///timer for ftp stuck
+		OUT_D1EBUG(textBuf,"Echo mode off ATE0 case 1\r\n");
+		OUT_D1EBUG(textBuf,(char *)ftp_buf_cmd);
+		Ql_SendToModem(ql_md_port1, (u8*)ftp_buf_cmd, Ql_strlen(ftp_buf_cmd));
+		//  check_AT_res();
+		break;
+
+	case 2:// Select a foreground context
+		Ql_sprintf((char *)ftp_buf_cmd, "AT+QIFGCNT=1\n");
+		ftp_rt_cmd_type = AT_General;
+		OUT_D1EBUG(textBuf,"Select a foreground context AT+QIFGCNT=1 case 2\r\n\n");
+		OUT_D1EBUG(textBuf,(char *)ftp_buf_cmd);
+		Ql_SendToModem(ql_md_port1, (u8*)ftp_buf_cmd, Ql_strlen(ftp_buf_cmd));
+		//  check_AT_res();
+
+		break;
+
+	case 3:// Select a bearer (0=CSD, 1=GPRS), if 'GPRS', set APN
+		Ql_sprintf((char *)ftp_buf_cmd, "AT+QICSGP=1,\"%s\"\n",APN_NAME);
+		ftp_rt_cmd_type = AT_General;
+		OUT_D1EBUG(textBuf,"Select a GPRS AT+QICSGP=1 case 3\n");
+		OUT_D1EBUG(textBuf,(char *)ftp_buf_cmd);
+		Ql_SendToModem(ql_md_port1, (u8*)ftp_buf_cmd, Ql_strlen(ftp_buf_cmd));
+		//   check_AT_res();
+		break;
+
+	case 4:// Set user name
+		Ql_sprintf((char *)ftp_buf_cmd, "AT+QFTPUSER=\"%s\"\n", FTP_USER_NAME);
+		ftp_rt_cmd_type = AT_General;
+		OUT_D1EBUG(textBuf,"Set user name AT+QFTPUSER case 4\r\n\n");
+		OUT_D1EBUG(textBuf,(char *)ftp_buf_cmd);
+		Ql_SendToModem(ql_md_port1, (u8*)ftp_buf_cmd, Ql_strlen(ftp_buf_cmd));
+		//   check_AT_res();
+		break;
+
+	case 5:// Set password
+		Ql_sprintf((char *)ftp_buf_cmd, "AT+QFTPPASS=\"%s\"\n", FTP_PASSWORD);
+		ftp_rt_cmd_type = AT_General;
+		OUT_D1EBUG(textBuf,"Set password AT+QFTPPASS=1 case 5\r\n\n");
+		OUT_D1EBUG(textBuf,(char *)ftp_buf_cmd);
+		Ql_SendToModem(ql_md_port1, (u8*)ftp_buf_cmd, Ql_strlen(ftp_buf_cmd));
+		//   check_AT_res();
+		break;
+
+	case 6:// Open FTP
+		Ql_sprintf((char *)ftp_buf_cmd, "AT+QFTPOPEN=\"%s\",\"%s\"\n", FTP_SVR_ADDR, FTP_SVR_PORT);
+		ftp_rt_cmd_type = AT_QFTPOPEN;
+		OUT_D1EBUG(textBuf,"Open FTP AT+QFTPOPEN=1 case 6\r\n\n");
+		//   check_AT_res();
+		ftp_rt_DoNext = FALSE;
+		OUT_D1EBUG(textBuf,(char *)ftp_buf_cmd);
+		Ql_SendToModem(ql_md_port1, (u8*)ftp_buf_cmd, Ql_strlen(ftp_buf_cmd));
+		break;
+
+	case 7:// Set local path
+		// Ql_sprintf((char *)ftp_buf_cmd, "AT+QFTPCFG=4,\"/UFS/Route_testt.txt\"\n");
+		Ql_strcpy((char *)ftp_buf_cmd, "AT+QFTPCFG=4,\"/UFS/");   
+		Ql_strcat(ftp_buf_cmd,(char *)FTPFILENAME);
+		Ql_strncat((char *)ftp_buf_cmd,(char *)"\"\r\n",3);   
+		ftp_rt_cmd_type = AT_QFTPCFG;
+		OUT_D1EBUG(textBuf,"Set local path AT+QFTPCFG=4 case 7\r\n\n");
+		//   check_AT_res();
+		ftp_rt_DoNext = FALSE;
+		OUT_D1EBUG(textBuf,(char *)ftp_buf_cmd);
+		Ql_SendToModem(ql_md_port1, (u8*)ftp_buf_cmd, Ql_strlen(ftp_buf_cmd));
+		break;
+
+	case 8:// Set server path
+		Ql_sprintf((char *)ftp_buf_cmd, "AT+QFTPPATH=\"%s\"\n", FTP_SVR_PATH);
+		ftp_rt_cmd_type = AT_QFTPPATH;
+		OUT_D1EBUG(textBuf,"Set server path AT+QFTPPATH=1 case 8\r\n\n");
+		//   check_AT_res();
+		ftp_rt_DoNext = FALSE;
+		OUT_D1EBUG(textBuf,(char *)ftp_buf_cmd);
+		Ql_SendToModem(ql_md_port1, (u8*)ftp_buf_cmd, Ql_strlen(ftp_buf_cmd));
+		break;
+
+
+	case 9:// Download File
+		OUT_D1EBUG(textBuf,"FILE Name for Route File   = %s\r\n",FTPFILENAME);
+		Ql_sprintf((char *)ftp_buf_cmd, "AT+QFTPGET=\"%s\"\n",FTPFILENAME);
+		//  ftp_rt_cmd_type = AT_QFTPPUT;
+		ftp_rt_cmd_type = AT_QFTPGET;
+		ftp_rt_DoNext = FALSE;
+		//  OUT_D1EBUG(textBuf,(char *)ftp_buf_cmd);
+		Ql_SendToModem(ql_md_port1, (u8*)ftp_buf_cmd, Ql_strlen(ftp_buf_cmd));
+		break;
+
+	case 10:// List files
+		Ql_sprintf((char *)ftp_buf_cmd, "AT+QFLST\n");
+		ftp_rt_cmd_type = AT_General;
+		OUT_D1EBUG(textBuf,"List files AT+QFLST case 10\r\n\n");
+		OUT_D1EBUG(textBuf,(char *)ftp_buf_cmd);
+		Ql_SendToModem(ql_md_port1, (u8*)ftp_buf_cmd, Ql_strlen(ftp_buf_cmd));
+		//   check_AT_res();
+		break;
+
+	case 11:// Close FTP connection
+		Ql_sprintf((char *)ftp_buf_cmd, "AT+QFTPCLOSE\n");
+		ftp_rt_cmd_type = AT_QFTPCLOSE;
+		OUT_D1EBUG(textBuf,"Close FTP AT+QFTPCLOSE case 11\r\n\n");
+		//  check_AT_res();
+		ftp_rt_DoNext = FALSE;
+		OUT_D1EBUG(textBuf,(char *)ftp_buf_cmd);
+		Ql_SendToModem(ql_md_port1, (u8*)ftp_buf_cmd, Ql_strlen(ftp_buf_cmd));
+		//   Ql_StopTimer(&timer_ftp);
+		break;
+
+	case 12:// Deactivate GPRS PDP context
+		Ql_sprintf((char *)ftp_buf_cmd, "AT+QIDEACT\n");
+		ftp_rt_cmd_type = AT_General;
+		OUT_D1EBUG(textBuf,"Deactivate GPRS AT+QIDEACT case 12\r\n\n");
+		//    check_AT_res();
+		//	ftp_rt_data=0;
+		// cam_fl_up_flag=0;
+		OUT_D1EBUG(textBuf,(char *)ftp_buf_cmd);
+		Ql_SendToModem(ql_md_port1, (u8*)ftp_buf_cmd, Ql_strlen(ftp_buf_cmd));
+		break;
+
+	default:
+		//     OUT_D1EBUG(textBuf,"at commands finished.\r\n");
+		ftp_rt_cmd_type = AT_General;
+		OUT_D1EBUG(textBuf,"at commands finished default\r\n\n");
+		ftp_rt_DoNext = TRUE;
+		OUT_D1EBUG(textBuf,"READ COMMAND FTP ELSE \r\n\n");
+
+		if(rt_dwnld_fail_flag == 1)
+		{
+			rt_retry_cnt++;
+			rt_dwnld_fail_flag = 0;
+			rt_dwnld_fail_flag_cnt  = 1;
+			//	JRM_ROUT_chk();
+		}
+		else
+		{
+			in_route_ftp = 0;
+			JRM_PATH_write((char *)FTPFILENAME);
+			JRM_JD_stamp();
+			ftp_rt_data=0;
+			Ql_Sleep(500);
+			Ql_Reset(0);
+		}
+		//jrm_rt_reset.timeoutPeriod = Ql_SecondToTicks(30);
+		//Ql_StartTimer(&jrm_rt_reset);
+		break;
+	}
+	return;
+}
+
+void JRM_FTP_AT_RES(char *ftp_buf)
+{
+
+	char* p1 = NULL;
+	char* p2 = NULL;
+	s32 nFtpDlLen = 0;
+	char strTmp[10];
+
+	OUT_D1EBUG(textBuf,"Modem Data at vPort [%d]: %s \r\n", pPortEvt->port, ftp_buf);
+
+	OUT_D1EBUG(textBuf,"ftp_rt_data value here =%d\r\n",ftp_rt_data);
+	if(ftp_rt_data==1)
+	{
+		if (Ql_strstr((char *)ftp_buf, "Call Ready") != NULL)
+		{
+
+		}
+		else if ((ftp_rt_cmd_type == AT_QFTPOPEN  && Ql_strstr((char*)ftp_buf,"+QFTPOPEN:0") != NULL)
+				|| (ftp_rt_cmd_type == AT_QFTPCFG  && Ql_strstr((char*)ftp_buf, "+QFTPCFG:0")   != NULL)
+				|| (ftp_rt_cmd_type == AT_QFTPPATH && Ql_strstr((char*)ftp_buf, "+QFTPPATH:0") != NULL)
+				|| (ftp_rt_cmd_type == AT_QFTPGET  && Ql_strstr((char*)ftp_buf, "+QFTPGET:")   != NULL)
+				|| (ftp_rt_cmd_type == AT_QFTPCLOSE && Ql_strstr((char*)ftp_buf, "+QFTPCLOSE:0") != NULL)
+		)
+		{
+			if((ftp_rt_cmd_type == AT_QFTPGET  && Ql_strstr((char*)ftp_buf, "+QFTPGET:")   != NULL))
+			{
+				p1 = Ql_strstr(ftp_buf, "\r\n+QFTPGET:");
+				p1 += Ql_strlen("\r\n+QFTPGET:");
+				p2 = Ql_strstr(p1, "\r\n");
+				if (p1 && p2)
+				{
+					Ql_memset(strTmp, 0x0, sizeof(strTmp));
+					Ql_memcpy(strTmp, p1, p2 - p1);
+					nFtpDlLen = Ql_atoi(strTmp);
+					OUT_D1EBUG(textBuf,"Route Downloaded Length =%d\r\n",nFtpDlLen);
+				}
+				ftp_rt_cmd_idx++;
+				ftp_rt_DoNext = TRUE;
+				JRM_FTP_DL();
+			}
+			else if ((  Ql_strstr((char*)ftp_buf, "\r\nOK") != NULL
+					|| Ql_strstr((char*)ftp_buf, "OK\r\n") != NULL
+					|| Ql_strstr((char*)ftp_buf, "ERROR") != NULL)
+					&& ftp_rt_DoNext != FALSE)
+			{
+				ftp_rt_cmd_idx++;
+				JRM_FTP_DL();
+			}
+		}
+		return;
+	}
+
+	void JRM_JD_stamp(void)
+	{
+		ascii JDtampString[90];
+		OUT_D1EBUG(textBuf,"JD stamping generation\r\n");
+		Ql_memset((ascii *)JDtampString,0,sizeof(JDtampString));
+		Ql_strncpy(JDtampString,UID,7);
+		Ql_strncat(JDtampString,"_JD,",4);
+		Ql_strcat(JDtampString,GPRMC);
+		ix_Itoa(mCurrSpeed);
+		Ql_strcat(JDtampString,(char *)ItoaStr);///mCurrSpeed speed
+		Ql_strncat(JDtampString,",",1);
+		Ql_strcat(JDtampString,(char *)(ix_Itoa(mTotDist)));
+		Ql_strncat(JDtampString,",",1);
+		Ql_strncat(JDtampString,"1",1);		//PDOP
+		Ql_strncat(JDtampString,",",1);
+		Ql_strncat((char *)JDtampString,(char *)route_id,sizeof(route_id));   //JRM ROUTE ID
+		Ql_strncat(JDtampString,",",1);
+		Ql_strncat(JDtampString,STAT,1);			//Status (A/V)
+		Ql_strncat(JDtampString,"\r\n",2);
+		OUT_D1EBUG(textBuf,"JDtampString=%s\r\n",JDtampString);
+		tw_filewrite((char *)JDtampString);
+	}
+
+
+	void gen_rt_dwnld_fail_stamp(void)
+	{
+		ascii DFtampString[90];
+		OUT_D1EBUG(textBuf,"DF stamping generation\r\n");
+		Ql_memset((ascii *)DFtampString,0,sizeof(DFtampString));
+		Ql_strncpy(DFtampString,UID,7);
+		Ql_strncat(DFtampString,"_DF,",4);
+		Ql_strcat(DFtampString,GPRMC);
+		ix_Itoa(mCurrSpeed);
+		Ql_strcat(DFtampString,(char *)ItoaStr);///mCurrSpeed speed
+		Ql_strncat(DFtampString,",",1);
+		Ql_strcat(DFtampString,(char *)(ix_Itoa(mTotDist)));
+		Ql_strncat(DFtampString,",",1);
+		Ql_strncat(DFtampString,"1",1);		//PDOP
+		Ql_strncat(DFtampString,",",1);
+		Ql_strncat((char *)DFtampString,(char *)route_id,sizeof(route_id));   //JRM ROUTE ID
+		Ql_strncat(DFtampString,",",1);
+		Ql_strncat(DFtampString,STAT,1);			//Status (A/V)
+		Ql_strncat(DFtampString,"\r\n",2);
+		OUT_D1EBUG(textBuf,"DFtampString=%s\r\n",DFtampString);
+		tw_filewrite((char *)DFtampString);
+	}
+
+	void gen_File_NA_stamp(void)
+	{
+		ascii DFtampString[90];
+		OUT_D1EBUG(textBuf,"DF stamping generation\r\n");
+		Ql_memset((ascii *)DFtampString,0,sizeof(DFtampString));
+		Ql_strncpy(DFtampString,UID,7);
+		Ql_strncat(DFtampString,"_FNA,",4);
+		Ql_strcat(DFtampString,GPRMC);
+		ix_Itoa(mCurrSpeed);
+		Ql_strcat(DFtampString,(char *)ItoaStr);///mCurrSpeed speed
+		Ql_strncat(DFtampString,",",1);
+		Ql_strcat(DFtampString,(char *)(ix_Itoa(mTotDist)));
+		Ql_strncat(DFtampString,",",1);
+		Ql_strncat(DFtampString,"1",1);		//PDOP
+		Ql_strncat(DFtampString,",",1);
+		Ql_strncat((char *)DFtampString,(char *)route_id,sizeof(route_id));   //JRM ROUTE ID
+		Ql_strncat(DFtampString,",",1);
+		Ql_strncat(DFtampString,STAT,1);			//Status (A/V)
+		Ql_strncat(DFtampString,"\r\n",2);
+		OUT_D1EBUG(textBuf,"DFtampString=%s\r\n",DFtampString);
+		tw_filewrite((char *)DFtampString);
+	}

@@ -1,0 +1,9 @@
+void EINT_PINSUB();
+void SMS_DATA(void);
+void PANIC_STAMP(void);
+void PANIC_BUZZER_high(void);
+void PANIC_BUZZER_low(void);
+void PANIC_TIMERUP();
+void PANIC_TIMER_INIT();
+void PANIC_ISR();
+void INT_unsub(void);

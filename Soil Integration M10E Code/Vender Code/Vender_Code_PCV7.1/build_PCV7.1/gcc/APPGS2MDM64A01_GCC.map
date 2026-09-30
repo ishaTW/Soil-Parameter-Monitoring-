@@ -1,0 +1,1200 @@
+Archive member included because of file (symbol)
+
+libs/gcc/app_start.lib(ql_func.o)
+                              build\gcc\obj/example/canparareadwrt.o (Ql_strcpy)
+libs/gcc/app_start.lib(ql_Main.o)
+                              build\gcc\obj/example/GPRMC.o (Ql_DebugTrace)
+libs/gcc/app_start.lib(ocpu_init.o)
+                              libs/gcc/app_start.lib(ql_Main.o) (_OCPU_InitUserMem)
+F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_addsubdf3.o)
+                              build\gcc\obj/example/Fun.o (__aeabi_dsub)
+F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_muldivdf3.o)
+                              build\gcc\obj/example/Fun.o (__aeabi_dmul)
+F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_cmpdf2.o)
+                              build\gcc\obj/example/Fun.o (__aeabi_dcmplt)
+F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_fixdfsi.o)
+                              build\gcc\obj/example/Fun.o (__aeabi_d2iz)
+F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_fixunsdfsi.o)
+                              build\gcc\obj/example/Fun.o (__aeabi_d2uiz)
+
+Allocating common symbols
+Common symbol       size              file
+
+gps_type            0xa               build\gcc\obj/example/main.o
+STI                 0x8               build\gcc\obj/example/GPRMC.o
+CCID_val_tf         0x1e              build\gcc\obj/example/GPRMC.o
+TIME                0x1               build\gcc\obj/example/para_read.o
+qlOpenCPUHeapMem    0x2800            build\gcc\obj/customer/customerconfig/ql_customer_config.o
+p                   0x4               build\gcc\obj/example/main.o
+mureadcnt           0x8               build\gcc\obj/example/para_read.o
+UIDtemp             0xf               build\gcc\obj/example/main.o
+Ql_sprintf          0x4               libs/gcc/app_start.lib(ql_Main.o)
+CanFlag_readbuffer  0x2               build\gcc\obj/example/para_read.o
+nLAT                0x1               build\gcc\obj/example/para_read.o
+GPRMC               0x5a              build\gcc\obj/example/GPS.o
+LONG                0x1               build\gcc\obj/example/para_read.o
+CV                  0xf               build\gcc\obj/example/GPRMC.o
+copy_of_buffer      0x1e              build\gcc\obj/example/main.o
+trackfile           0xfa              build\gcc\obj/example/GPRMC.o
+readptr             0x4               build\gcc\obj/example/MRW.o
+WMSN                0x14              build\gcc\obj/example/GPRMC.o
+GPRS_APN            0x19              build\gcc\obj/example/GPRMC.o
+FtoaStr             0x14              build\gcc\obj/example/Fun.o
+mGlobalGPRMC1       0x5a              build\gcc\obj/example/GPS.o
+TXI                 0x8               build\gcc\obj/example/GPRMC.o
+pData               0x4               build\gcc\obj/example/main.o
+flSignalBuffer      0x408             build\gcc\obj/example/main.o
+Globalstring        0x5a              build\gcc\obj/example/GPS.o
+ipaddress           0x4               build\gcc\obj/example/GSM_GPRS.o
+uart3_buffer        0x64              build\gcc\obj/example/main.o
+CanPara_readbuffer  0xf               build\gcc\obj/example/para_read.o
+ItoaStr             0xf               build\gcc\obj/example/Fun.o
+FW                  0x64              build\gcc\obj/example/GPRMC.o
+CVread              0x19              build\gcc\obj/example/para_read.o
+appBinFile          0x64              build\gcc\obj/example/main.o
+UID_Fota            0x8               build\gcc\obj/example/para_read.o
+textBuf             0x1f4             build\gcc\obj/example/main.o
+COURSE              0x1               build\gcc\obj/example/para_read.o
+DATE                0x1               build\gcc\obj/example/para_read.o
+GSN_val             0x64              build\gcc\obj/example/GPRMC.o
+entryaddr           0x4               build\gcc\obj/example/TCP_IP.o
+CanUpdate_flag      0x1               build\gcc\obj/example/main.o
+pPortEvt            0x4               build\gcc\obj/example/main.o
+buffer              0xfa              build\gcc\obj/example/main.o
+data_p              0xf               build\gcc\obj/example/TCP_IP.o
+UID                 0xf               build\gcc\obj/example/GPRMC.o
+pfilecamflag        0x1               build\gcc\obj/example/GPRMC.o
+SPEED               0x1               build\gcc\obj/example/para_read.o
+CCID_val            0xc8              build\gcc\obj/example/GPRMC.o
+STAT                0x1               build\gcc\obj/example/para_read.o
+sms_set             0x19              build\gcc\obj/example/sms_handle.o
+IMEI_Num            0x14              build\gcc\obj/example/GPRMC.o
+addr                0x14              build\gcc\obj/example/TCP_IP.o
+eLONG               0x1               build\gcc\obj/example/para_read.o
+Flag_readbuffer     0x5               build\gcc\obj/example/para_read.o
+GSN_val_tf          0x1e              build\gcc\obj/example/GPRMC.o
+sms_buffer          0xc8              build\gcc\obj/example/sms_handle.o
+Unit_Type           0x23              build\gcc\obj/example/GPRMC.o
+Test_CV             0xf               build\gcc\obj/example/main.o
+modem_str           0x1e              build\gcc\obj/example/GPRMC.o
+readbuffer          0x1f4             build\gcc\obj/example/MRW.o
+debug_buffer        0x64              build\gcc\obj/example/sms_handle.o
+buffer1             0xfa              build\gcc\obj/example/sms_handle.o
+mPrevGPRMC          0x4b              build\gcc\obj/example/para_read.o
+Ql_DebugTrace       0x4               libs/gcc/app_start.lib(ql_Main.o)
+sendbuffer          0x3e8             build\gcc\obj/example/MRW.o
+mprevDist           0x8               build\gcc\obj/example/para_read.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+ROM              0x08540000         0x00100000         xr
+RAM              0x00200000         0x00200000         xrw
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+                0x08540000                . = 0x8540000
+
+.initdata       0x08540000       0x2c
+ *(.initdata)
+ .initdata      0x08540000       0x2c libs/gcc/app_start.lib(ql_Main.o)
+                0x08540000                GADLENTRY
+
+text            0x0854002c    0x13db4
+ *(.text)
+ .text          0x0854002c        0x0 build\gcc\obj/customer/customerconfig/ql_customer_config.o
+ .text          0x0854002c        0x0 build\gcc\obj/customer/customerconfig/ql_customer_gpio.o
+ .text          0x0854002c     0x163c build\gcc\obj/example/canparareadwrt.o
+                0x0854002c                tw_updatedCanParaRead
+                0x08540788                SIM_Apn
+                0x085409b0                remote_pararead_APN
+                0x08540acc                newunit_id
+                0x08540bf8                type_gps
+                0x08540d24                FunSIMProvider
+                0x08540f28                type_unit
+                0x08541054                SI_TI
+                0x08541230                OS_Lmt_wrt
+ .text          0x08541668     0x1110 build\gcc\obj/example/fota.o
+                0x08541668                H2F_CheckTimeOut
+                0x085416a8                H2F_Init
+                0x08541794                H2F_WriteData_Init
+                0x085418fc                H2F_WriteData_Write
+                0x08541a4c                H2F_SendCMDCtrl
+                0x08541f70                H2F_WriteData_Finish
+                0x085420e0                H2F_StateMachine
+                0x0854260c                fota_uart
+                0x085426cc                fota_function
+ .text          0x08542778      0x804 build\gcc\obj/example/Fun.o
+                0x08542778                ix_Retchar
+                0x08542784                ix_Itoa
+                0x08542898                isdigita
+                0x085428b0                atofd
+                0x08542b14                ix_Ftoa
+                0x08542e4c                ix_AtoI
+                0x08542e84                ix_Strcat
+                0x08542ed8                tw_DM2DD
+ .text          0x08542f7c     0x1ae0 build\gcc\obj/example/GPRMC.o
+                0x08542f7c                createandwrite
+                0x0854309c                set_info
+                0x0854365c                ATcommand
+                0x085439f8                trackfile_gen
+                0x0854402c                checkATresponse
+                0x08544a58                delay
+ .text          0x08544a5c      0x120 build\gcc\obj/example/GPS.o
+                0x08544a5c                gprsformat1
+ .text          0x08544b7c      0x6b4 build\gcc\obj/example/GSM_GPRS.o
+                0x08544b7c                CallBack_network_deactived
+                0x08544c18                CallBack_network_actived
+                0x08544cd8                CallBack_GprsAPNSet
+                0x08544dcc                CallBack_GprsAPNGet
+                0x08544ee4                GSMGPRS
+ .text          0x08545230     0x19ac build\gcc\obj/example/main.o
+                0x08545230                ql_entry
+ .text          0x08546bdc      0x218 build\gcc\obj/example/MRW.o
+                0x08546bdc                tw_checkconnection
+ .text          0x08546df4      0x490 build\gcc\obj/example/para_read.o
+                0x08546df4                tw_CanUpdate_flag_read
+                0x08546fd4                mainsettings
+                0x08547024                readcreated
+                0x085471f8                formatmemory
+ .text          0x08547284      0x140 build\gcc\obj/example/SEND_DATA.o
+                0x08547284                timer_handler_stamping
+ .text          0x085473c4      0xa8c build\gcc\obj/example/SIM_lock.o
+                0x085473c4                ATcommandSIM
+                0x08547778                SIM_LockRoutines
+                0x08547b40                WriteSimPin
+                0x08547c8c                ReadSimPin
+ .text          0x08547e50     0x19d4 build\gcc\obj/example/sms_handle.o
+                0x08547e50                CallBack_NewSMS
+                0x08547f88                CallBack_SendSMS
+                0x08548014                CallBack_DeleteSMS
+                0x085480a0                CallBack_ReadPDUSMS
+                0x085481ec                CallBack_NewFlashPDUSMS
+                0x085482fc                CallBack_PDUStatusReport
+                0x08548424                CallBack_NewFlashTextSMS
+                0x08548688                CallBack_TextStatusReport
+                0x085487e4                Change_RemoteParameter
+                0x0854917c                read_sms
+                0x0854948c                CallBack_ReadTextSMS
+ .text          0x08549824      0x320 build\gcc\obj/example/Stamps.o
+                0x08549824                Gen_NGSM
+                0x085499b4                Gen_NGPRS
+ .text          0x08549b44     0x15e0 build\gcc\obj/example/TCP_IP.o
+                0x08549b44                CallBack_getipbyname
+                0x08549e78                CallBack_socket_connect
+                0x08549fd4                CallBack_socket_close
+                0x0854a428                CallBack_socket_accept
+                0x0854a42c                CallBack_socket_read
+                0x0854a8e0                CallBack_socket_write
+                0x0854abf8                transfer_tcp_data
+                0x0854adb8                TCP_IP
+ .text          0x0854b124        0x0 build\gcc\obj/customer/customer.o
+ .text          0x0854b124     0x8034 libs/gcc/app_start.lib(ql_func.o)
+                0x0854b124                Ql_create_api_hash
+                0x0854b16c                Ql_ui64toa
+                0x0854b210                Ql_itoa
+                0x0854b2a0                Ql_atof
+                0x0854b324                Ql_strcpy
+                0x0854b3b4                Ql_strncpy
+                0x0854b438                Ql_strcat
+                0x0854b4b4                Ql_strncat
+                0x0854b538                Ql_strlen
+                0x0854b5a4                Ql_strcmp
+                0x0854b624                Ql_strncmp
+                0x0854b6ac                Ql_memset
+                0x0854b730                Ql_memcpy
+                0x0854b7b4                Ql_memcmp
+                0x0854b83c                Ql_memmove
+                0x0854b8c0                Ql_strstr
+                0x0854b93c                Ql_strchr
+                0x0854b9b8                Ql_SetDebugMode
+                0x0854ba20                Ql_GetEvent
+                0x0854ba88                Ql_Sleep
+                0x0854baf0                Ql_Reset
+                0x0854bb58                Ql_PowerDown
+                0x0854bbc0                Ql_PowerOnAck
+                0x0854bc20                Ql_StartWatchdog
+                0x0854bca4                Ql_FeedWatchdog
+                0x0854bd04                Ql_StopWatchdog
+                0x0854bd64                Ql_ReadModuleUID
+                0x0854bdd4                Ql_GetSDKVer
+                0x0854be28                Ql_GetPowerOnReason
+                0x0854be90                Ql_SetSleepMode
+                0x0854bf00                Ql_SetCFUN
+                0x0854bf80                Ql_GetPowerSupply
+                0x0854c008                Ql_VoltageInd_Init
+                0x0854c078                Ql_PwrKey_Init
+                0x0854c0e8                Ql_GenericURC_Init
+                0x0854c158                Ql_GetCFUN
+                0x0854c1c0                Ql_GetCHINFO
+                0x0854c230                Ql_StartJammingDet
+                0x0854c2a0                Ql_StopJammingDet
+                0x0854c308                Ql_ChangeUsbMode
+                0x0854c378                Ql_SecureData_Store
+                0x0854c408                Ql_SecureData_Read
+                0x0854c490                Ql_GetMemory
+                0x0854c4fc                Ql_FreeMemory
+                0x0854c56c                Ql_memMaxCanAllocSize
+                0x0854c5d0                Ql_memTotalLeftSize
+                0x0854c634                Ql_FileGetFreeSize
+                0x0854c69c                Ql_FileGetFreeSizeEx
+                0x0854c71c                Ql_FileOpen
+                0x0854c7a4                Ql_FileOpenEx
+                0x0854c824                Ql_FileRead
+                0x0854c8b4                Ql_FileWrite
+                0x0854c944                Ql_FileSeek
+                0x0854c9cc                Ql_FileGetFilePosition
+                0x0854ca4c                Ql_FileTruncate
+                0x0854cabc                Ql_FileFlush
+                0x0854cb24                Ql_FileClose
+                0x0854cb8c                Ql_FileGetSize
+                0x0854cc0c                Ql_FileDelete
+                0x0854cc7c                Ql_FileCheck
+                0x0854ccec                Ql_FileRename
+                0x0854cd6c                Ql_FileCreateDir
+                0x0854cddc                Ql_FileRemoveDir
+                0x0854ce4c                Ql_FileCheckDir
+                0x0854cebc                Ql_FileFindFirst
+                0x0854cf54                Ql_FileFindNext
+                0x0854cfec                Ql_FileFindClose
+                0x0854d054                Ql_FileXDelete
+                0x0854d0d4                Ql_FileXMove
+                0x0854d15c                Ql_Fs_Format
+                0x0854d1cc                Ql_FileSys_GetSpaceInfo
+                0x0854d254                Ql_WrtCodeRegion_Init
+                0x0854d2c0                Ql_WrtCodeRegion_Write
+                0x0854d340                Ql_WrtCodeRegion_Finish
+                0x0854d3a8                Ql_pinSubscribe
+                0x0854d430                Ql_pinUnSubscribe
+                0x0854d4a0                Ql_pinQueryMode
+                0x0854d530                Ql_pinRead
+                0x0854d5b0                Ql_pinWrite
+                0x0854d630                Ql_pinControl
+                0x0854d6b0                Ql_eintRead
+                0x0854d728                Ql_eintMask
+                0x0854d7a0                Ql_eintSetPolarity
+                0x0854d818                Ql_ReadADC
+                0x0854d898                Ql_ConfigADC
+                0x0854d920                Ql_GetGpioByName
+                0x0854d990                Ql_busSubscribe
+                0x0854da10                Ql_busUnSubscribe
+                0x0854da80                Ql_busWrite
+                0x0854db10                Ql_busRead
+                0x0854dba0                Ql_busQuery
+                0x0854dc28                Ql_I2C_Init
+                0x0854dc88                Ql_I2C_Config
+                0x0854dd08                Ql_I2C_Read
+                0x0854dd90                Ql_I2C_Write
+                0x0854de18                Ql_PlayAudio
+                0x0854de98                Ql_StopAudio
+                0x0854df08                Ql_StartPlayAudioFile
+                0x0854df98                Ql_PlayAudioFile_8k
+                0x0854e030                Ql_StopAudioFile_8k
+                0x0854e098                Ql_StopPlayAudioFile
+                0x0854e100                Ql_StartPlayAudioStream
+                0x0854e1a0                Ql_StopPlayAudioStream
+                0x0854e208                Ql_StartRecord
+                0x0854e288                Ql_StartRecord_FullFunc
+                0x0854e32c                Ql_StopRecord
+                0x0854e394                Ql_PlayTone
+                0x0854e424                Ql_StopTone
+                0x0854e48c                Ql_SelectRingTone
+                0x0854e4fc                Ql_VoiceCallChangePath
+                0x0854e568                Ql_VoiceCallGetCurrentPath
+                0x0854e5cc                Ql_SetVolume
+                0x0854e64c                Ql_SetVolume_Ex
+                0x0854e6d4                Ql_GetVolume
+                0x0854e744                Ql_SetMicGain
+                0x0854e7c4                Ql_GetMicGain
+                0x0854e834                Ql_SetSideToneGain
+                0x0854e8b4                Ql_GetSideToneGain
+                0x0854e924                Ql_CtrlEchoCancel
+                0x0854e9bc                Ql_VTS
+                0x0854ea3c                Ql_WDTMF
+                0x0854eacc                Ql_EnableDTMF
+                0x0854eb3c                Ql_DisableDTMF
+                0x0854eba4                Ql_GetDTMFConfig
+                0x0854ec14                Ql_SetDTMFConfig
+                0x0854ec90                Ql_SetRingToneEnable
+                0x0854ed00                Ql_StartTimer
+                0x0854ed6c                Ql_StopTimer
+                0x0854ede4                Ql_GetLocalTime
+                0x0854ee50                Ql_SetLocalTime
+                0x0854eebc                Ql_GetRelativeTime
+                0x0854ef24                Ql_GetRelativeTime_Counter
+                0x0854ef88                Ql_SecondToTicks
+                0x0854eff4                Ql_MillisecondToTicks
+                0x0854f060                Ql_Mktime
+                0x0854f0cc                Ql_LocalTime2CalendarTime
+                0x0854f148                Ql_CalendarTime2LocalTime
+                0x0854f1cc                Ql_StartGPTimer
+                0x0854f250                Ql_StopGPTimer
+                0x0854f2b0                Ql_Alarm_StartUp
+                0x0854f330                Ql_Alarm_Remove
+                0x0854f398                Ql_OpenModemPort
+                0x0854f404                Ql_SendToModem
+                0x0854f48c                Ql_SendToUart
+                0x0854f514                Ql_SetPortRts
+                0x0854f58c                Ql_SetUartBaudRate
+                0x0854f60c                Ql_SetPortOwner
+                0x0854f68c                Ql_SetUartDCBConfig
+                0x0854f724                Ql_SetUartFlowCtrl
+                0x0854f7a4                Ql_UartGetBytesAvail
+                0x0854f810                Ql_UartGetTxRoomLeft
+                0x0854f87c                Ql_UartGetTxRestBytes
+                0x0854f8f8                Ql_UartConfigEscape
+                0x0854f97c                Ql_UartClrTxBuffer
+                0x0854f9e4                Ql_UartClrRxBuffer
+                0x0854fa4c                Ql_UartSetGenericThreshold
+                0x0854fad8                Ql_UartGenericClearFEFlag
+                0x0854fb40                Ql_UartSetVfifoThreshold
+                0x0854fbd4                Ql_VfifoUart_SetDriverBuf
+                0x0854fc68                Ql_UartGetVfifoThresholdInfo
+                0x0854fcfc                Ql_UartMaxGetVfifoThresholdInfo
+                0x0854fd90                Ql_UartStartVfifoMonitorRxTimeout
+                0x0854fe0c                Ql_UartStopVfifoMonitorRxTimeout
+                0x0854fe78                Ql_UartRcvData
+                0x0854fef8                Ql_UartQueryDataMode
+                0x0854ff68                Ql_UartForceSendEscape
+                0x0854ffd4                Ql_GprsAPNSet
+                0x0855006c                Ql_GprsAPNGet
+                0x085500ec                Ql_GprsNetworkInitialize
+                0x08550174                Ql_GprsNetworkUnInitialize
+                0x085501e4                Ql_GprsNetworkActive
+                0x08550254                Ql_GprsNetworkDeactive
+                0x085502c4                Ql_GprsNetworkGetState
+                0x0855034c                Ql_SocketCreate
+                0x085503d0                Ql_SocketClose
+                0x08550440                Ql_SocketConnect
+                0x085504c8                Ql_SocketSend
+                0x08550550                Ql_SocketRecv
+                0x085505d8                Ql_SocketTcpAckNumber
+                0x08550658                Ql_SocketSendTo
+                0x085506f0                Ql_SocketRecvFrom
+                0x08550788                Ql_SocketBind
+                0x08550810                Ql_SocketListen
+                0x085508a0                Ql_SocketAccept
+                0x0855092c                Ql_GetHostIpbyName
+                0x085509d4                Ql_GetLocalIpAddress
+                0x08550a54                Ql_GetDnsServerAddress
+                0x08550adc                Ql_SetDnsServerAddress
+                0x08550b74                Ql_SocketCheckIp
+                0x08550bf4                Ql_SocketSetSendBufferSize
+                0x08550c74                Ql_SocketSetRecvBufferSize
+                0x08550cf4                Ql_GetDeviceCurrentRunState
+                0x08550d84                Ql_SocketHtonl
+                0x08550df0                Ql_SocketHtons
+                0x08550e5c                Ql_SwitchHeartBeat
+                0x08550ee4                Ql_SMSInitialize
+                0x08550f5c                Ql_SetSMSStorage
+                0x08550fd4                Ql_GetSMSStorageInfo
+                0x08551064                Ql_SetInfoCentreNum
+                0x085510dc                Ql_GetInfoCentreNum
+                0x08551164                Ql_SetNewSMSDirectToTE
+                0x085511dc                Ql_SetSMSFormat
+                0x08551254                Ql_ReadSMS
+                0x085512dc                Ql_DeleteSMS
+                0x08551364                Ql_ListSMS
+                0x085513fc                Ql_GetUnReadSMS
+                0x08551474                Ql_SendPDUSMS
+                0x085514fc                Ql_WritePDUSMS
+                0x08551584                Ql_SetTextSMSPara
+                0x08551614                Ql_SendTextSMS
+                0x085516a4                Ql_WriteTextSMS
+                0x08551734                Ql_SMS_DCS_ToCSCS
+                0x085517b4                Ql_Call_Initialize
+                0x08551824                Ql_GetCallCntByType
+                0x08551890                Ql_Call_Dial
+                0x08551910                Ql_Call_Answer
+                0x08551978                Ql_Call_Hangup
+                0x085519e0                Ql_GSM_GetIMEI
+                0x08551a60                Ql_SIM_GetIMSI
+                0x08551ae0                Ql_GetCoreVer
+                0x08551b60                Ql_IsSIMInserted
+                0x08551bc4                Ql_GetOperator
+                0x08551c44                Ql_RetrieveNodeBInfo
+                0x08551cb4                Ql_Call_GetCurrCall
+                0x08551d24                Ql_SIM_GetLockState
+                0x08551d94                Ql_SIM_FeedPIN
+                0x08551e1c                Ql_osSendEvent
+                0x08551ea4                Ql_osCreateMutex
+                0x08551f10                Ql_osTakeMutex
+                0x08551f78                Ql_osGiveMutex
+                0x08551fe0                Ql_osCreateSemaphore
+                0x0855205c                Ql_osTakeSemaphore
+                0x085520d8                Ql_osGiveSemaphore
+                0x08552140                Ql_SetLastErrorCode
+                0x085521ac                Ql_GetLastErrorCode
+                0x08552218                Ql_osGetCurrentTaskPriority
+                0x0855227c                Ql_osGetCurrenTaskRemainStackSize
+                0x085522e0                Ql_osChangeTaskPriority
+                0x0855235c                Ql_Fota_Core_Init
+                0x085523bc                Ql_Fota_Core_Write_Data
+                0x0855243c                Ql_Fota_Core_Finish
+                0x0855249c                Ql_Fota_App_Init
+                0x0855250c                Ql_Fota_App_InitEx
+                0x0855257c                Ql_Fota_App_Write_Data
+                0x085525fc                Ql_Fota_App_Finish
+                0x08552660                Ql_Fota_Update
+                0x085526c8                Ql_TTS_Initialize
+                0x08552738                Ql_TTS_Play
+                0x085527b8                Ql_TTS_PlayInCall
+                0x08552848                Ql_TTS_Stop
+                0x085528b0                Ql_TTS_Query
+                0x08552918                Ql_TTS_SetStyle
+                0x0855299c                Ql_GetFontData
+                0x08552a24                Ql_FTP_SetUserName
+                0x08552a94                Ql_FTP_SetPasswd
+                0x08552b04                Ql_FTP_Connect
+                0x08552b8c                Ql_FTP_Disconnect
+                0x08552bf4                Ql_FTP_SetConnMode
+                0x08552c64                Ql_FTP_SetTransMode
+                0x08552cd4                Ql_FTP_SetResumePoint
+                0x08552d44                Ql_FTP_SetLocalPos
+                0x08552db4                Ql_FTP_SetSrvPath
+                0x08552e24                Ql_FTP_Upload
+                0x08552eb4                Ql_FTP_Download
+                0x08552f34                Ql_FTP_GetState
+                0x08552f9c                Ql_FTP_GetTransLength
+                0x08553004                Ql_ConvertCodec
+                0x08553094                ocpu_isspace
+                0x085530c4                ocpu_isdigit
+                0x085530d8                Ql_atoi
+ .text          0x08553158      0x190 libs/gcc/app_start.lib(ql_Main.o)
+                0x08553158                ql_InitVFunc
+                0x085531f0                ql_main
+ .text          0x085532e8       0x4c libs/gcc/app_start.lib(ocpu_init.o)
+                0x085532e8                _OCPU_InitUserMem
+ .text          0x08553334      0x41c F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_addsubdf3.o)
+                0x08553334                __aeabi_drsub
+                0x0855333c                __aeabi_dsub
+                0x0855333c                __subdf3
+                0x08553340                __aeabi_dadd
+                0x08553340                __adddf3
+                0x08553650                __floatunsidf
+                0x08553650                __aeabi_ui2d
+                0x08553674                __floatsidf
+                0x08553674                __aeabi_i2d
+                0x0855369c                __aeabi_f2d
+                0x0855369c                __extendsfdf2
+                0x085536dc                __floatundidf
+                0x085536dc                __aeabi_ul2d
+                0x085536f0                __floatdidf
+                0x085536f0                __aeabi_l2d
+ .text          0x08553750      0x49c F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_muldivdf3.o)
+                0x08553750                __aeabi_dmul
+                0x08553750                __muldf3
+                0x085539e0                __divdf3
+                0x085539e0                __aeabi_ddiv
+ .text          0x08553bec      0x144 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_cmpdf2.o)
+                0x08553bec                __gtdf2
+                0x08553bec                __gedf2
+                0x08553bf4                __ltdf2
+                0x08553bf4                __ledf2
+                0x08553bfc                __nedf2
+                0x08553bfc                __eqdf2
+                0x08553bfc                __cmpdf2
+                0x08553c84                __aeabi_cdrcmple
+                0x08553ca0                __aeabi_cdcmpeq
+                0x08553ca0                __aeabi_cdcmple
+                0x08553cb8                __aeabi_dcmpeq
+                0x08553cd0                __aeabi_dcmplt
+                0x08553ce8                __aeabi_dcmple
+                0x08553d00                __aeabi_dcmpge
+                0x08553d18                __aeabi_dcmpgt
+ .text          0x08553d30       0x5c F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_fixdfsi.o)
+                0x08553d30                __aeabi_d2iz
+                0x08553d30                __fixdfsi
+ .text          0x08553d8c       0x54 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_fixunsdfsi.o)
+                0x08553d8c                __aeabi_d2uiz
+                0x08553d8c                __fixunsdfsi
+
+.glue_7         0x08553de0        0x0
+ .glue_7        0x00000000        0x0 linker stubs
+
+.glue_7t        0x08553de0        0x0
+ .glue_7t       0x00000000        0x0 linker stubs
+
+.vfp11_veneer   0x08553de0        0x0
+ .vfp11_veneer  0x00000000        0x0 linker stubs
+
+.v4_bx          0x08553de0        0x0
+ .v4_bx         0x00000000        0x0 linker stubs
+
+.iplt           0x08553de0        0x0
+ .iplt          0x00000000        0x0 build\gcc\obj/example/canparareadwrt.o
+
+.rodata         0x08553de0      0x4a8
+ *(.rodata)
+ .rodata        0x08553de0       0x10 build\gcc\obj/customer/customerconfig/ql_customer_config.o
+                0x08553de0                qlMainTaskExtqsize
+                0x08553de4                qlMainTaskPriority
+                0x08553de8                qlMainTaskStackSize
+                0x08553dec                qlOpenCPUHeapMemSize
+ .rodata        0x08553df0      0x42c build\gcc\obj/customer/customerconfig/ql_customer_gpio.o
+                0x08553df0                Customer_QlPinConfigTable
+                0x085541f8                Customer_user_qlconfig
+ .rodata        0x0855421c        0x4 build\gcc\obj/example/canparareadwrt.o
+ .rodata        0x08554220        0x4 build\gcc\obj/example/GPRMC.o
+ .rodata        0x08554224       0x28 build\gcc\obj/example/main.o
+ .rodata        0x0855424c       0x24 libs/gcc/app_start.lib(ql_func.o)
+ .rodata        0x08554270       0x18 libs/gcc/app_start.lib(ql_Main.o)
+
+.rodata.str1.4  0x08554288     0x393c
+ .rodata.str1.4
+                0x08554288      0x464 build\gcc\obj/example/canparareadwrt.o
+                                0x46c (size before relaxing)
+ .rodata.str1.4
+                0x085546ec      0x491 build\gcc\obj/example/fota.o
+                                0x498 (size before relaxing)
+ *fill*         0x08554b7d        0x3 
+ .rodata.str1.4
+                0x08554b80      0x596 build\gcc\obj/example/GPRMC.o
+                                0x5a8 (size before relaxing)
+ *fill*         0x08555116        0x2 
+ .rodata.str1.4
+                0x08555118      0x254 build\gcc\obj/example/GSM_GPRS.o
+                                0x258 (size before relaxing)
+ .rodata.str1.4
+                0x0855536c      0x52e build\gcc\obj/example/main.o
+                                0x580 (size before relaxing)
+ *fill*         0x0855589a        0x2 
+ .rodata.str1.4
+                0x0855589c       0x77 build\gcc\obj/example/MRW.o
+                                 0x78 (size before relaxing)
+ *fill*         0x08555913        0x1 
+ .rodata.str1.4
+                0x08555914      0x148 build\gcc\obj/example/para_read.o
+                                0x154 (size before relaxing)
+ .rodata.str1.4
+                0x08555a5c        0xc build\gcc\obj/example/SEND_DATA.o
+                                 0x14 (size before relaxing)
+ .rodata.str1.4
+                0x08555a68      0x19c build\gcc\obj/example/SIM_lock.o
+                                0x288 (size before relaxing)
+ .rodata.str1.4
+                0x08555c04      0x48b build\gcc\obj/example/sms_handle.o
+                                0x514 (size before relaxing)
+ *fill*         0x0855608f        0x1 
+ .rodata.str1.4
+                0x08556090       0x36 build\gcc\obj/example/Stamps.o
+                                 0x44 (size before relaxing)
+ *fill*         0x085560c6        0x2 
+ .rodata.str1.4
+                0x085560c8      0x6f8 build\gcc\obj/example/TCP_IP.o
+                                0x770 (size before relaxing)
+ .rodata.str1.4
+                0x085567c0     0x13b0 libs/gcc/app_start.lib(ql_func.o)
+ .rodata.str1.4
+                0x08557b70       0x54 libs/gcc/app_start.lib(ql_Main.o)
+                                 0x5c (size before relaxing)
+
+.rel.dyn        0x08557bc4        0x0
+ .rel.iplt      0x00000000        0x0 build\gcc\obj/example/canparareadwrt.o
+
+.data           0x00200000      0x108 load address 0x08557bc4
+                0x08557bc4                PROVIDE (__data_load, LOADADDR (.data))
+                0x00200000                PROVIDE (__data_start, .)
+ *(.data)
+ .data          0x00200000        0x0 build\gcc\obj/customer/customerconfig/ql_customer_config.o
+ .data          0x00200000        0x0 build\gcc\obj/customer/customerconfig/ql_customer_gpio.o
+ .data          0x00200000        0x0 build\gcc\obj/example/canparareadwrt.o
+ .data          0x00200000       0x54 build\gcc\obj/example/fota.o
+                0x00200000                URL_FOTA
+ .data          0x00200054        0x0 build\gcc\obj/example/Fun.o
+ .data          0x00200054       0x50 build\gcc\obj/example/GPRMC.o
+                0x00200054                pfile2
+                0x00200064                pfile3
+                0x00200074                pfile_new
+                0x00200088                pfile_imgdata
+                0x0020009c                SIM_Lock
+ .data          0x002000a4       0x10 build\gcc\obj/example/GPS.o
+                0x002000a4                mStarFound
+                0x002000a8                pfile1
+ .data          0x002000b4       0x1c build\gcc\obj/example/GSM_GPRS.o
+                0x002000b4                callback_func
+ .data          0x002000d0       0x10 build\gcc\obj/example/main.o
+                0x002000d0                temp_SI
+                0x002000d8                temp_TI
+ .data          0x002000e0        0xc build\gcc\obj/example/MRW.o
+                0x002000e0                pfile
+ .data          0x002000ec        0x0 build\gcc\obj/example/para_read.o
+ .data          0x002000ec        0x0 build\gcc\obj/example/SEND_DATA.o
+ .data          0x002000ec        0x0 build\gcc\obj/example/SIM_lock.o
+ .data          0x002000ec        0x0 build\gcc\obj/example/sms_handle.o
+ .data          0x002000ec        0x0 build\gcc\obj/example/Stamps.o
+ .data          0x002000ec        0x2 build\gcc\obj/example/TCP_IP.o
+                0x002000ec                port
+ .data          0x002000ee        0x0 build\gcc\obj/customer/customer.o
+ *fill*         0x002000ee        0x2 
+ .data          0x002000f0       0x18 libs/gcc/app_start.lib(ql_func.o)
+ .data          0x00200108        0x0 libs/gcc/app_start.lib(ql_Main.o)
+ .data          0x00200108        0x0 libs/gcc/app_start.lib(ocpu_init.o)
+ .data          0x00200108        0x0 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_addsubdf3.o)
+ .data          0x00200108        0x0 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_muldivdf3.o)
+ .data          0x00200108        0x0 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_cmpdf2.o)
+ .data          0x00200108        0x0 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_fixdfsi.o)
+ .data          0x00200108        0x0 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_fixunsdfsi.o)
+                0x00200108                PROVIDE (_edata, .)
+
+.igot.plt       0x00200108        0x0 load address 0x08557ccc
+ .igot.plt      0x00000000        0x0 build\gcc\obj/example/canparareadwrt.o
+
+.bss            0x00200108     0x4c94 load address 0x08557ccc
+                0x00200108                PROVIDE (__bss_start__, .)
+ *(.bss)
+ .bss           0x00200108       0x10 build\gcc\obj/customer/customerconfig/ql_customer_config.o
+                0x00200108                SubMutitaskArray
+ .bss           0x00200118        0x0 build\gcc\obj/customer/customerconfig/ql_customer_gpio.o
+ .bss           0x00200118       0x34 build\gcc\obj/example/canparareadwrt.o
+                0x00200118                gps_g3
+                0x00200119                gps_g2
+                0x0020011a                gps_g4
+                0x0020011b                gps_g5
+                0x0020011c                apnsim
+                0x00200138                SIMProv
+ *fill*         0x0020014c        0x4 
+ .bss           0x00200150      0x840 build\gcc\obj/example/fota.o
+                0x00200988                doing_fota
+ .bss           0x00200990        0x0 build\gcc\obj/example/Fun.o
+ .bss           0x00200990       0x38 build\gcc\obj/example/GPRMC.o
+                0x00200990                CCID
+                0x00200991                GSN
+                0x00200994                RMC_str
+                0x002009c6                SIM_Flag
+                0x002009c7                ATI
+ .bss           0x002009c8       0xd8 build\gcc\obj/example/GPS.o
+                0x002009c8                checkdata
+                0x00200a13                mRFound
+                0x00200a18                mTotDist
+                0x00200a20                mCurrSpeed
+                0x00200a28                mSearchString
+                0x00200a2c                mRMCString
+                0x00200a30                mRMCString3
+                0x00200a34                mRMCString2
+                0x00200a38                mRMCString1
+                0x00200a3c                mGlobalGPRMC
+                0x00200a98                str
+                0x00200a9c                mSAFound
+                0x00200a9e                length
+ .bss           0x00200aa0        0x4 build\gcc\obj/example/GSM_GPRS.o
+                0x00200aa0                creg
+ .bss           0x00200aa4       0x28 build\gcc\obj/example/main.o
+                0x00200aa4                mGSMRegister
+                0x00200aa8                hd_file
+                0x00200aac                datalen
+                0x00200aae                flag_set
+                0x00200aaf                flag_test
+                0x00200ab0                Fota_UnitId
+                0x00200ab1                Fota_Reset_Flag
+                0x00200ab2                OneMinTimer_Fota_Reset
+                0x00200ab4                OneMinTimer_Fota
+                0x00200ab8                NGcount
+                0x00200abc                rec_flag
+                0x00200ac0                track_gen
+                0x00200ac4                uFlag
+                0x00200ac6                MS500timer
+                0x00200ac8                OneMinTimer
+ .bss           0x00200acc       0x34 build\gcc\obj/example/MRW.o
+                0x00200acc                uCount
+                0x00200ad0                uwrt_cnt
+                0x00200ad4                uread_cnt
+                0x00200ad8                wcnt
+                0x00200adc                readlength
+                0x00200ae0                read_cnt1
+                0x00200ae4                mprevcnt
+                0x00200ae8                filehandle
+                0x00200aec                uflag
+                0x00200aee                Max_Count
+                0x00200af0                BackUpwrt_cnt
+                0x00200af4                read_cnt
+                0x00200af8                wrt_cnt
+                0x00200afc                BackUp_Flag
+ .bss           0x00200b00       0x30 build\gcc\obj/example/para_read.o
+                0x00200b00                modified_flag
+                0x00200b08                OSpeed
+                0x00200b10                mPrevLatLong
+ .bss           0x00200b30        0x0 build\gcc\obj/example/SEND_DATA.o
+ .bss           0x00200b30        0x5 build\gcc\obj/example/SIM_lock.o
+                0x00200b30                Lock_sim
+                0x00200b31                CLCK_cmd
+                0x00200b32                CPWD_cmd
+                0x00200b33                CPIN_cmd
+                0x00200b34                CPIN_cmd11
+ *fill*         0x00200b35        0x1 
+ .bss           0x00200b36        0x4 build\gcc\obj/example/sms_handle.o
+                0x00200b36                sms_index
+                0x00200b38                Fota_http_Flag
+                0x00200b39                camdumpflag
+ .bss           0x00200b3a        0x0 build\gcc\obj/example/Stamps.o
+ *fill*         0x00200b3a        0x6 
+ .bss           0x00200b40       0x30 build\gcc\obj/example/TCP_IP.o
+                0x00200b40                serialnum
+                0x00200b44                tcpsocket
+                0x00200b48                query_dns_number
+                0x00200b4c                mSocketClose
+                0x00200b50                remain_len
+                0x00200b54                pMemSend
+                0x00200b58                pCurrentPos
+                0x00200b60                ackedNum
+                0x00200b68                trackfile_sent
+                0x00200b69                addr_len
+                0x00200b6a                out_entry_num
+                0x00200b6b                nSTATE_TCPLONG
+ .bss           0x00200b70        0x0 build\gcc\obj/customer/customer.o
+ .bss           0x00200b70      0x42c libs/gcc/app_start.lib(ql_func.o)
+                0x00200b70                m_create_api_hash
+                0x00200b74                m_ui64toa
+                0x00200b78                m_get_api_ptr
+                0x00200b7c                m_itoa
+                0x00200b80                m_atof
+                0x00200b84                m_strcpy
+                0x00200b88                m_strncpy
+                0x00200b8c                m_strcat
+                0x00200b90                m_strncat
+                0x00200b94                m_strlen
+                0x00200b98                m_strcmp
+                0x00200b9c                m_strncmp
+                0x00200ba0                m_memset
+                0x00200ba4                m_memcpy
+                0x00200ba8                m_memcmp
+                0x00200bac                m_memmove
+                0x00200bb0                m_strstr
+                0x00200bb4                m_strchr
+                0x00200bb8                m_SetDebugMode
+                0x00200bbc                m_GetEvent
+                0x00200bc0                m_Sleep
+                0x00200bc4                m_Reset
+                0x00200bc8                m_PowerDown
+                0x00200bcc                m_PowerOnAck
+                0x00200bd0                m_StartWatchdog
+                0x00200bd4                m_FeedWatchdog
+                0x00200bd8                m_StopWatchdog
+                0x00200bdc                m_ReadModuleUID
+                0x00200be0                m_GetPowerOnReason
+                0x00200be4                m_SetSleepMode
+                0x00200be8                m_SetCFUN
+                0x00200bec                m_GetPowerSupply
+                0x00200bf0                m_VoltageInd_Init
+                0x00200bf4                m_PwrKey_Init
+                0x00200bf8                m_GenericURC_Init
+                0x00200bfc                m_GetCFUN
+                0x00200c00                m_GetCHINFO
+                0x00200c04                m_StartJammingDet
+                0x00200c08                m_StopJammingDet
+                0x00200c0c                m_ChangeUsbMode
+                0x00200c10                m_Userdata_Backup
+                0x00200c14                m_Userdata_Read
+                0x00200c18                m_GetMemory
+                0x00200c1c                m_FreeMemory
+                0x00200c20                m_memMaxCanAllocSize
+                0x00200c24                m_memTotalLeftSize
+                0x00200c28                m_FileGetFreeSize
+                0x00200c2c                m_FileGetFreeSizeEx
+                0x00200c30                m_FileOpen
+                0x00200c34                m_FileOpenEx
+                0x00200c38                m_FileRead
+                0x00200c3c                m_FileWrite
+                0x00200c40                m_FileSeek
+                0x00200c44                m_FileGetFilePosition
+                0x00200c48                m_FileTruncate
+                0x00200c4c                m_FileFlush
+                0x00200c50                m_FileClose
+                0x00200c54                m_FileGetSize
+                0x00200c58                m_FileDelete
+                0x00200c5c                m_FileCheck
+                0x00200c60                m_FileRename
+                0x00200c64                m_FileCreateDir
+                0x00200c68                m_FileRemoveDir
+                0x00200c6c                m_FileCheckDir
+                0x00200c70                m_FileFindFirst
+                0x00200c74                m_FileFindNext
+                0x00200c78                m_FileFindClose
+                0x00200c7c                m_FileXDelete
+                0x00200c80                m_FileXMove
+                0x00200c84                m_Fs_Format
+                0x00200c88                m_FileSys_GetSpaceInfo
+                0x00200c8c                m_WrtCodeRegion_Init
+                0x00200c90                m_WrtCodeRegion_Write
+                0x00200c94                m_WrtCodeRegion_Finish
+                0x00200c98                m_pinSubscribe
+                0x00200c9c                m_pinUnSubscribe
+                0x00200ca0                m_pinQueryMode
+                0x00200ca4                m_pinRead
+                0x00200ca8                m_pinWrite
+                0x00200cac                m_pinControl
+                0x00200cb0                m_eintRead
+                0x00200cb4                m_eintMask
+                0x00200cb8                m_eintSetPolarity
+                0x00200cbc                m_ReadADC
+                0x00200cc0                m_ConfigADC
+                0x00200cc4                m_GetGpioByName
+                0x00200cc8                m_busSubscribe
+                0x00200ccc                m_busUnSubscribe
+                0x00200cd0                m_busWrite
+                0x00200cd4                m_busRead
+                0x00200cd8                m_busQuery
+                0x00200cdc                m_I2C_Init
+                0x00200ce0                m_I2C_Config
+                0x00200ce4                m_I2C_Read
+                0x00200ce8                m_I2C_Write
+                0x00200cec                m_PlayAudio
+                0x00200cf0                m_StopAudio
+                0x00200cf4                m_StartPlayAudioFile
+                0x00200cf8                m_PlayAudioFile_8k
+                0x00200cfc                m_StopAudioFile_8k
+                0x00200d00                m_StopPlayAudioFile
+                0x00200d04                m_StartPlayAudioStream
+                0x00200d08                m_StopPlayAudioStream
+                0x00200d0c                m_StartRecord
+                0x00200d10                m_StartRecord_FullFunc
+                0x00200d14                m_StopRecord
+                0x00200d18                m_PlayTone
+                0x00200d1c                m_StopTone
+                0x00200d20                m_SelectRingTone
+                0x00200d24                m_VoiceCallChangePath
+                0x00200d28                m_VoiceCallGetCurrentPath
+                0x00200d2c                m_SetVolume
+                0x00200d30                m_SetVolume_Ex
+                0x00200d34                m_GetVolume
+                0x00200d38                m_SetMicGain
+                0x00200d3c                m_GetMicGain
+                0x00200d40                m_SetSideToneGain
+                0x00200d44                m_GetSideToneGain
+                0x00200d48                m_CtrlEchoCancel
+                0x00200d4c                m_VTS
+                0x00200d50                m_WDTMF
+                0x00200d54                m_EnableDTMF
+                0x00200d58                m_DisableDTMF
+                0x00200d5c                m_GetDTMFConfig
+                0x00200d60                m_SetDTMFConfig
+                0x00200d64                m_SetRingToneEnable
+                0x00200d68                m_StartTimer
+                0x00200d6c                m_StopTimer
+                0x00200d70                m_GetLocalTime
+                0x00200d74                m_SetLocalTime
+                0x00200d78                m_GetRelativeTime
+                0x00200d7c                m_GetRelativeTime_Counter
+                0x00200d80                m_SecondToTicks
+                0x00200d84                m_MillisecondToTicks
+                0x00200d88                m_Mktime
+                0x00200d8c                m_LocalTime2CalendarTime
+                0x00200d90                m_CalendarTime2LocalTime
+                0x00200d94                m_StartGPTimer
+                0x00200d98                m_StopGPTimer
+                0x00200d9c                m_Alarm_StartUp
+                0x00200da0                m_Alarm_Remove
+                0x00200da4                m_OpenModemPort
+                0x00200da8                m_SendToModem
+                0x00200dac                m_SendToUart
+                0x00200db0                m_SetPortRts
+                0x00200db4                m_SetUartBaudRate
+                0x00200db8                m_SetPortOwner
+                0x00200dbc                m_SetUartDCBConfig
+                0x00200dc0                m_SetUartFlowCtrl
+                0x00200dc4                m_UartGetBytesAvail
+                0x00200dc8                m_UartGetTxRoomLeft
+                0x00200dcc                m_UartGetTxRestBytes
+                0x00200dd0                m_UartConfigEscape
+                0x00200dd4                m_UartClrTxBuffer
+                0x00200dd8                m_UartClrRxBuffer
+                0x00200ddc                m_UartSetGenericThreshold
+                0x00200de0                m_UartGenericClearFEFlag
+                0x00200de4                m_UartSetVfifoThreshold
+                0x00200de8                m_VfifoUart_SetDriverBuf
+                0x00200dec                m_UartGetVfifoThresholdInfo
+                0x00200df0                m_UartMaxGetVfifoThresholdInfo
+                0x00200df4                m_UartStartVfifoMonitorRxTimeout
+                0x00200df8                m_UartStopVfifoMonitorRxTimeout
+                0x00200dfc                m_UartRcvData
+                0x00200e00                m_UartQueryDataMode
+                0x00200e04                m_UartForceSendEscape
+                0x00200e08                m_GprsAPNSet
+                0x00200e0c                m_GprsAPNGet
+                0x00200e10                m_GprsNetworkInitialize
+                0x00200e14                m_GprsNetworkUnInitialize
+                0x00200e18                m_GprsNetworkActive
+                0x00200e1c                m_GprsNetworkDeactive
+                0x00200e20                m_GprsNetworkGetState
+                0x00200e24                m_SocketCreate
+                0x00200e28                m_SocketClose
+                0x00200e2c                m_SocketConnect
+                0x00200e30                m_SocketSend
+                0x00200e34                m_SocketRecv
+                0x00200e38                m_SocketTcpAckNumber
+                0x00200e3c                m_SocketSendTo
+                0x00200e40                m_SocketRecvFrom
+                0x00200e44                m_SocketBind
+                0x00200e48                m_SocketListen
+                0x00200e4c                m_SocketAccept
+                0x00200e50                m_GetHostIpbyName
+                0x00200e54                m_GetLocalIpAddress
+                0x00200e58                m_GetDnsServerAddress
+                0x00200e5c                m_SetDnsServerAddress
+                0x00200e60                m_SocketCheckIp
+                0x00200e64                m_SocketSetSendBufferSize
+                0x00200e68                m_SocketSetRecvBufferSize
+                0x00200e6c                m_GetDeviceCurrentRunState
+                0x00200e70                m_SocketHtonl
+                0x00200e74                m_SocketHtons
+                0x00200e78                m_SwitchHeartBeat
+                0x00200e7c                m_SMSInitialize
+                0x00200e80                m_SetSMSStorage
+                0x00200e84                m_GetSMSStorageInfo
+                0x00200e88                m_SetInfoCentreNum
+                0x00200e8c                m_GetInfoCentreNum
+                0x00200e90                m_SetNewSMSDirectToTE
+                0x00200e94                m_SetSMSFormat
+                0x00200e98                m_ReadSMS
+                0x00200e9c                m_DeleteSMS
+                0x00200ea0                m_ListSMS
+                0x00200ea4                m_GetUnReadSMS
+                0x00200ea8                m_SendPDUSMS
+                0x00200eac                m_WritePDUSMS
+                0x00200eb0                m_SetTextSMSPara
+                0x00200eb4                m_SendTextSMS
+                0x00200eb8                m_WriteTextSMS
+                0x00200ebc                m_SMS_DCS_ToCSCS
+                0x00200ec0                m_Call_Initialize
+                0x00200ec4                m_GetCallCntByType
+                0x00200ec8                m_Call_Dial
+                0x00200ecc                m_Call_Answer
+                0x00200ed0                m_Call_Hangup
+                0x00200ed4                m_GSM_GetIMEI
+                0x00200ed8                m_SIM_GetIMSI
+                0x00200edc                m_GetCoreVer
+                0x00200ee0                m_IsSIMInserted
+                0x00200ee4                m_GetOperator
+                0x00200ee8                m_RetrieveNodeBInfo
+                0x00200eec                m_Call_GetCurrCall
+                0x00200ef0                m_SIM_GetLockState
+                0x00200ef4                m_SIM_FeedPIN
+                0x00200ef8                m_osSendEvent
+                0x00200efc                m_osCreateMutex
+                0x00200f00                m_osTakeMutex
+                0x00200f04                m_osGiveMutex
+                0x00200f08                m_osCreateSemaphore
+                0x00200f0c                m_osTakeSemaphore
+                0x00200f10                m_osGiveSemaphore
+                0x00200f14                m_SetLastErrorCode
+                0x00200f18                m_GetLastErrorCode
+                0x00200f1c                m_osGetCurrentTaskPriority
+                0x00200f20                m_osGetCurrenTaskRemainStackSize
+                0x00200f24                m_osChangeTaskPriority
+                0x00200f28                m_Fota_Core_Init
+                0x00200f2c                m_Fota_Core_Write_Data
+                0x00200f30                m_Fota_Core_Finish
+                0x00200f34                m_Fota_App_Init
+                0x00200f38                m_Fota_App_InitEx
+                0x00200f3c                m_Fota_App_Write_Data
+                0x00200f40                m_Fota_App_Finish
+                0x00200f44                m_Fota_Update
+                0x00200f48                m_TTS_Initialize
+                0x00200f4c                m_TTS_Play
+                0x00200f50                m_TTS_PlayInCall
+                0x00200f54                m_TTS_Stop
+                0x00200f58                m_TTS_Query
+                0x00200f5c                m_TTS_SetStyle
+                0x00200f60                m_GetFontData
+                0x00200f64                m_FTP_SetUserName
+                0x00200f68                m_FTP_SetPasswd
+                0x00200f6c                m_FTP_Connect
+                0x00200f70                m_FTP_Disconnect
+                0x00200f74                m_FTP_SetConnMode
+                0x00200f78                m_FTP_SetTransMode
+                0x00200f7c                m_FTP_SetResumePoint
+                0x00200f80                m_FTP_SetLocalPos
+                0x00200f84                m_FTP_SetSrvPath
+                0x00200f88                m_FTP_Upload
+                0x00200f8c                m_FTP_Download
+                0x00200f90                m_FTP_GetState
+                0x00200f94                m_FTP_GetTransLength
+                0x00200f98                m_ConvertCodec
+ .bss           0x00200f9c       0x10 libs/gcc/app_start.lib(ql_Main.o)
+                0x00200fa0                runinfo
+ .bss           0x00200fac        0x0 libs/gcc/app_start.lib(ocpu_init.o)
+ .bss           0x00200fac        0x0 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_addsubdf3.o)
+ .bss           0x00200fac        0x0 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_muldivdf3.o)
+ .bss           0x00200fac        0x0 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_cmpdf2.o)
+ .bss           0x00200fac        0x0 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_fixdfsi.o)
+ .bss           0x00200fac        0x0 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_fixunsdfsi.o)
+                0x00200fac                PROVIDE (__bss_end__, .)
+ COMMON         0x00200fac     0x2800 build\gcc\obj/customer/customerconfig/ql_customer_config.o
+                0x00200fac                qlOpenCPUHeapMem
+ COMMON         0x002037ac       0x23 build\gcc\obj/example/Fun.o
+                0x002037ac                FtoaStr
+                0x002037c0                ItoaStr
+ *fill*         0x002037cf        0x1 
+ COMMON         0x002037d0      0x386 build\gcc\obj/example/GPRMC.o
+                0x002037d0                STI
+                0x002037d8                CCID_val_tf
+                0x002037f8                CV
+                0x00203808                trackfile
+                0x00203904                WMSN
+                0x00203918                GPRS_APN
+                0x00203934                TXI
+                0x0020393c                FW
+                0x002039a0                GSN_val
+                0x00203a04                UID
+                0x00203a14                pfilecamflag
+                0x00203a18                CCID_val
+                0x00203ae0                IMEI_Num
+                0x00203af4                GSN_val_tf
+                0x00203b14                Unit_Type
+                0x00203b38                modem_str
+ *fill*         0x00203b56        0x2 
+ COMMON         0x00203b58      0x112 build\gcc\obj/example/GPS.o
+                0x00203b58                GPRMC
+                0x00203bb4                mGlobalGPRMC1
+                0x00203c10                Globalstring
+ *fill*         0x00203c6a        0x2 
+ COMMON         0x00203c6c        0x4 build\gcc\obj/example/GSM_GPRS.o
+                0x00203c6c                ipaddress
+ COMMON         0x00203c70      0x81b build\gcc\obj/example/main.o
+                0x00203c70                gps_type
+                0x00203c7c                p
+                0x00203c80                UIDtemp
+                0x00203c90                copy_of_buffer
+                0x00203cb0                pData
+                0x00203cb4                flSignalBuffer
+                0x002040bc                uart3_buffer
+                0x00204120                appBinFile
+                0x00204184                textBuf
+                0x00204378                CanUpdate_flag
+                0x0020437c                pPortEvt
+                0x00204380                buffer
+                0x0020447c                Test_CV
+ *fill*         0x0020448b        0x1 
+ COMMON         0x0020448c      0x5e0 build\gcc\obj/example/MRW.o
+                0x0020448c                readptr
+                0x00204490                readbuffer
+                0x00204684                sendbuffer
+ COMMON         0x00204a6c       0xbc build\gcc\obj/example/para_read.o
+                0x00204a6c                TIME
+                0x00204a70                mureadcnt
+                0x00204a78                CanFlag_readbuffer
+                0x00204a7c                nLAT
+                0x00204a80                LONG
+                0x00204a84                CanPara_readbuffer
+                0x00204a94                CVread
+                0x00204ab0                UID_Fota
+                0x00204ab8                COURSE
+                0x00204abc                DATE
+                0x00204ac0                SPEED
+                0x00204ac4                STAT
+                0x00204ac8                eLONG
+                0x00204acc                Flag_readbuffer
+                0x00204ad4                mPrevGPRMC
+                0x00204b20                mprevDist
+ COMMON         0x00204b28      0x242 build\gcc\obj/example/sms_handle.o
+                0x00204b28                sms_set
+                0x00204b44                sms_buffer
+                0x00204c0c                debug_buffer
+                0x00204c70                buffer1
+ *fill*         0x00204d6a        0x2 
+ COMMON         0x00204d6c       0x28 build\gcc\obj/example/TCP_IP.o
+                0x00204d6c                entryaddr
+                0x00204d70                data_p
+                0x00204d80                addr
+ COMMON         0x00204d94        0x8 libs/gcc/app_start.lib(ql_Main.o)
+                0x00204d94                Ql_sprintf
+                0x00204d98                Ql_DebugTrace
+LOAD build\gcc\obj/customer/customerconfig/ql_customer_config.o
+LOAD build\gcc\obj/customer/customerconfig/ql_customer_gpio.o
+LOAD build\gcc\obj/example/canparareadwrt.o
+LOAD build\gcc\obj/example/fota.o
+LOAD build\gcc\obj/example/Fun.o
+LOAD build\gcc\obj/example/GPRMC.o
+LOAD build\gcc\obj/example/GPS.o
+LOAD build\gcc\obj/example/GSM_GPRS.o
+LOAD build\gcc\obj/example/main.o
+LOAD build\gcc\obj/example/MRW.o
+LOAD build\gcc\obj/example/para_read.o
+LOAD build\gcc\obj/example/SEND_DATA.o
+LOAD build\gcc\obj/example/SIM_lock.o
+LOAD build\gcc\obj/example/sms_handle.o
+LOAD build\gcc\obj/example/Stamps.o
+LOAD build\gcc\obj/example/TCP_IP.o
+LOAD build\gcc\obj/customer/customer.o
+LOAD libs/gcc/app_start.lib
+LOAD F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb/libm.a
+LOAD F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb/libc.a
+LOAD F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb/libcs3.a
+LOAD F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a
+OUTPUT(build\gcc/APPGS2MDM64A01_GCC.elf elf32-littlearm)
+
+.comment        0x00000000       0x30
+ .comment       0x00000000       0x30 build\gcc\obj/customer/customerconfig/ql_customer_config.o
+                                 0x31 (size before relaxing)
+ .comment       0x00000000       0x31 build\gcc\obj/customer/customerconfig/ql_customer_gpio.o
+ .comment       0x00000000       0x31 build\gcc\obj/example/canparareadwrt.o
+ .comment       0x00000000       0x31 build\gcc\obj/example/fota.o
+ .comment       0x00000000       0x31 build\gcc\obj/example/Fun.o
+ .comment       0x00000000       0x31 build\gcc\obj/example/GPRMC.o
+ .comment       0x00000000       0x31 build\gcc\obj/example/GPS.o
+ .comment       0x00000000       0x31 build\gcc\obj/example/GSM_GPRS.o
+ .comment       0x00000000       0x31 build\gcc\obj/example/main.o
+ .comment       0x00000000       0x31 build\gcc\obj/example/MRW.o
+ .comment       0x00000000       0x31 build\gcc\obj/example/para_read.o
+ .comment       0x00000000       0x31 build\gcc\obj/example/SEND_DATA.o
+ .comment       0x00000000       0x31 build\gcc\obj/example/SIM_lock.o
+ .comment       0x00000000       0x31 build\gcc\obj/example/sms_handle.o
+ .comment       0x00000000       0x31 build\gcc\obj/example/Stamps.o
+ .comment       0x00000000       0x31 build\gcc\obj/example/TCP_IP.o
+ .comment       0x00000000       0x31 build\gcc\obj/customer/customer.o
+ .comment       0x00000000       0x31 libs/gcc/app_start.lib(ql_func.o)
+ .comment       0x00000000       0x31 libs/gcc/app_start.lib(ql_Main.o)
+
+.ARM.attributes
+                0x00000000       0x2b
+ .ARM.attributes
+                0x00000000       0x2b build\gcc\obj/customer/customerconfig/ql_customer_config.o
+ .ARM.attributes
+                0x0000002b       0x2b build\gcc\obj/customer/customerconfig/ql_customer_gpio.o
+ .ARM.attributes
+                0x00000056       0x2b build\gcc\obj/example/canparareadwrt.o
+ .ARM.attributes
+                0x00000081       0x2b build\gcc\obj/example/fota.o
+ .ARM.attributes
+                0x000000ac       0x2b build\gcc\obj/example/Fun.o
+ .ARM.attributes
+                0x000000d7       0x2b build\gcc\obj/example/GPRMC.o
+ .ARM.attributes
+                0x00000102       0x2b build\gcc\obj/example/GPS.o
+ .ARM.attributes
+                0x0000012d       0x2b build\gcc\obj/example/GSM_GPRS.o
+ .ARM.attributes
+                0x00000158       0x2b build\gcc\obj/example/main.o
+ .ARM.attributes
+                0x00000183       0x2b build\gcc\obj/example/MRW.o
+ .ARM.attributes
+                0x000001ae       0x2b build\gcc\obj/example/para_read.o
+ .ARM.attributes
+                0x000001d9       0x2b build\gcc\obj/example/SEND_DATA.o
+ .ARM.attributes
+                0x00000204       0x2b build\gcc\obj/example/SIM_lock.o
+ .ARM.attributes
+                0x0000022f       0x2b build\gcc\obj/example/sms_handle.o
+ .ARM.attributes
+                0x0000025a       0x2b build\gcc\obj/example/Stamps.o
+ .ARM.attributes
+                0x00000285       0x2b build\gcc\obj/example/TCP_IP.o
+ .ARM.attributes
+                0x000002b0       0x2b build\gcc\obj/customer/customer.o
+ .ARM.attributes
+                0x000002db       0x2b libs/gcc/app_start.lib(ql_func.o)
+ .ARM.attributes
+                0x00000306       0x2b libs/gcc/app_start.lib(ql_Main.o)
+ .ARM.attributes
+                0x00000331       0x1d libs/gcc/app_start.lib(ocpu_init.o)
+ .ARM.attributes
+                0x0000034e       0x18 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_addsubdf3.o)
+ .ARM.attributes
+                0x00000366       0x18 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_muldivdf3.o)
+ .ARM.attributes
+                0x0000037e       0x18 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_cmpdf2.o)
+ .ARM.attributes
+                0x00000396       0x18 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_fixdfsi.o)
+ .ARM.attributes
+                0x000003ae       0x18 F:\CodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.8.1/thumb/libgcc.a(_arm_fixunsdfsi.o)

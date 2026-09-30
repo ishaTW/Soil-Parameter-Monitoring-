@@ -1,0 +1,18 @@
+
+Step 1: Configure GCC installation path and GCC version
+
+GCC_INSTALL_PATH=D:\Jagrutee_transworld\JagruteeCodeSourcery\Sourcery_CodeBench_Lite_for_ARM_EABI
+GCC_VERSION=4.8.1
+
+
+
+
+NOTE: if you don't have gcc , installed the gcc in your system 
+
+if you facing aby difficulties please contact us
+
+Sheetal Kolhe
+8319412781
+
+Salman Shah
+8421218893

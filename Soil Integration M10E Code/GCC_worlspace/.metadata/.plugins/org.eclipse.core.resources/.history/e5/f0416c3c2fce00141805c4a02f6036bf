@@ -1,0 +1,1633 @@
+
+/*-------------------------------------------------------------------------*/
+/*  File       : GPS.c                                                 
+                 GPS Data receptions & saggregation
+-------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------*/
+/*							Revision History								   */
+/*-------------------------------------------------------------------------*/
+
+/*-------------------------------------------------------------------------*/
+/*								Headers									   */
+/*-------------------------------------------------------------------------*/
+
+#include<stdio.h>
+#include<string.h>
+#include "ql_trace.h"
+#include "ql_timer.h"
+#include "ql_stdlib.h"
+#include "ql_appinit.h"
+#include "ql_interface.h"
+#include "ql_type.h"
+#include "Ql_filesystem.h"
+#include "Ql_tcpip.h"
+#include "ql_error.h"
+#include "Fun.h"
+#include "GPS.h"
+#include "ql_fcm.h"
+#include "GSM_GPRS.h"
+#include "TCP_IP.h"
+#include "MRW.h" 
+#include "SEND_DATA.h"
+#include "para_read.h"
+#include "camera.h"
+#include "camera2.h"
+#include "JRM.h"
+#include "ACCSMTP.h"
+/*-------------------------------------------------------------------------*/
+/*								Globals									   */
+/*-------------------------------------------------------------------------*/
+//Variables for traces
+
+#define OUT_D1EBUG(x,...)  \
+    Ql_memset((x),0,100);  \
+    Ql_sprintf((x),__VA_ARGS__);   \
+    Ql_SendToUart(ql_uart_port2,(u8 *)(x),Ql_strlen(x));
+
+extern char textBuf[100];
+//Variables for GPS data
+extern char buffer[90];
+extern u16 datalen;
+u16 length=0;
+bool mRFound = FALSE;
+bool mStarFound = TRUE;
+bool mSAFound = FALSE;
+//bool mGStarFound=FALSE;
+void *str = NULL;
+
+//Variables for GPRMC data saggregation
+char DATE[7], TIME[7], nLAT[2], LONG[20], eLONG[2], STAT[2], SPEED[5], COURSE[10];
+char LAT[25];
+//Variables for GPS data extraction & saggregation
+ascii mGlobalGPRMC[90] = {0};
+char mGlobalGPRMC1[90];
+u8 checkdata[75] ={0};
+char checkdata1[75] ={0};
+char GPRMC[90];
+extern char readbuffer[100];
+int *mRMCString1 = NULL, *mRMCString2 = NULL, *mRMCString3 = NULL, *mRMCString = NULL;
+extern char UID[];
+char *mSearchString = NULL;
+extern char Unit_Type[35];
+//Variables for ON stamp generation - Shweta 22-Nov-2011
+int powerStamp = 0;
+//extern int powerStamp;
+extern char jrmstatus[10];
+//Variables for distance calculations - Shweta 2 Oct 2011
+char mPrevTimeAscii[7] = "000000\0";
+char mSpeedAscii[6] = "000.0\0", par40[7];
+double mMultiFactorSpeed = 1.852,mTotDist = 0.000000, mAvgSpeed = 0.000000,VoidDist=0,mPrevCnt = 0.000000;
+float mTimeDiffLimit = 10.000000;
+
+//Variables for AC/DC stamp - Atul 21 Oct 2011
+//double mAccDcLimit = 0.000000, mAccDcLimit_1 = 0.000000;
+double mAccDcLimit = 15.000000;
+static double mAccDcLimit_1 = 0.000000;
+char ACStampString[90], DCStampString[90];
+
+//Variables for start & stop logic
+int mStartDuration = 60, mStopDuration = 60, mCountMoving = 0, mCountNotMoving = 0;
+char StartStampString[90], StopStampString[90];
+extern char mPrevLatLong[];
+bool mVehMoving = FALSE;
+extern unsigned char ItoaStr[];
+extern unsigned char FtoaStr[];
+double mCurrSpeed = 0.000000;
+double mPrevSpeed=0.00000;
+double RA_Prespeed=0.0000;
+double raprespeed=0.00000;
+double extraraprespeed=0.00000;
+double  mPrevLat = 0.000000, mPrevLong = 0.000000;
+char pfile1[10]="flag.txt";
+//char pfile2[20]="RMC.txt";
+u32 filehandle1=0;
+u32 LatLongfilehandle=0;
+static int Flag_wrt_cnt = 0;
+static int Flag_read_cnt = 0;
+//extern char Flagreadbuffer[];
+int mFlagprevcnt=0;
+u32 Flagreadedlen=0;
+u32 LatLongwriteedlen=0;
+ascii mPrevCntAscii[10] = "000.0\0"; 
+int Flagread_cnt1=0;
+char Globalstring[90];
+u8 mCurrLatLong[30] = {0};
+//bool Flag_readbuffer;
+bool Flag_Writebuffer=0;
+u8 wcnt1=0;
+int onstop=0;
+char mOSpeedString[90];
+char mOSpeedmultipleString[90];
+double mOverspeedA=0.00 , mOverspeedB=0.00;
+bool mOSpeedFlag=FALSE , mOverspd=FALSE;
+int mCountOS=0;
+int mCountOS1min=0;
+int mOverSpeedLimit=0;
+int mOverSpeedLimit1=0;
+int mOverSpeedLimit2=0;
+//int mOverSpeedLimit = 65;
+
+extern QlTimer onesecdummy;
+double mCurrLat = 0.000000,mCurrLong = 0.000000;
+extern int detected_POID;
+bool camcaptureflag=0;
+int camindicatorflag=0;
+extern QlTimer timer_1,onesectimer,osbuzzer,cap_intv;
+int osbuzzer_flg=0;
+extern bool stop_acc_capt;
+extern bool OSGreen;
+extern bool OSRed;
+extern bool OSYellow;
+/*-------------------------------------------------------------------------*/
+/*  Function   : fn_save		                                           */
+/*-------------------------------------------------------------------------*/
+/*  Object     : ON Stamp Generation				                       */
+/*-------------------------------------------------------------------------*/
+
+//-------------------------------------------------------------------------
+//==========================speed calculation==============================
+//-------------------------------------------------------------------------
+
+void tw_AvgSpeed1(void)
+{
+	static float mCurrTime = 0.000000,mTimeDiff = 0.000000;
+	static float mPrevTime = 0.000000; 
+    char *dist;
+    char Dist[8];
+	s32 ret2;
+    static u8 Cnt;
+    s32 ret1;
+    u32 writeedlen1;
+  
+    char mSpeed[5];
+    u32 readedlen1;
+	char buffer[10];
+	char *mpSpeed;
+	//OUT_D1EBUG(textBuf,"\r\n##############mSpeedAscii######################:%s\r\n",mSpeedAscii);
+
+	if((Ql_strncmp(str,"RMC",3)) || (Ql_strncmp(str,":RMC",4)))
+	{		
+		//   //OUT_D1EBUG(textBuf,"in  Avgspeed");
+
+		if (!Ql_strncmp(STAT,"V",1))
+		{
+			//	//OUT_D1EBUG(textBuf,"\r\n V data\r\n");
+		}
+		else if (!Ql_strncmp(STAT,"A",1))
+		{
+			////OUT_D1EBUG(textBuf,"A data\r\n");
+			//Time
+			//Previous Time
+			mPrevTimeAscii[6] = 0;
+	        ////OUT_D1EBUG(textBuf,"mPrevTimeAscii1:%s\r\n",mPrevTimeAscii);
+			mPrevTime = tw_ReturnSec(mPrevTimeAscii);
+	        ////OUT_D1EBUG(textBuf,"mPrevTime:%f\r\n",mPrevTime);
+			//Current time
+			Ql_memset(par40,0,sizeof(par40));
+			Ql_strncpy(par40,TIME,6);
+			Ql_strncat(par40,"\0",1);
+			mCurrTime = tw_ReturnSec(par40);
+			
+			Ql_memset(mPrevTimeAscii,0,sizeof(mPrevTimeAscii));
+			Ql_strncpy(mPrevTimeAscii,par40,6);
+			mPrevTimeAscii[6] = 0;
+			//Speed
+			//Added 0 at end of array to avoid garbage
+			//Previous Speed
+			mSpeedAscii[5] = 0;  
+
+			//OUT_D1EBUG(textBuf,"\r\n++++++++++++ in Avgspeed +++++++++++++++++");
+
+			//OUT_D1EBUG(textBuf,"First RA_Prespeed:%f\r\n",RA_Prespeed);
+			//extraraprespeed=raprespeed;
+	//		extraraprespeed=RA_Prespeed;        ///chnaged due to value becoming zero
+		//	OUT_D1EBUG(textBuf,"Before extraraprespeed:%f\r\n",extraraprespeed);
+
+			//OUT_D1EBUG(textBuf,"\r\n********mSpeedAscii:%s\r\n",mSpeedAscii);
+			//mPrevSpeed = (Ql_atof(mSpeedAscii)) * mMultiFactorSpeed;
+			mPrevSpeed = atofd(mSpeedAscii) * 1.852;
+			//OUT_D1EBUG(textBuf,"\r\n********mPrevSpeed:%f\r\n",mPrevSpeed);
+			extraraprespeed=mPrevSpeed;
+			//OUT_D1EBUG(textBuf,"Before extraraprespeed:%f\r\n",extraraprespeed);
+			//Current Speed
+			Ql_memset((ascii *)mSpeed,0,sizeof(mSpeed));
+			Ql_strcpy((ascii *)mSpeed,SPEED);
+			//OUT_D1EBUG(textBuf,"  Ascii SPEED=%s\r\n",SPEED);
+			mCurrSpeed = atofd((ascii *)mSpeed) * 1.852;
+			//raprespeed=mCurrSpeed;
+			RA_Prespeed = mCurrSpeed;
+			//OUT_D1EBUG(textBuf,"*********mCurrSpeed:%f\r\n",mCurrSpeed);
+			//OUT_D1EBUG(textBuf,"Second raprespeed:%f\r\n",RA_Prespeed);
+			//	//OUT_D1EBUG(textBuf,"mCurrSpeed:%f\r\n",mCurrSpeed);
+			mpSpeed=ix_Ftoa(mCurrSpeed,2);
+			Ql_memset(mSpeedAscii,0,sizeof(mSpeedAscii));
+			Ql_strncpy(mSpeedAscii,mSpeed,5);
+			//OUT_D1EBUG(textBuf,"\r\n********mSpeedAscii*******************:%s\r\n",mSpeedAscii);
+			//	//OUT_D1EBUG(textBuf,"LATbefr:%s\r\n",LAT);
+			//Current Lat and Long					
+			Ql_memset(mCurrLatLong,0,sizeof(mCurrLatLong));
+			//Lat
+			//Ql_strncat((ascii *)mCurrLatLong,":",1);
+			Ql_strncat((ascii *)mCurrLatLong,LAT,10);						
+			mCurrLat = atofd(LAT);		
+			//OUT_D1EBUG(textBuf,"mCurrLat1 before:%s\r\n",LAT);
+			//OUT_D1EBUG(textBuf,"mCurrLat1 before:%f\r\n",mCurrLat);
+			//Long
+			Ql_strncat((ascii *)mCurrLatLong,",",1);
+			Ql_strncat((ascii *)mCurrLatLong,LONG,10);			
+			mCurrLong = atofd(LONG);
+			//	Ql_strncat((ascii *)mCurrLatLong,",-",2);
+			Ql_strncat((ascii *)mCurrLatLong,"\0\0",2);
+
+			//Time differance
+			if (mCurrTime > mPrevTime)
+			{
+				mTimeDiff = mCurrTime - mPrevTime;
+				//OUT_D1EBUG(textBuf,"Time diff1:%f\r\n",mTimeDiff);
+			}	
+			else
+			{
+
+			}	
+			
+			//Distance calculation using speed
+			//Check if time difference(between current & previous time) is greater than 1 or less than equal to 10
+
+			if ((mTimeDiff >= 1) && (mTimeDiff <= mTimeDiffLimit))
+			{
+				////OUT_D1EBUG(textBuf,"Dist clac by speed\r\n");
+				//Then calculate by avg speed by taking the two end speeds
+				if(mCurrSpeed <= 300.000000 && mCurrSpeed > 3.000000)
+				{
+					//Checking condition for sure that in 10 sec max 1 meter cab travelled.only
+					////OUT_D1EBUG(textBuf,"\nin current\r\n");
+					//extraraprespeed
+					if((extraraprespeed + mCurrSpeed)/2 * (mTimeDiff/3600) < 1.1) //////**&&&&&&&&&&&&changed extraraprespeed
+					{
+					    mTotDist = mTotDist + ((extraraprespeed + mCurrSpeed)/2 * (mTimeDiff/3600));
+					    //  OUT_D1EBUG(textBuf,"Dist:%f\r\n",mTotDist);
+					}
+					else
+					{
+						////OUT_D1EBUG(textBuf,"Current speed < 300***2\r\n");
+					}
+				}
+				else
+				{
+					////OUT_D1EBUG(textBuf,"Current speed < 300***3\r\n");
+				}
+			}
+			
+			//Distance calculation using LAT & LONG
+			//  //OUT_D1EBUG(textBuf,"Time diff limit:%f\r\n",mTimeDiffLimit);
+			// //OUT_D1EBUG(textBuf,"Time diff:%f\r\n",mTimeDiff);
+	        
+			else if((mTimeDiff > mTimeDiffLimit) && (mTimeDiff !=mCurrTime))
+			{		
+				//	//OUT_D1EBUG(textBuf,"Dist clac by lat & long\r\n");
+				//Read previous lat & long from memory
+				////OUT_D1EBUG(textBuf,"In file write func\r\n");
+				//  //OUT_D1EBUG(textBuf,"LatLongfile = %s\r\n",pfile2);
+				//OUT_D1EBUG(textBuf,"Calling function tw_LatLong_read from GPS.c\r\n");
+				tw_LatLong_read();   //Read previous Lat & Long
+				
+				if((Ql_strlen((ascii *)mPrevLatLong) > 16) && (Ql_strlen((ascii *)mCurrLatLong) > 16)) 
+				{
+					//Read Lat & Long separate in 2 different functions
+					ReadLatLong();
+				}
+			}	
+			
+		else
+		{
+			
+			//Calculate distance by speed
+			//		//OUT_D1EBUG(textBuf,"Calculate distance by speed***1\r\n");
+
+			if (mCurrSpeed <= 300.000000 && mCurrSpeed > 3.000000)
+			{
+				if((mCurrSpeed/3600) < 0.1) //shital //in 1 sec maximum o.03 diatsnce can travelled for safe side we check for 100 meters i.e0.1
+				{
+					mTotDist = mTotDist + (mCurrSpeed/3600);
+					//		  //OUT_D1EBUG(textBuf,"Dist by speed=%f\r\n",mTotDist);
+				}
+				else
+				{
+				}
+				
+			}
+			else
+			{
+			}
+		}
+			ret2 = Ql_FileOpenEx((u8 *)pfile1,QL_FS_CREATE);
+
+			if(ret2 >= QL_RET_OK)
+			{
+				LatLongfilehandle = ret2;
+				wcnt1=5+1;
+				ret2 = Ql_FileSeek(LatLongfilehandle,wcnt1,QL_FS_FILE_BEGIN);
+				//	//OUT_D1EBUG(textBuf,"Globalstring=%s\r\n",Globalstring);
+				//	//OUT_D1EBUG(textBuf,"Globalstring=%d\r\n",Ql_strlen((char *)Globalstring));
+				ret2 = Ql_FileWrite(LatLongfilehandle,(u8*)mCurrLatLong,30,&LatLongwriteedlen);
+				//	    //OUT_D1EBUG(textBuf,"Ql_FileWrite()=%d: LatLongwriteedlen=%d\r\n",ret2,LatLongwriteedlen);
+				Ql_FileClose(LatLongfilehandle);
+				LatLongfilehandle = -1;
+				   
+			}
+			else
+			{
+				//	//OUT_D1EBUG(textBuf,"Error in file LatLongfile writing\r\n");
+			}
+
+			////////////////////////////////////////----------------------///////////////////////////////////
+			//Logic for Stop Stamp:- Check if speed is zero or non-zero for 60secs continously,
+			//then only generate stop or start stamps respectively after 60th second
+			//Stop Stamp
+			if(mCurrSpeed <= 3.00000)  // Changed from 1 to 3 on 23 Aug 2012
+			{
+				prvRMC_store();          //store RMC string
+				clrcam1flags();
+				clrcam2flags();
+				//camcaptureflag=0;
+				//camindicatorflag=0;
+				camcaptureflag=0;
+				camindicatorflag=0;
+				//Ql_StopTimer(&cap_intv);
+				//Ql_StopTimer(&timer_1);
+				Ql_StopTimer(&onesecdummy);
+				//onesecdummy.timerId =0;
+
+				if(mCountNotMoving < (mStopDuration/3))
+				{
+					if(mCountMoving < (mStartDuration/3))
+					{
+						mCountMoving=0;
+					}
+					else
+					{
+					}
+					mCountNotMoving++;
+				}				
+				else if((mCountNotMoving >= (mStopDuration/3)) && (mCountNotMoving < mStopDuration))
+				{
+					mCountMoving = 0;
+					mCountNotMoving	++;
+				}		
+				else if(mCountNotMoving == mStopDuration)
+				{
+					mCountMoving =0;
+					mCountNotMoving++;
+
+					if(mVehMoving == TRUE)
+					{
+						Ql_memset(StopStampString,0,sizeof(StopStampString));
+						Ql_strncpy(StopStampString,UID,7);
+						Ql_strncat(StopStampString,"_SP,",4);
+						Ql_strcat(StopStampString,GPRMC);
+						//Ql_strcat(StopStampString,mSpeedAscii);  //Speed
+						//ix_Ftoa(mCurrSpeed,2);
+					    ix_Itoa(mCurrSpeed);
+					    ////OUT_D1EBUG(textBuf,"FtoaStrcurre%s\r\n",ItoaStr);
+				        Ql_strcat(StopStampString,(char *)ItoaStr);///mCurrSpeed speed
+	                    Ql_strncat(StopStampString,",",1);
+						Ql_strcat(StopStampString,(ix_Itoa(mTotDist)));	//Distance
+						Ql_strncat(StopStampString,",",1);
+						Ql_strncat(StopStampString,"0.0",3);						//PDOP
+						Ql_strncat(StopStampString,",",1);
+						Ql_strcat(StopStampString,STAT);							//Status (A/V)
+						Ql_strncat(StopStampString,"\r\n",2);
+						//OUT_D1EBUG(textBuf,"%s\r\n",StopStampString);
+						tw_filewrite((char *)StopStampString);
+						mVehMoving = FALSE;
+						Flag_Writebuffer=mVehMoving;
+						ret1 = Ql_FileOpenEx((u8*)pfile1,QL_FS_CREATE);
+
+						if(ret1 >= QL_RET_OK)
+						{
+							filehandle1 = ret1;
+							ret1 = Ql_FileSeek(filehandle1,0,QL_FS_FILE_BEGIN);
+							//Flag_wrt_cnt+=Ql_strlen(mVehMoving);
+						    //ret1 = Ql_FileWrite(filehandle1, (u8 *)Flag_Writebuffer,1,&writeedlen1);
+						    ////OUT_D1EBUG(textBuf,"Flag_Writebuffer=%d\r\n",Flag_Writebuffer);
+						    ret1 = Ql_FileWrite(filehandle1, (u8 *)"FALSE",5,&writeedlen1);
+						    //OUT_D1EBUG(textBuf,"Flag_Writebuffer=FALSE\r\n");
+						    Ql_FileClose(filehandle1);
+	    					filehandle1 = -1;
+						}
+					}
+				}	
+			}
+
+			//Start Stamp
+			if(mCurrSpeed > 3.00000)        // Changed from 1 to 3 on 23 Aug 2012
+			{
+				prvRMC_store();          //store RMC string
+				if(stop_acc_capt==0)
+				{
+					tw_writeAccData(checkdata);
+				}
+				camcaptureflag=1;
+				
+				if(camindicatorflag==0)
+				{
+					camindicatorflag=1;
+				}
+				
+				if(mCountMoving <(mStartDuration/3))
+				{
+					if(mCountNotMoving <(mStopDuration/3))
+					{
+						mCountNotMoving=0;
+					}
+					else
+					{
+					}
+					mCountMoving++;
+				}				
+				else if((mCountMoving >= (mStartDuration/3)) && (mCountMoving < mStartDuration))
+				{
+					mCountMoving++;
+					mCountNotMoving	= 0;
+				}		
+				else if(mCountMoving == mStartDuration)
+				{
+					mCountMoving++;
+					mCountNotMoving = 0;
+					
+					if(mVehMoving == FALSE)
+					{
+						//mVehMoving = TRUE;
+						Ql_memset(StartStampString,0,sizeof(StartStampString));
+						Ql_strncpy(StartStampString,UID,7);
+						Ql_strncat(StartStampString,"_ST,",4);
+						Ql_strcat(StartStampString,GPRMC);
+						//	Ql_strcat(StartStampString,mSpeedAscii);
+						//    ix_Ftoa(mCurrSpeed,2);
+	                    ix_Itoa(mCurrSpeed);
+	                    ////OUT_D1EBUG(textBuf,"FtoaStrcurre%s\r\n",ItoaStr);
+	                    Ql_strcat(StartStampString,(char *)ItoaStr);///mCurrSpeed speed
+	                  
+	                    Ql_strncat(StartStampString,",",1);
+						Ql_strcat(StartStampString,(ix_Itoa(mTotDist)));	//Distance
+						 Ql_strncat(StartStampString,",",1);
+						Ql_strncat(StartStampString,"0.0",3);						//PDOP
+						Ql_strncat(StartStampString,",",1);
+						Ql_strcat(StartStampString,STAT);							//Status (A/V)
+						Ql_strncat(StartStampString,"\r\n",2);		
+						//OUT_D1EBUG(textBuf,"%s\r\n",StartStampString);
+						tw_filewrite((char *)StartStampString);
+						mVehMoving = TRUE;
+						Flag_Writebuffer=mVehMoving;
+						ret1 = Ql_FileOpenEx((u8*)pfile1,QL_FS_CREATE);
+						if(ret1 >= QL_RET_OK)
+						{
+							filehandle1 = ret1;
+							ret1 = Ql_FileSeek(filehandle1,0,QL_FS_FILE_BEGIN);
+						    ////OUT_D1EBUG(textBuf,"Flag_Writebuffer=%d\r\n",Flag_Writebuffer);
+						    ret1 = Ql_FileWrite(filehandle1, (u8*)"TRUE",4,&writeedlen1);
+						    //    //OUT_D1EBUG(textBuf,"Flag_Writebuffer=TRUE\r\n");
+						    Ql_FileClose(filehandle1);
+	    					filehandle1 = -1;
+						}
+					}
+				}	
+			}
+		
+			////////////////////////////////////////----------------------///////////////////////////////////
+			//AC/DC logic:- Check the time difference between two consecutive RMC strings in the range 1 - 3
+			//Generate AC/DC stamps only if the above condition matches
+		//	if((3 >= mTimeDiff) && (mTimeDiff >= 1))
+			if((mTimeDiff <= 3 ) && (mTimeDiff >= 1))
+			{
+				//OUT_D1EBUG(textBuf,"in AC_DC mTimeDiff=%f",mTimeDiff);
+				//	//OUT_D1EBUG(textBuf,"mTimeDiff is 1 - 3\r\n");
+				//OUT_D1EBUG(textBuf,"mTimeDiff=%f\r\n",mTimeDiff);
+				//OUT_D1EBUG(textBuf,"\rnextraraprespeed:%f\r\n",extraraprespeed);
+				//OUT_D1EBUG(textBuf," mCurrSpeed:%f\r\n",mCurrSpeed);
+		 		mAccDcLimit_1=( mAccDcLimit )*( mTimeDiff );
+		 		//OUT_D1EBUG(textBuf," mTimeDiff=%f\r",mTimeDiff);
+		 		//OUT_D1EBUG(textBuf," mAccDcLimit=%f\r\n",mAccDcLimit);
+		 		//OUT_D1EBUG(textBuf,"cal mAccDcLimit_1=%f\r\n",mAccDcLimit_1);
+				
+				//if((mPrevSpeed - mCurrSpeed) >= mAccDcLimit_1)
+				if((extraraprespeed - mCurrSpeed) >= 15.0)
+				{
+					Ql_memset(DCStampString,0,sizeof(DCStampString));
+					Ql_strncpy(DCStampString,UID,7);
+					Ql_strncat(DCStampString,"_DC,",4);
+
+					Ql_strcat(DCStampString,GPRMC);
+		//			Ql_strcat(DCStampString,(ix_Itoa(mTotDist)));	//Distance
+					//Ql_strcat(DCStampString,mSpeedAscii);
+				//	ix_Ftoa(mCurrSpeed,2);
+					ix_Itoa(mCurrSpeed);
+	//				//OUT_D1EBUG(textBuf,"FtoaStrcurre%s\r\n",ItoaStr);
+				    Ql_strcat(DCStampString,(char *)ItoaStr);///mCurrSpeed speed
+				    Ql_strncat(DCStampString,",",1);
+				    
+			//	    ix_Ftoa(mPrevSpeed,2);
+				    ix_Itoa(extraraprespeed);
+		//			//OUT_D1EBUG(textBuf,"FtoaStrprev%s\r\n",ItoaStr);
+				    Ql_strcat(DCStampString,(char *)ItoaStr);///mPrevSpeed speed
+				    Ql_strncat(DCStampString,",",1);
+				    		
+					//Ql_strncat(DCStampString,",",1);
+					//Ql_strncat(DCStampString,"mCurrSpeed",1);
+					Ql_strncat(DCStampString,"0.0",3);	//PDOP
+					Ql_strncat(DCStampString,",",1);
+					Ql_strcat(DCStampString,STAT);		//Status (A/V)
+					Ql_strncat(DCStampString,"\r\n",2);		
+				//	tw_filewrite((char *)DCStampString);
+					//OUT_D1EBUG(textBuf,"%s\r\n",DCStampString);
+					tw_filewrite(DCStampString);
+				}
+			//	else if((mCurrSpeed - mPrevSpeed) >= mAccDcLimit_1)
+				else if((mCurrSpeed - extraraprespeed) >= 15.0)
+		 		{
+		 			//OUT_D1EBUG(textBuf,"AC ____mAccDcLimit_1=%f\r\n",mAccDcLimit_1);
+					Ql_memset(ACStampString,0,sizeof(ACStampString));
+//					Ql_strncpy(ACStampString,"UI8002_AC,",10);
+					Ql_strncpy(ACStampString,UID,7);
+					Ql_strncat(ACStampString,"_AC,",4);
+
+					Ql_strcat(ACStampString,GPRMC);
+				//	Ql_strcat(ACStampString,(ix_Itoa(mTotDist)));	//Distance
+				//	Ql_strcat(ACStampString,mSpeedAscii);
+				//	ix_Ftoa(mCurrSpeed,2);
+					ix_Itoa(mCurrSpeed);
+				//	//OUT_D1EBUG(textBuf,"FtoaStr%s\r\n",ItoaStr);
+				    Ql_strcat(ACStampString,(char *)ItoaStr);///mCurrSpeed speed
+				    Ql_strncat(ACStampString,",",1);
+				    
+     			    ix_Ftoa(extraraprespeed,2);
+	//			    ix_Itoa(mCurrSpeed);
+				//	//OUT_D1EBUG(textBuf,"FtoaStrprev%s\r\n",ItoaStr);
+				    Ql_strcat(ACStampString,(char *)ItoaStr);///mPrevSpeed speed
+				    Ql_strncat(ACStampString,",",1);
+				    		
+					
+					//Ql_strncat(ACStampString,",",1);
+					Ql_strncat(ACStampString,"0.0",3);	//PDOP
+					Ql_strncat(ACStampString,",",1);
+					Ql_strcat(ACStampString,STAT);		//Status (A/V)
+					Ql_strncat(ACStampString,"\r\n",2);		
+					//OUT_D1EBUG(textBuf,"%s\r\n",ACStampString);
+                    tw_filewrite(ACStampString);
+				}				
+			}
+			
+  //-----------------Over speed------------------------------------------------------------------------------
+
+			///For JRM on condition
+			if(Ql_strstr((char *)jrmstatus,"JRMON") != NULL)
+			{
+				OUT_D1EBUG(textBuf,"\r\n Started timer osbuzzer JRMON \r\n");
+				OUT_D1EBUG(textBuf,"mCurrSpeed=%f\r\n",mCurrSpeed);
+				if(((OSRed == TRUE) && (mCurrSpeed > mOverSpeedLimit1)) || ((OSYellow == TRUE) && (mCurrSpeed > mOverSpeedLimit2)) || (mCurrSpeed > mOverSpeedLimit))
+				{
+					mOverspeedA=mCurrSpeed;
+
+					if((osbuzzer_flg==0) && (((Ql_strstr((char *)Unit_Type,"JRM") != NULL)||(Ql_strstr((char *)Unit_Type,"jrm") != NULL))) )
+					{
+						//osbuzzer.timerId =0;
+						osbuzzer_flg=1;
+						Ql_StartTimer(&osbuzzer);
+						 OUT_D1EBUG(textBuf,"\r\n Started timer osbuzzer g1 \r\n");
+					}
+					if(mOverspd==FALSE)
+					{
+						mOverspd=TRUE;
+						mOverspeedB = mOverspeedA;
+					}
+					if( mOverspeedA > mOverspeedB)
+					{
+						mOverspeedB = mOverspeedA;
+					}
+
+					if(mCountOS < 10)
+					{
+						if(mCountOS == 0)
+						{
+							//---------Stamp Generation-----------------
+							Ql_memset(mOSpeedString,0,sizeof(mOSpeedString));
+							//						 Ql_strncpy((ascii *)mOSpeedString,"UI8002_OS,",10);
+							Ql_strncpy(mOSpeedString,UID,7);
+							Ql_strncat(mOSpeedString,"_OS,",4);
+							Ql_strcat(mOSpeedString,GPRMC);
+						}
+						mCountOS++;
+					}
+					if(mCountOS1min < 61)
+					{
+						if(mCountOS1min == 60)
+						{
+							//---------Stamp Generation-----------------
+							Ql_memset(mOSpeedmultipleString,0,sizeof(mOSpeedmultipleString));
+							Ql_strncpy(mOSpeedmultipleString,UID,7);
+							Ql_strncat(mOSpeedmultipleString,"_OS,",4);
+							Ql_strcat(mOSpeedmultipleString,GPRMC);
+							ix_Itoa(mOverspeedB);
+							//OUT_D1EBUG(textBuf,"FtoaStr%s\r\n",ItoaStr);
+							Ql_strcat(mOSpeedmultipleString,(char *)ItoaStr);///speed
+							Ql_strncat(mOSpeedmultipleString,",",1);
+							Ql_strcat(mOSpeedmultipleString,(char *)(ix_Itoa( mCountOS1min))); ///seconds
+							Ql_strncat(mOSpeedmultipleString,",",1);
+							Ql_strncat(mOSpeedmultipleString,"0.0",3);	//PDOP
+							Ql_strncat(mOSpeedmultipleString,",",1);
+							Ql_strcat(mOSpeedmultipleString,STAT);
+							//Ql_strncat(mOSpeedmultipleString,",",1);
+							// Ql_strncat(mOSpeedmultipleString,"$",1);
+
+							if(detected_POID > 0)
+							{
+								Ql_strncat(mOSpeedmultipleString,",",1);
+								Ql_strncat(mOSpeedmultipleString,"$",1);
+								Ql_strcat(mOSpeedmultipleString,(char *)(ix_Itoa(detected_POID)));
+							}			//Status (A/V)
+
+							Ql_strncat(mOSpeedmultipleString,"\r\n",2);
+							tw_filewrite(mOSpeedmultipleString);
+							mCountOS1min=0;
+							Ql_memset(mOSpeedmultipleString,0,sizeof(mOSpeedmultipleString));
+						}
+
+						mCountOS1min++;
+					}
+					else
+					{
+						mOSpeedFlag=TRUE;
+						mCountOS++;
+					}
+				}
+			}
+
+
+////For JRM OFF condition
+			else if(mCurrSpeed > mOverSpeedLimit)
+			{
+			      mOverspeedA=mCurrSpeed;
+			      OUT_D1EBUG(textBuf,"\r\n Started timer osbuzzer else \r\n");
+			      if((osbuzzer_flg==0) && (((Ql_strstr((char *)Unit_Type,"JRM") != NULL)||(Ql_strstr((char *)Unit_Type,"jrm") != NULL))) )
+			      {
+				  //osbuzzer.timerId =0;
+			    	  //osbuzzer_flg=1;
+			      Ql_StartTimer(&osbuzzer);
+				 // OUT_D1EBUG(textBuf,"\r\n Started timer osbuzzer g1 \r\n");
+			      }
+			      if(mOverspd==FALSE)
+			      {
+			          mOverspd=TRUE;
+			          mOverspeedB = mOverspeedA;
+			      }
+			      if( mOverspeedA > mOverspeedB)
+			      {
+			          mOverspeedB = mOverspeedA;
+			      }
+			      /*
+			      if(buzzflg==0)
+			      {
+			      	JRM_GPIO_buzzer_unsub();
+			      	JRM_GPIO_BUZZER_high();
+			      	JRM_GPIO_buzzer_unsub();
+			      	JRM_GPIO_BUZZER_low();
+			      	buzzflg=1;
+			      }
+			      else if(buzzflg==1)
+			      {
+			      	JRM_GPIO_buzzer_unsub();
+			      	JRM_GPIO_BUZZER_low();
+			      	JRM_GPIO_buzzer_unsub();
+			      	JRM_GPIO_BUZZER_high();
+			      	buzzflg=0;
+			      	
+			      }
+			      */
+			      if(mCountOS < 10)
+			      {
+			          if(mCountOS == 0)
+			          {
+			             //---------Stamp Generation-----------------
+			             Ql_memset(mOSpeedString,0,sizeof(mOSpeedString));
+//						 Ql_strncpy((ascii *)mOSpeedString,"UI8002_OS,",10);
+						Ql_strncpy(mOSpeedString,UID,7);
+						Ql_strncat(mOSpeedString,"_OS,",4);
+
+						 Ql_strcat(mOSpeedString,GPRMC);
+			          
+			          }
+			          	          
+			            mCountOS++;
+			          
+			      
+			      }
+			      if(mCountOS1min < 61)
+			      {
+
+			    	  if(mCountOS1min == 60)
+			    	  {
+			    		  //---------Stamp Generation-----------------
+			    		  Ql_memset(mOSpeedmultipleString,0,sizeof(mOSpeedmultipleString));
+			    		  Ql_strncpy(mOSpeedmultipleString,UID,7);
+			    		  Ql_strncat(mOSpeedmultipleString,"_OS,",4);
+			    		  Ql_strcat(mOSpeedmultipleString,GPRMC);
+			    		  ix_Itoa(mOverspeedB);
+			    		  //OUT_D1EBUG(textBuf,"FtoaStr%s\r\n",ItoaStr);
+			    		  Ql_strcat(mOSpeedmultipleString,(char *)ItoaStr);///speed
+			    		  Ql_strncat(mOSpeedmultipleString,",",1);
+			    		  Ql_strcat(mOSpeedmultipleString,(char *)(ix_Itoa( mCountOS1min))); ///seconds
+			    		  Ql_strncat(mOSpeedmultipleString,",",1);
+			    		  Ql_strncat(mOSpeedmultipleString,"0.0",3);	//PDOP
+			    		  Ql_strncat(mOSpeedmultipleString,",",1);
+			    		  Ql_strcat(mOSpeedmultipleString,STAT);
+			    		  //Ql_strncat(mOSpeedmultipleString,",",1);
+			    		  // Ql_strncat(mOSpeedmultipleString,"$",1);
+
+			    		  if(detected_POID > 0)
+			    		  {
+			    			  Ql_strncat(mOSpeedmultipleString,",",1);
+			    			  Ql_strncat(mOSpeedmultipleString,"$",1);
+			    			  Ql_strcat(mOSpeedmultipleString,(char *)(ix_Itoa(detected_POID)));
+			    		  }			//Status (A/V)
+
+			    		  Ql_strncat(mOSpeedmultipleString,"\r\n",2);
+			    		  tw_filewrite(mOSpeedmultipleString);
+			    		  mCountOS1min=0;
+			    		  Ql_memset(mOSpeedmultipleString,0,sizeof(mOSpeedmultipleString));
+			    	  }
+			          	          
+			    	  mCountOS1min++;
+			      }
+			      else
+			      {
+			          mOSpeedFlag=TRUE;
+			          mCountOS++;			      
+			      }			
+			}
+			
+			else
+			{
+				 
+				if(osbuzzer_flg==1)
+				{
+					OS_buzzer();
+				} 
+				if(mOSpeedFlag == TRUE)
+				{
+					//   ix_Ftoa(mOverspeedB,2);
+					ix_Itoa(mOverspeedB);
+					//OUT_D1EBUG(textBuf,"FtoaStr%s\r\n",ItoaStr);
+					Ql_strcat(mOSpeedString,(char *)ItoaStr);///speed
+					Ql_strncat(mOSpeedString,",",1);
+						    
+					Ql_strcat(mOSpeedString,(char *)(ix_Itoa( mCountOS))); ///seconds
+					Ql_strncat(mOSpeedString,",",1);
+						    
+					Ql_strncat(mOSpeedString,"0.0",3);	//PDOP
+					Ql_strncat(mOSpeedString,",",1);
+					Ql_strcat(mOSpeedString,STAT);		//Status (A/V)
+					//Ql_strncat(mOSpeedString,",",1);
+					// Ql_strncat(mOSpeedString,"$",1);
+					if(detected_POID > 0)
+					{
+						Ql_strncat(mOSpeedString,",",1);
+						Ql_strncat(mOSpeedString,"$",1);
+						Ql_strcat(mOSpeedString,(char *)(ix_Itoa(detected_POID)));
+					}
+					Ql_strncat(mOSpeedString,"\r\n",2);
+							         
+					if (mVehMoving == TRUE)
+					{
+						//OUT_D1EBUG(textBuf,"mOverSpeedString 2=%s\r\n",mOSpeedString);
+						tw_filewrite(mOSpeedString);
+					}
+					mOverspd = FALSE;
+					mOSpeedFlag = FALSE;
+					mCountOS = 0;
+					Ql_memset((ascii *)mOSpeedString,0,sizeof(mOSpeedString));
+					mOSpeedString[0] = 0;
+				}
+				else
+				{
+			          mOverspd = FALSE;
+			          mOSpeedFlag = FALSE;
+				  	  mCountOS = 0;
+					  Ql_memset((ascii *)mOSpeedString,0,sizeof(mOSpeedString));
+					  mOSpeedString[0] = 0;
+			     }		
+			}
+			////////////////////////////////////////----------------------///////////////////////////////////
+			mPrevSpeed = mCurrSpeed;
+			mAccDcLimit_1=0;
+			//mAvgSpeed = mTotSpeed;
+		}
+		//OUT_D1EBUG(textBuf,"\r\n##############mSpeedAscii#####end#################:%s\r\n",mSpeedAscii);
+	}
+	else
+	{
+		//OUT_D1EBUG(textBuf,"RMC not found\r\n");
+	}
+	
+	if(Cnt == 20)
+	{
+	     Cnt=0;
+	     wcnt1=5+30+75+1;
+	    
+	     //   Ql_memset(Dist,0,sizeof(Dist));
+	     //code for distance writing into memory
+	     ret1 = Ql_FileOpenEx((u8 *)pfile1,QL_FS_CREATE);
+         dist=ix_Ftoa(mTotDist,2);
+         Ql_strncpy(Dist,dist,Ql_strlen(dist));
+
+         if(ret1 >= QL_RET_OK)
+		 {
+        	 filehandle1 = ret1;
+        	 ret1 = Ql_FileSeek(filehandle1,wcnt1,QL_FS_FILE_BEGIN);
+        	 ret1 = Ql_FileWrite(filehandle1,(u8 *)Dist,8,&writeedlen1);
+        	 //OUT_D1EBUG(textBuf,"Ql_FileWrite()=%d: writeedlen=%d\r\n",ret1,writeedlen1);
+        	 //OUT_D1EBUG(textBuf,"writedistance=%s\r\n",Dist);
+        	 Ql_FileClose(filehandle1);
+        	 filehandle1 = -1;
+		 }
+		 else
+		 {
+			 //OUT_D1EBUG(textBuf,"Error in distance write\r\n");
+		 }
+	}
+	else
+	{
+		Cnt++;
+	}
+	
+}
+/*-------------------------------------------------------------------------*/
+/*  Function   : fn_save		                                           */
+/*-------------------------------------------------------------------------*/
+/*  Object     : ON Stamp Generation				                       */
+/*-------------------------------------------------------------------------*/
+/*void fn_save()
+{
+	char OnStampString[90];
+	
+	//Check correct date for writing in accident memory & 16th memory location		
+	if((Ql_strncmp((ascii *)DATE,"010303",6)) || (Ql_strncmp((ascii *)DATE,"010407",6)) || (Ql_strncmp((ascii *)DATE,"291006",6)) && (Ql_strlen((ascii *)DATE) == 6))
+	{
+		if(powerStamp == 0)
+		{
+			powerStamp = 1;
+				
+			Ql_memset((ascii *)OnStampString,0,sizeof(OnStampString));
+			Ql_strncpy((ascii *)OnStampString,"UI8002_ON,",10);
+			Ql_strcat(OnStampString,GPRMC);
+			//Ql_strcat(OnStampString,(ascii *)(itoa(mTotDist)));	//Distance
+			Ql_strncat(OnStampString,"0.0,",4);						//PDOP
+			Ql_strcat(OnStampString,STAT);							//Status (A/V)
+			Ql_strncat(OnStampString,"\r\n",2);
+			//OUT_D1EBUG(textBuf,"%s\r\n",OnStampString);
+			//tw_filewrite((char *)OnStampString);
+			//tw_fileread();
+		}
+	}
+	else
+	{
+	}
+}
+*/
+//-------------------------------------------------------------------------
+//===================new fnsave1()=========================================
+//-------------------------------------------------------------------------
+void fn_save1(void)
+{
+	char OnStampString[90];
+    s32 ret1;
+    u32 writeedlen1;	
+    onstop=5;
+	//OUT_D1EBUG(textBuf,"in fn_save1\r\n");
+	
+	//Check correct date for writing in accident memory & 16th memory location		
+	if((Ql_strlen(DATE) == 6) && ((Ql_strncmp(DATE,"010303",6)) || (Ql_strncmp(DATE,"010407",6)) || (Ql_strncmp(DATE,"291006",6))))
+	{
+		////OUT_D1EBUG(textBuf,"%d\r\n",powerStamp);
+		if(powerStamp == 0)
+		{
+			powerStamp = 1;
+			
+			Ql_memset(OnStampString,0,sizeof(OnStampString));
+			Ql_strncpy(OnStampString,UID,7);
+			Ql_strncat(OnStampString,"_ON,",4);
+			Ql_strcat(OnStampString,GPRMC);
+			//	ix_Ftoa(mCurrSpeed,2);
+		    ix_Itoa(mCurrSpeed);
+		    //	//OUT_D1EBUG(textBuf,"FtoaStrcurre%s\r\n",ItoaStr);
+			Ql_strcat(OnStampString,(char *)ItoaStr);///mCurrSpeed speed
+			//	Ql_strcat((ascii *)OnStampString,(ascii *)mSpeedAscii);
+			Ql_strncat(OnStampString,",",1);
+			Ql_strcat(OnStampString,(ascii *)(ix_Itoa(mTotDist)));	//Distance
+			Ql_strncat(OnStampString,",",1);
+			Ql_strncat(OnStampString,"0.0",4);									//PDOP
+			Ql_strncat(OnStampString,",",1);
+			Ql_strncat(OnStampString,STAT,1);							//Status (A/V)
+			Ql_strncat(OnStampString,"\r\n",2);
+			//OUT_D1EBUG(textBuf,"onstamp=%s\r\n",OnStampString);
+			//Ql_strcpy((ascii *)readbuffer,(ascii *)OnStampString);//copy ON stamp from SIstampstring to readbuffer
+			//	//OUT_D1EBUG(textBuf,"onstamp write\r\n");
+			tw_filewrite((char *)OnStampString);
+			//	tw_fileread();
+		}
+	}
+	else
+	{
+		//OUT_D1EBUG(textBuf,"in else fn_save1\r\n");
+	}
+}
+
+void prvRMC_store(void)
+{
+	s32 ret1;
+	u32 writeedlen1;
+
+	ret1 = Ql_FileOpenEx((u8*)pfile1,QL_FS_CREATE);
+
+	if(ret1 >= QL_RET_OK)
+	{
+		wcnt1=5+30+1;
+		//Ql_strlen((char*)checkdata)
+		filehandle1 = ret1;
+		ret1 = Ql_FileSeek(filehandle1,wcnt1,QL_FS_FILE_BEGIN);
+		ret1 = Ql_FileWrite(filehandle1, (u8*)checkdata,75,&writeedlen1);
+		////OUT_D1EBUG(textBuf,"Flag_Writebuffer=%d\r\n",checkdata);
+		// //OUT_D1EBUG(textBuf,"checkdata=%s\r\n",checkdata);
+		//	  //OUT_D1EBUG(textBuf,"Ql_FileWriteGPRMC()=%d: Checkdatawriteedlen=%d\r\n",ret1,writeedlen1);
+		//    //OUT_D1EBUG(textBuf,"Flag_Writebuffer=TRUE\r\n");
+		Ql_FileClose(filehandle1);
+		filehandle1 = -1;
+	}
+	else
+	{
+		//OUT_D1EBUG(textBuf,"error in GPRMC write\r\n");
+	}
+}
+
+//-------------------------------------------------------------------------
+//=====================ReadLatLong=========================================
+//-------------------------------------------------------------------------
+
+
+void ReadLatLong(void)
+{
+	int i , j ,q, k = 0, l = 0 , w = 0;
+	char mPrevLatAscii[10], mPrevLongAscii[11];
+
+	Ql_memset((ascii *)mPrevLatAscii,0,sizeof(mPrevLatAscii));
+	Ql_memset((ascii *)mPrevLongAscii,0,sizeof(mPrevLongAscii));
+	Ql_memset((ascii *)mPrevCntAscii,0,sizeof(mPrevCnt));
+	
+	
+	
+	for(i=0; i<=8; i++)
+	{
+		mPrevLatAscii[k] = mPrevLatLong[i];
+		k++;
+	}
+	////OUT_D1EBUG(textBuf,"PrevLat in ReadLatLong = %s\r\n",mPrevLatAscii);
+	mPrevLat = atofd(mPrevLatAscii);
+	//	//OUT_D1EBUG(textBuf,"PrevLat in ReadLatLong = %f\r\n",mPrevLat);
+	for(j=10; j<=19; j++)
+	{
+		mPrevLongAscii[l] = mPrevLatLong[j];
+		l++;
+	}
+	////OUT_D1EBUG(textBuf,"PrevLong in ReadLatLong= %s\r\n",mPrevLongAscii);
+	mPrevLong = atofd(mPrevLongAscii);
+	//	//OUT_D1EBUG(textBuf,"PrevLong in ReadLatLong= %f\r\n",mPrevLong);
+}
+
+double tw_sqrt(double m)
+{
+	double c=0,b=0;
+	double x1,x2;
+	while( (c*c) <= m )
+	c+=0.1;
+	x1=c;
+	
+	for( b=0;b<10;b++)
+	{
+		x2=m;
+		x2/=x1;
+		x2+=x1;
+		x2/=2;
+		x1=x2;
+	}
+	return x2;
+}
+
+
+//-------------------------------------------------------------------------
+//=====================dist_lat_long=========================================
+//-------------------------------------------------------------------------
+
+
+double dist_lat_long(double lat1,double long1,double lat2,double long2)
+{
+	double x,y,dist;
+	//	//OUT_D1EBUG(textBuf,"lat2= %f\r\n",lat2);
+	//	//OUT_D1EBUG(textBuf,"lat1= %f\r\n",lat1);
+	//	//OUT_D1EBUG(textBuf,"long2= %f\r\n",long2);
+	//	//OUT_D1EBUG(textBuf,"long1= %f\r\n",long1);
+	x = (69.1 * (lat2 - lat1));
+	y = (53.0 * (long2 - long1));
+	
+	dist = (1.6 * (tw_sqrt(x * x + y * y)));
+	//OUT_D1EBUG(textBuf,"dist= %f\r\n",dist);
+	return dist;
+}
+
+
+
+/*-------------------------------------------------------------------------*/
+/*  Function   : Data_Seperation_func                                      */
+/*-------------------------------------------------------------------------*/
+/*  Object     : GPS Data Saggregation					                   */
+/*-------------------------------------------------------------------------*/
+/*
+void Data_Seperation_func(char mGlobalGPRMC1 )
+{
+	unsigned char sCountPtr = 0;
+	
+	
+	Ql_memset((ascii *)TIME,0,sizeof(TIME));
+	Ql_memset((ascii *)STAT,0,sizeof(STAT));
+	Ql_memset((ascii *)LAT,0,sizeof(LAT));
+	Ql_memset((ascii *)nLAT,0,sizeof(nLAT));
+	Ql_memset((ascii *)LONG,0,sizeof(LONG));
+	Ql_memset((ascii *)eLONG,0,sizeof(eLONG));
+	Ql_memset((ascii *)SPEED,0,sizeof(SPEED));
+	Ql_memset((ascii *)COURSE,0,sizeof(COURSE));
+	Ql_memset((ascii *)DATE,0,sizeof(DATE));
+
+	if (mGlobalGPRMC1[2] == 'M' && mGlobalGPRMC1[3] == 'C')
+	{
+		int i, j;
+		
+		for(i=0;mGlobalGPRMC1[i] != ',';i++)
+		{
+		}
+		i++;
+		j=i;		
+		//Time String
+		for(i=j;mGlobalGPRMC1[i] != ',';i++)
+		{
+			TIME[sCountPtr] = mGlobalGPRMC1[i];
+			sCountPtr++;			
+		}
+		i++;
+		j=i;
+		TIME[sCountPtr] = '\0';
+		sCountPtr = 0;			
+			
+		//Validity String
+		for(i=j;mGlobalGPRMC1[i] != ',';i++)
+		{
+			STAT[sCountPtr] = mGlobalGPRMC1[i];
+			sCountPtr++;			
+		}
+		i++;
+		j=i;
+		STAT[sCountPtr] = '\0';
+		sCountPtr = 0;		
+	
+		//Latitude String
+		for(i=j;mGlobalGPRMC1[i] != ',';i++)
+		{
+			LAT[sCountPtr] = mGlobalGPRMC1[i];
+			sCountPtr++;			
+		}
+		i++;
+		j=i;
+		LAT[sCountPtr] = '\0';
+		sCountPtr = 0;		
+	
+		//Latitude Direction String
+		for(i=j;mGlobalGPRMC1[i] != ',';i++)
+		{
+			nLAT[sCountPtr] = mGlobalGPRMC1[i];
+			sCountPtr++;
+		}
+		i++;
+		j=i;
+		nLAT[sCountPtr] = '\0';
+		sCountPtr = 0;
+		
+		//Longitude String
+		for(i=j;mGlobalGPRMC1[i] != ',';i++)
+		{
+			LONG[sCountPtr] = mGlobalGPRMC1[i];
+			sCountPtr++;
+		}
+		i++;
+		j=i;
+		LONG[sCountPtr] = '\0';
+		sCountPtr = 0;
+		
+		//Longitude Direction String
+		for(i=j;mGlobalGPRMC1[i] != ',';i++)
+		{
+			eLONG[sCountPtr] = mGlobalGPRMC1[i];
+			sCountPtr++;
+		}
+		i++;
+		j=i;
+		eLONG[sCountPtr] = '\0';
+		sCountPtr = 0;
+		
+		//Speed String
+		for(i=j;mGlobalGPRMC1[i] != ',';i++)
+		{
+			SPEED[sCountPtr] = mGlobalGPRMC1[i];
+			sCountPtr++;			
+		}
+		i++;
+		j=i;
+		SPEED[sCountPtr] = '\0';	//Speed in Knots
+		sCountPtr = 0;
+		////OUT_D1EBUG(textBuf,"SPEED=%s\r\n",SPEED);
+		
+		//Direction Digree String
+		for(i=j;mGlobalGPRMC1[i] != ',';i++)
+		{
+			COURSE[sCountPtr] = mGlobalGPRMC1[i];
+			sCountPtr++;
+		}
+		i++;
+		j=i;
+		COURSE[sCountPtr] = '\0';
+		sCountPtr = 0;		
+		
+		//Date String
+		for(i=j;mGlobalGPRMC1[i] != ',';i++)
+		{
+			DATE[sCountPtr] = mGlobalGPRMC1[i];
+			sCountPtr++;
+		}
+		i++;		
+		DATE[sCountPtr] = '\0';
+		sCountPtr = 0;	
+	
+		Ql_strcpy(GPRMC,DATE);		//Date
+		Ql_strncat(GPRMC,",",1);	
+		Ql_strcat(GPRMC,TIME);		//Time
+		Ql_strncat(GPRMC,",",1);	
+		Ql_strcat(GPRMC,LAT);		//Lat
+		Ql_strncat(GPRMC,",",1);
+		Ql_strcat(GPRMC,nLAT);		//Lat dir
+		Ql_strncat(GPRMC,",",1);	
+		Ql_strcat(GPRMC,LONG);		//Long
+		Ql_strncat(GPRMC,",",1);
+		Ql_strcat(GPRMC,eLONG);		//Long dir
+		Ql_strcat(GPRMC,",");
+		Ql_strcat(GPRMC,COURSE);	//Dir degree
+		Ql_strncat(GPRMC,",",1);
+		//OUT_D1EBUG(textBuf,"GPRMC=%s\r\n",GPRMC);
+	}
+}
+*/
+// ---------------------------------------------
+// New function                 
+
+void Data_Seperation_func1(u8 checkdata[])
+{
+	unsigned char sCountPtr = 0;
+	int j;
+//	OUT_D1EBUG(textBuf,"in D_S_F1\r\n");
+//	OUT_D1EBUG(textBuf,"checkdata=%s\r\n",checkdata);
+//	char *mpSpeed;
+	
+	
+	/*
+	Ql_memset((ascii *)TIME,0,sizeof(TIME));
+	Ql_memset((ascii *)STAT,0,sizeof(STAT));
+	Ql_memset((ascii *)LAT,0,sizeof(LAT));
+	Ql_memset((ascii *)nLAT,0,sizeof(nLAT));
+	Ql_memset((ascii *)LONG,0,sizeof(LONG));
+	Ql_memset((ascii *)eLONG,0,sizeof(eLONG));
+	Ql_memset((ascii *)SPEED,0,sizeof(SPEED));
+	Ql_memset((ascii *)COURSE,0,sizeof(COURSE));
+	Ql_memset((ascii *)DATE,0,sizeof(DATE));
+    */
+
+    Ql_memset(TIME,0,sizeof(TIME));
+	Ql_memset(STAT,0,sizeof(STAT));
+	Ql_memset(LAT,0,sizeof(LAT));
+	Ql_memset(nLAT,0,sizeof(nLAT));
+	Ql_memset(LONG,0,sizeof(LONG));
+	Ql_memset(eLONG,0,sizeof(eLONG));
+	Ql_memset(SPEED,0,sizeof(SPEED));
+	Ql_memset(COURSE,0,sizeof(COURSE));
+	Ql_memset(DATE,0,sizeof(DATE));
+	
+	
+	if (checkdata[1] == 'M' && checkdata[2] == 'C')
+	{
+		int i;
+	//	//OUT_D1EBUG(textBuf,"checkdata=%s\r\n",checkdata);
+		for(i=0;checkdata[i] != ',';i++)
+		{
+		}
+		i++;
+		//j=i;		
+		//Time String
+		for(i=i;checkdata[i] != ',';i++)
+		{
+			TIME[sCountPtr] = checkdata[i];
+			sCountPtr++;		
+		}		
+		i++;
+		TIME[sCountPtr] = '\0';
+		sCountPtr=0;
+/*		for(i=i;checkdata[i] != ',';i++)
+		{
+		}*/
+	//	i++;
+	//	i++;
+	/*	for(j=0;TIME[sCountPtr] !='.';j++)
+		{
+			  TIME[j]=TIME[sCountPtr];
+		      sCountPtr++;	  
+		}
+		
+		//j++;
+		TIME[j] = '\0';
+		sCountPtr = 0;			
+		*/
+	//	 //OUT_D1EBUG(textBuf,"TIME=%s\r\n",TIME);
+		
+		//Validity String
+		for(i=i;checkdata[i] != ',';i++)
+		{
+			STAT[sCountPtr] = checkdata[i];
+			sCountPtr++;			
+		}
+		i++;
+		//j=i;
+		STAT[sCountPtr] = '\0';
+		sCountPtr = 0;		
+	//    //OUT_D1EBUG(textBuf,"STAT=%s\r\n",STAT);
+		//Latitude String
+		for(i=i;checkdata[i] != ',';i++)
+		{
+			LAT[sCountPtr] = checkdata[i];
+			sCountPtr++;			
+		}
+		i++;
+		//j=i;
+		LAT[sCountPtr] = '\0';
+		sCountPtr = 0;		
+	 //   //OUT_D1EBUG(textBuf,"LAT=%s\r\n",LAT);
+		//Latitude Direction String
+		for(i=i;checkdata[i] != ',';i++)
+		{
+			nLAT[sCountPtr] = checkdata[i];
+			sCountPtr++;
+		}
+		i++;
+		//j=i;
+		nLAT[sCountPtr] = '\0';
+		sCountPtr = 0;
+		
+		//Longitude String
+		for(i=i;checkdata[i] != ',';i++)
+		{
+			LONG[sCountPtr] = checkdata[i];
+			sCountPtr++;
+		}
+		i++;
+		//j=i;
+		LONG[sCountPtr] = '\0';
+		sCountPtr = 0;
+		
+		//Longitude Direction String
+		for(i=i;checkdata[i] != ',';i++)
+		{
+			eLONG[sCountPtr] = checkdata[i];
+			sCountPtr++;
+		}
+		i++;
+		//j=i;
+		eLONG[sCountPtr] = '\0';
+		sCountPtr = 0;
+		
+		//Speed String
+		for(i=i;checkdata[i] != ',';i++)
+		{
+			SPEED[sCountPtr] = checkdata[i];
+			sCountPtr++;			
+		}
+		i++;
+		//j=i;
+		SPEED[sCountPtr] = '\0';	//Speed in Knots
+    	sCountPtr = 0;
+	/*	mSpeedAscii[5] = 0;           					
+		Ql_memset(mSpeed,0,sizeof(mSpeed));
+		Ql_strcpy(mSpeed,SPEED);
+		mCurrSpeed = atofd(mSpeed) * mMultiFactorSpeed;
+		//OUT_D1EBUG(textBuf,"mCurrSpeed:%f\r\n",mCurrSpeed);
+		mpSpeed=ix_Ftoa(mCurrSpeed,4);
+		Ql_memset(mSpeedAscii,0,sizeof(mSpeedAscii));
+		Ql_strncpy(mSpeedAscii,mSpeed,5);
+	*///	//OUT_D1EBUG(textBuf,"SPEED=%s\r\n",SPEED);
+		
+		//Direction Digree String
+		for(i=i;checkdata[i] != ',';i++)
+		{
+			COURSE[sCountPtr] = checkdata[i];
+			sCountPtr++;
+		}
+		i++;
+		//j=i;
+		COURSE[sCountPtr] = '\0';
+		sCountPtr = 0;		
+		
+		//Date String
+		for(i=i;checkdata[i] != ',';i++)
+		{
+			DATE[sCountPtr] = checkdata[i];
+			sCountPtr++;
+		}
+		i++;;		
+		DATE[sCountPtr] = '\0';
+		sCountPtr = 0;	
+	
+		Ql_strcpy(GPRMC,DATE);		//Date
+		Ql_strncat(GPRMC,",",1);	
+        Ql_strncat(GPRMC,TIME,6);		//Time
+		Ql_strncat(GPRMC,",",1);	
+		Ql_strcat(GPRMC,LAT);		//Lat
+		Ql_strncat(GPRMC,",",1);
+		Ql_strcat(GPRMC,nLAT);		//Lat dir
+		Ql_strncat(GPRMC,",",1);	
+		Ql_strcat(GPRMC,LONG);		//Long
+		Ql_strncat(GPRMC,",",1);
+		Ql_strcat(GPRMC,eLONG);		//Long dir
+		Ql_strcat(GPRMC,",");
+		Ql_strcat(GPRMC,COURSE);	//Dir degree
+		Ql_strncat(GPRMC,",",1);
+		//	Ql_strcat(GPRMC,SPEED);	    //Speed
+		//	Ql_strncat(GPRMC,",",1);
+		//		Ql_strncat(GPRMC,"\0",1);
+		//	OUT_D1EBUG(textBuf,"GPRMC=%s\r\n",GPRMC);
+		//	OUT_D1EBUG(textBuf,"*********LAT=%s\r\n",LAT);
+		//	OUT_D1EBUG(textBuf,"*********LONG=%s\r\n",LONG);
+	}
+	else
+	{
+		//		OUT_D1EBUG(textBuf,"in else\r\n");
+		Ql_memset((ascii *)GPRMC,0,sizeof(GPRMC));
+    }
+	////OUT_D1EBUG(textBuf,"in else\r\n");
+}
+
+/*-------------------------------------------------------------------------*/
+/*  Function   : gpsformat		                                           */
+/*-------------------------------------------------------------------------*/
+/*  Object     : GPS Data Reception					                       */
+/*-------------------------------------------------------------------------*/
+
+void gprsformat1(char smsdata[],u16 length)
+{
+   int i,j=0,k=0;
+  // OUT_D1EBUG(textBuf,"in gprsformat1.\r\n");
+  // OUT_D1EBUG(textBuf,"length=%d\r\n",length);
+  // OUT_D1EBUG(textBuf,"smsdata=%s\r\n",smsdata);
+    for(i = 0; i < length ;i++)
+    {
+   //  OUT_D1EBUG(textBuf,"in gprsformat1_loop.i=%d\r\n",i);
+       if(smsdata[i] == 'R')
+       {
+         checkdata[j] = 'R';
+         j++;
+         mRFound = TRUE;
+         mStarFound = FALSE;
+       }
+       else if(smsdata[i] == '*')
+       {
+          if( mRFound == TRUE && mStarFound == FALSE )
+          {
+          checkdata[j] = '*';
+          j++;
+          checkdata[j]='\0';
+	//	  Ql_strcpy((ascii *)mGlobalGPRMC,(ascii *)mRMCString);
+		// OUT_D1EBUG(textBuf,"checkdata1=%s\r\n",checkdata);
+		   ////OUT_D1EBUG(textBuf,"String1=%c\r\n",checkdata[2]);
+		  // //OUT_D1EBUG(textBuf,"String1=%c\r\n",checkdata[3]);
+								
+	    	//Data saggregation function
+		  mRFound = FALSE;
+          mStarFound = TRUE;	
+		  Data_Seperation_func1(checkdata);
+								
+		   //Distance calculation function
+				
+		//  tw_AvgSpeed();
+		  tw_AvgSpeed1();
+				
+		  //ON stamp function
+		  //fn_save();	
+		  if(onstop==0)
+		   {
+		    fn_save1();
+		   }			
+		  mRFound = FALSE;
+		  mStarFound = TRUE;
+          }
+          else
+          {
+          }
+       }
+      else if(mRFound == TRUE && mStarFound == FALSE)
+      {
+          if(smsdata[i] == '$' || smsdata[i] == 'G' || smsdata[i] == 'L' || smsdata[i] == 'P' || smsdata[i] == 'Z')
+          {
+             while(k < i)
+             {
+               checkdata[k] = '\0';
+               k++;
+             }
+          
+          }      
+          else
+          {
+             checkdata[j] = smsdata[i];
+             j++;
+          
+          }
+      }
+    
+    }
+}
+
+
+//--------------------------------------------------------------------
+//------------------New gprsformat------------------------------------
+//--------------------------------------------------------------------
+/*void gprsformat1(char smsdata[],u16 length)
+{
+    int i,j=0,k=0,l=0,t=0;
+   // //OUT_D1EBUG(textBuf,"in gprsformat1.\r\n");
+    for(i = 0; i < length ;i++)
+    {
+     
+       if(smsdata[i] == 'R')
+       {
+         checkdata[j] = 'R';
+         j++;
+         mRFound = TRUE;
+         mStarFound = FALSE;
+         //OUT_D1EBUG(textBuf,"rfound\r\n");
+       }
+       else if((smsdata[i] = 'S') && (smsdata[++i] = 'A'))
+         {
+             checkdata1[t] = 'S'; 
+             t++;   
+             checkdata1[t] = 'A';
+             t++;
+             //OUT_D1EBUG(textBuf,"safound\r\n");
+             mSAFound=TRUE;
+             mStarFound=FALSE;
+           //  continue;
+         }
+       else if(smsdata[i] == '*')
+       {
+          if( mRFound == TRUE && mStarFound == FALSE )
+          {
+          checkdata[j] = '*';
+          j++;
+          checkdata[j]='\0';
+	//	  Ql_strcpy((ascii *)mGlobalGPRMC,(ascii *)mRMCString);
+		 //OUT_D1EBUG(textBuf,"checkdata=%s\r\n",checkdata);
+		   ////OUT_D1EBUG(textBuf,"String1=%c\r\n",checkdata[2]);
+		  // //OUT_D1EBUG(textBuf,"String1=%c\r\n",checkdata[3]);
+								
+	    	//Data saggregation function
+		  mRFound = FALSE;
+          mStarFound = TRUE;		
+		  Data_Seperation_func1();
+								
+		   //Distance calculation function
+				
+		//  tw_AvgSpeed();
+		  tw_AvgSpeed1();
+				
+		  //ON stamp function
+		  //fn_save();	
+		  fn_save1();			
+		  mRFound = FALSE;
+		  mStarFound = TRUE;
+          }
+          else if((mSAFound=TRUE) && (mStarFound=FALSE))
+             {
+                  checkdata1[t] = '*';
+                  t++;
+                  checkdata1[t]='\0';             
+             
+                  //OUT_D1EBUG(textBuf,"checkdata1=%s\r\n",checkdata1);
+		      //    //OUT_D1EBUG(textBuf,"String1=%c\r\n",checkdata[0]);
+		       //   //OUT_D1EBUG(textBuf,"String1=%c\r\n",checkdata[1]);
+		          
+		       	//Data saggregation function
+			     mSAFound = FALSE;
+		         mStarFound = TRUE;
+          	
+		         Data_Seperation_func1();
+								
+		          
+             
+             }
+          else
+          {
+          }
+       }
+      else if(mRFound == TRUE && mStarFound == FALSE)
+      {
+          if(smsdata[i] == '$' || smsdata[i] == 'G' || smsdata[i] == 'L' || smsdata[i] == 'P' || smsdata[i] == 'Z' || smsdata[i] == 'D')
+          {
+             while(k < i)
+             {
+               checkdata[k] = '\0';
+               k++;
+               ////OUT_D1EBUG(textBuf,"String1=%c\r\n",checkdata[1]);
+             }
+                
+          }      
+          else
+          {
+             checkdata[j] = smsdata[i];
+             j++;
+             //OUT_D1EBUG(textBuf,"checkdata[j]=%c\r\n",checkdata[j]);
+          }
+      }
+     else if((mSAFound=TRUE) && (mStarFound=FALSE))
+         {
+             
+             if(smsdata[i] == '$' || smsdata[i] == 'G' || smsdata[i] == 'L' || smsdata[i] == 'P' || smsdata[i] == 'Z' || smsdata[i] == 'D')
+             {
+                while(l < i)
+                {
+                  checkdata1[l] = '\0';
+                  l++;
+                }
+             
+              }
+             else
+             {
+                  checkdata1[t] = smsdata[i];
+                  t++;
+                //OUT_D1EBUG(textBuf,"checkdata1[t]=%c\r\n",checkdata1[t]);
+             }
+             
+         
+         
+         }
+      else
+      {
+      
+      }
+    
+    }
+   
+    
+
+
+}
+
+
+*/
+
+/*-------------------------------------------------------------------------*/
+/*  Function   : RMC time conversion	                                   */
+/*-------------------------------------------------------------------------*/
+/*  Object     : time convert to seconds					               */
+/*-------------------------------------------------------------------------*/
+
+float tw_ReturnSec(char mHHMMSS[6])
+{
+	float mTotSec = 0;
+	//ascii mTemp[3] = {0};
+    ascii mTemp[3] = {0};
+	mTemp[0] = mHHMMSS[0];
+	mTemp[1] = mHHMMSS[1];
+	mTemp[2] = 0;
+	//mTotSec = mTotSec + (Ql_atoi((ascii *)mTemp) * 3600);
+	mTotSec = mTotSec + (Ql_atoi(mTemp) * 3600);
+	mTemp[0] = mHHMMSS[2];
+	mTemp[1] = mHHMMSS[3];
+	mTemp[2] = 0;
+	//mTotSec = mTotSec + (Ql_atoi((ascii *)mTemp) * 60);
+	mTotSec = mTotSec + (Ql_atoi(mTemp) * 60);
+	mTemp[0] = mHHMMSS[4];
+	mTemp[1] = mHHMMSS[5];
+	mTemp[2] = 0;
+	//mTotSec = mTotSec + Ql_atoi((ascii *)mTemp);
+	mTotSec = mTotSec + Ql_atoi(mTemp);
+	return mTotSec;
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

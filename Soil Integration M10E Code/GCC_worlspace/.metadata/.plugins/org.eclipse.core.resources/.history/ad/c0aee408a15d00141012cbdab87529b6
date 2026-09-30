@@ -1,0 +1,2338 @@
+/////camera code v 1.0
+
+
+#include<stdio.h>
+#include<string.h>
+#include "ql_appinit.h"
+#include "ql_interface.h"
+#include "ql_type.h"
+#include "ql_trace.h"
+#include "ql_audio.h"
+#include "ql_timer.h"
+#include "ql_stdlib.h"
+#include "ql_error.h"
+#include "ql_fcm.h"
+#include "ql_filesystem.h"
+#include "ql_fcm.h"
+#include "ql_trace.h"
+#include "ftp2.h"
+#include "camera.h"
+#include "camera2.h"
+#include "ftp.h"
+#include "Fun.h"
+#include "MRW.h"
+//#include "ftp.c"
+#include "Ql_error.h"
+
+#define  PATH_CAMERA ((u8 *)"SD:camera_R.txt")
+
+#define OUT_D1EBUG(x,...)  \
+    Ql_memset((x),0,100);  \
+    Ql_sprintf((x),__VA_ARGS__);   \
+    Ql_SendToUart(ql_uart_port2,(u8 *)(x),Ql_strlen(x));
+
+
+   
+QlEventBuffer g_event; // Keep this variable a global variable due to its big size
+
+
+
+
+char notes[100];
+extern char textBuf[100];
+
+
+char readbuffer_cam[35000];
+char sendbuffer_cam[35000];
+
+u8 cam_sync_cmd[]={0xAA,0x0D,0x00,0x00,0x00,0x00};
+//u8 cam_init_cmd[]={0xAA,0x01,0x00,0x07,0x03,0x07};				//640
+u8 cam_init_cmd[]={0xAA,0x01,0x00,0x07,0x03,0x05};            //320
+u8 cam_takepic_cmd[]={0xAA,0x04,0x01,0x00,0x00,0x00};
+u8 cam_snapshot_cmd[]={0xAA,0x05,0x01,0x00,0x00,0x00};
+u8 cam_reset_cmd[]={0xAA,0x08,0x00,0x00,0x00,0x00};
+u8 cam_pack_size[]={0xAA,0x06,0x08,0x00,0x04,0x00};
+
+//u8 cam_snapshot_cmd[]={0xAA,0x04,0x00,0x00,0x00,0x00};
+//u8 cam_takepic_cmd[]={0xAA,0x05,0x00,0x00,0x00,0x00};
+
+u8 cam_getdata_cmd[]={0xAA,0x0E,0x00,0x00,0x00,0x00};
+u8 cam_getdata1_cmd[]={0xAA,0x0E,0x00,0x00,0x01,0x00};
+u8 cam_readbuffer[15000];
+u8 cam_readbuffer11[20000];
+char cam_final_readbuffer[35000];
+char IndexFile[25000];
+bool ffFound = 0, d9Found = 0 ,d8Found = 0;
+int fcount=0;
+u16 f_read_len=0;
+
+//__________Ftp
+bool FTP_TX_Flag=0;
+extern bool cam_fl_up_flag;
+//extern char textBuf[100];
+extern unsigned char ItoaStr[15];
+extern unsigned char FtoaStr[20];
+
+extern bool camdumpflag;////flag to read cmdump sms
+//____________
+bool Synchronise_cmd = 0;
+bool Initialize_cmd = 0;
+bool takepic_cmd = 0;
+bool snapshot_cmd = 0;
+bool getdata_cmd = 0;
+bool getdata1_cmd = 0;
+bool cmd_picready = 0;
+bool snapshot_cmd_fire =0;
+bool Packetsize_cmd = 0;
+bool reset_cam_flg=0;
+
+bool open_ftp_flg=0;
+bool send_ftp_flg=0;
+bool  close_ftp_flg=0;
+
+bool ovrwr_flg=0;
+bool stop_img_capt=0;
+bool datareading=0;
+bool CAM_backup_flg=0;
+int stuck_ptr=0;
+
+extern bool cam_connect_success;
+
+bool red_fl = 0;
+bool sen_fl = 0;
+
+unsigned long cam_wrt_cnt=0;
+unsigned long readcount=0;
+unsigned long dummyreadcount=0;
+unsigned long dump_cam_wrt_cnt=0;
+int images=0;
+
+int img_taken=0;
+
+u32 count=0;
+u32 count11=0;
+s32 cam_coun123=0;
+bool getdata1_cmd_fire=0;
+bool Synchronise_cmd_fire=0;
+bool Initialize_cmd_fire=0;
+bool takepic_cmd_fire=0;
+bool getdata_cmd_fire=0;
+bool Packetsize_cmd_fire=0;
+int cam1_stk_flg=0;
+extern int onestuck1;
+
+
+u32 cam_length=0;
+u32 data_cam_length=0;
+u32 cam_datalen=0;
+u32 readedlen=0;
+
+u32 filecounter=0;
+u32 fileposition=0;
+u32 read_comp=2;
+
+unsigned int nullindex[1500];
+unsigned int nullarry=0;
+
+//char readbuffer_cam[25000];
+char FTPFILENAME[20];
+//char pfile_FTPUID[7] ="8138_";
+extern char CAMUID[6];
+char pfile_FTPTXT[5] =".txt";
+char bulk_n[6]="Bulk_";
+
+char pfile_imgdata[20] ="Imagedata.txt";
+char pfile_new[20]="swap_file.txt";
+char cam1_mem_loc[20] ="cam1memory.txt";
+u8 cam1memwcnt=0;
+
+extern QlTimer tm;
+extern QlTimer tm11,onesectimer;
+extern QlTimer timer_1,timer_stuck,timer_sync,cam_tx;
+//extern buffer[];
+//extern u16 datalen;
+extern u16 ucamdatalen;
+extern u8 cam_cmd_type;
+extern bool cam_bDoNexAT;
+extern PortData_Event* pPortEvt;
+int fileincr=0;
+extern u16  cam_cmd_idx;
+//extern char cam_pfile_FTP[20];
+extern bool cam_cap_time;
+extern QlTimer get_img;
+extern char cam_uart_readbuffer[3000];
+
+extern bool synctimer;
+extern bool firsttimer;
+extern bool timer_tm;
+extern bool stucktimer;
+extern bool imageget;
+extern bool in_cam_rou;
+extern char DATE[7];
+extern char TIME[7];
+extern double mCurrSpeed;
+extern unsigned long cam_wrt_cnt2;
+extern unsigned long readcount22;
+extern unsigned long dump_cam_wrt_cnt2;
+
+extern bool camcaptureflag;
+extern int camindicatorflag;
+
+extern bool cam1dump;
+extern bool cam2dump;
+bool timerstarted=0;
+int ftpcamsendflag=0;
+int x=0;
+///////////////dump flag
+//extern bool camdumpflag;
+////////generate CW and CR stamps
+int error_wrt=0;    ///to generate error stamp
+int error_read=0;    ///to generate error stamp
+extern char GPRMC[];
+extern char UID[];
+extern char STAT[];
+extern double mCurrSpeed,mTotDist;
+extern unsigned char ItoaStr[];
+
+
+extern QlTimer onesecdummy;
+
+//u8 mailstr[]={''};
+//char mailstr[]={'a','\n','0','0','0','0'};
+//char buffer1[12000];
+s32 buffer11[2000];
+u32 tot=0;
+
+s32 ret=0;						
+extern s32 tm_ret;			///onesec timer return value.
+u32 cnt = 0;
+
+ void cam_uartdata(char *cam_uart_readbuffer)
+    {
+              
+    
+         //   	cam_cap_time =1;  
+                 take_pic_cmd_fun();
+		//	  OUT_D1EBUG(textBuf,"Uart Data at vPort [%d]: %d\r\n",pDataEvt->port,pDataEvt->len);
+						//	cam_length=cam_length+datalen;
+                    	//     OUT_D1EBUG(textBuf,"cam_length=%d\r\n",cam_length);            
+		//    }
+		    
+                // TODO: receive and handle data from UART
+
+                /* The following code segment is written to demonstrate the usage of 'AT+QLOCPU'.
+                *   If send 'AT+QLOCPU=0' through serial port tool, and reboot the device, only Core 
+                *   System software is booted (the application will not be booted).
+                */
+                
+                
+             /*    if(Ql_strstr((char *)cam_uart_readbuffer,("AT+DUMPCAM=")) || Ql_strstr((char *)cam_uart_readbuffer,("at+dumpcam=")))
+               //    {
+                   
+                   OUT_D1EBUG(textBuf,"@@@@@@@@@@@@@@@@@@@ AT+DUMPCAM  or  at+dumpcam fired  @@@@@@@@@@@@@@@@@@@@@@r\n");
+                     stop_img_capt=1;
+                      Ql_StopTimer(&timer_stuck); 
+                     open_ftp_flg = 1;
+                     readcount =0;
+                     if(dump_cam_wrt_cnt == 0)
+  						  {
+  						   readcount =0;
+  						   dump_cam_wrt_cnt = cam_wrt_cnt;
+  						  } 
+  						   tw_fileread();  
+ 				 
+ 				 */
+ 				 /*	  else
+ 						   {
+ 						   dump_cam_wrt_cnt=cam_wrt_cnt-760000;
+ 						   readcount =0;
+ 						//   red_fl == 0;
+ 						   }
+ 					*/	   
+ 					//  cam_cmd_idx=1;
+                   //  connect_ftp();   
+ 				/*	if(cam_connect_success == 1)
+ 					  {	   
+ 						 tw_fileread();   
+ 					   }
+ 					   */	     
+                  //   dump_cam_wrt_cnt = cam_wrt_cnt;
+                  //   tw_fileread();
+                //   OUT_D1EBUG(textBuf,"@@@@@@@@@@@@@@@@@@@#################### File read complited##################### @@@@@@@@@@@@@@@@@@@@@@r\n");  
+//                    OUT_D1EBUG(textBuf,"file read readcount=%d\r\n",readcount);
+//  					OUT_D1EBUG(textBuf,"file read readcount=%d\r\n",dump_cam_wrt_cnt);
+//  					OUT_D1EBUG(textBuf,"Total images sent=%d\r\n",img_taken);
+  					
+                    
+                 //   }
+//                Ql_sprintf(notes, "AT+QLOCPU=0\r\n");
+               
+//                OUT_D1EBUG(textBuf,"Uart Data at vPort [%d]: %s %d\r\n", pDataEvt->port, pDataEvt->data,datalen);
+          ////      OUT_D1EBUG(textBuf,"Uart Data at vPort [%d]: %d\r\n", pDataEvt->port,datalen);
+//                Ql_strncat((char *)buffer1,(char *)pDataEvt->data,datalen);
+//                OUT_D1EBUG(textBuf,"buffer1=%s\r\n",buffer1);
+//                OUT_D1EBUG(textBuf,"Modem Data at vPort [%d]: %s\r\n", pPortEvt->port, pPortEvt->data);
+/*                if(datalen == 6)
+                {
+                   OUT_D1EBUG(textBuf,"Port data len==6\r\n");
+                   if(Synchronise_cmd == 1)
+				   {
+				     Synchronise_cmd = 0;
+				     Initialize_cmd =1;
+				   }   
+				   
+
+				                   
+                   if(takepic_cmd == 1)
+                   {
+                      takepic_cmd=0;
+                      snapshot_cmd=1;
+                   
+                   }
+                   if(snapshot_cmd == 1)
+                   {
+                      snapshot_cmd=0;
+                      getdata_cmd=1;
+                   }
+                   
+                }
+                else
+            //    {
+                   if(getdata_cmd == 1)
+                   {
+                     getdata_cmd=0;
+                     getdata1_cmd=1;
+                     AsciiTohex((u8 *)pDataEvt->data,datalen);
+                   }
+                   if(getdata1_cmd == 1)
+                   {
+                     getdata1_cmd=0;
+                     AsciiTohex((u8 *)pDataEvt->data,datalen);
+//                     OUT_D1EBUG(textBuf,"Modem Data at vPort [%d]: %s \r\n", pPortEvt->port, pPortEvt->data);                     
+                   }
+*/           //   if(pDataEvt->port == 0)
+              //  {  
+              //cam_coun123++;
+            /*  		if(reset_cam_flg == 1)
+				   {
+				     
+				        OUT_D1EBUG(textBuf,"Reset_cmd == 1\r\n");
+				        reset_cam_flg = 0;
+				        Synchronise_cmd = 1;
+				        Ql_StartTimer(&timer_sync);
+				   }
+				 */  
+                   if(Synchronise_cmd_fire == 1)
+				   {
+				     OUT_D1EBUG(textBuf,"\r\nSynchronise_cmd matched\r\n");
+				     //if(datalen == 6)
+				     //{
+				         OUT_D1EBUG(textBuf,"\r\nSynchronise_cmd == 1\r\n");
+				        Synchronise_cmd_fire = 0;
+				        Synchronise_cmd=0;
+				        Initialize_cmd =1;
+				    //    take_pic_cmd_fun();
+				    // Ql_StartTimer(&timer_1);
+				    
+				//     Ql_StartTimer(&timer_stuck);
+				//        Ql_StartTimer(&tm);
+				     //}
+				     
+				     
+				   }
+				   
+				   
+                   else if(Initialize_cmd_fire == 1)
+				   {
+   			         //if(datalen == 6)
+  			         //{
+   			            OUT_D1EBUG(textBuf,"Initialize_cmd=1\r\n");
+				    //   Packetsize_cmd = 1;
+				  //  Packetsize_cmd = 1;
+				         takepic_cmd = 1;
+				       Initialize_cmd_fire =0;
+					//   timer_sync.timeoutPeriod = Ql_MillisecondToTicks(500);
+					   OUT_D1EBUG(textBuf,"\r\nStoping timer timer_sync 6\n"); 
+				       Ql_StopTimer(&timer_sync);
+					   timer_sync.timerId =0;
+					//   timer_sync.timerId =0;
+				   //    Ql_StartTimer(&tm); 
+				    //   Ql_StopTimer(&tm); 
+				   /* if(timerstarted == 0)
+				    {
+						OUT_D1EBUG(textBuf,"if(timerstarted == 0) Start onesectimer.....\r\n");
+						timerstarted=1;
+			//			onesectimer.timerId =0;    
+			//			onesectimer.timeoutPeriod = Ql_SecondToTicks(2);
+					//	onesecdummy.timerId =0;
+					//	tm_ret = Ql_StartTimer(&onesecdummy);
+					//	OUT_D1EBUG(textBuf,"\r\onesectimer with timer ID camera_1=%d\r\n", tm_ret);
+				      }*/
+				        take_pic_data(); 
+				     //}
+				   } 
+				   
+			////////////////////////////////////////////////////////
+		/*			   
+				   
+				    else if(Packetsize_cmd_fire == 1)
+				   {
+   			         //if(datalen == 6)
+   			         //{
+   			           OUT_D1EBUG(textBuf,"Packetsize_cmd=1\r\n");
+				       takepic_cmd = 1;
+				       Packetsize_cmd_fire =0;
+				   //    Ql_StartTimer(&tm); 
+				       Ql_StopTimer(&tm);  
+				        take_pic_data(); 
+				     //}
+				   }
+				   
+		   
+                   else if(takepic_cmd_fire == 1)
+				   {
+   			         //if(datalen == 6)
+   			         //{
+   			           OUT_D1EBUG(textBuf,"takepic_cmd_cmd=1\r\n");
+				       takepic_cmd_fire = 0;
+				       snapshot_cmd_fire =1;
+				       Ql_StartTimer(&tm);  
+				     //}
+				   }   
+				      
+                   else if(snapshot_cmd == 1)
+                   {
+                      //if(datalen == 6)
+                      //{
+                        OUT_D1EBUG(textBuf,"snapshot_cmd == 1\r\n");
+                        snapshot_cmd=0;
+                        getdata_cmd=1;
+                        Ql_StartTimer(&tm);  
+                      //}
+                   }
+            */       
+         ////////////////////////////////////////////////////////////          
+//                   else if(datalen > 6)
+//                   {
+//                     cam_length=cam_length+datalen;
+//                     OUT_D1EBUG(textBuf,"cam_length=%d\r\n",cam_length); 
+                      
+//                   }
+                   /*else if(getdata_cmd == 1)
+                   {
+                     OUT_D1EBUG(textBuf,"getdata_cmd Uart\r\n");
+                     getdata_cmd=0;
+                     getdata1_cmd=1;
+                     AsciiTohex((u8 *)pDataEvt->data,datalen);
+                   }*/
+/*                   else if(getdata1_cmd == 1)
+                   {
+                     OUT_D1EBUG(textBuf,"getdata1_cmd Uart\r\n"); 
+                     getdata1_cmd=0;
+                     AsciiTohex((u8 *)pDataEvt->data,datalen);
+//                     OUT_D1EBUG(textBuf,"Modem Data at vPort [%d]: %s \r\n", pPortEvt->port, pPortEvt->data);                     
+                   }*/
+                  
+                  else if(ucamdatalen > 6)
+                {
+                 
+                 stuck_ptr=0;
+             //   in_cam_rou=1;
+                 cam_datalen=cam_datalen+ucamdatalen;
+                      OUT_D1EBUG(textBuf,"data *******pDataEvt->cam_length=%d\r\n",ucamdatalen); 
+       	  //  OUT_D1EBUG(textBuf,"data *******ucamdatalen=%d\r\n",ucamdatalen); 
+                     //buffer11=(s32*)Ql_GetMemory(sizeof(s32));
+                     //Ql_memset((char *)buffer11,'\0',2000);
+                     //Ql_strncpy((char *)buffer11,(char *)pDataEvt->data,datalen); 
+                     //OUT_D1EBUG(textBuf,"buffer11=%s\r\n",buffer11); 
+                     data_cam_length=data_cam_length+ucamdatalen;
+                //     OUT_D1EBUG(textBuf,"cam_length=%d\r\n",cam_length); 
+                     //cam_coun123++;
+                     
+                   //  stuck_ptr=0;
+                     
+                   if(getdata_cmd_fire == 1)
+                     {
+//                       OUT_D1EBUG(textBuf,"getdata_cmd == 1\r\n");
+                       getdata_cmd_fire=0;
+                       //getdata1_cmd=1;
+                    //  cmd_picready=1;
+				//	Ql_StartTimer(&get_img);
+                  //     Ql_StopTimer(&tm11);   
+                     }
+                     /*else if(getdata1_cmd_fire == 1)
+                     {
+                       //OUT_D1EBUG(textBuf,"getdata1111_cmd UART\r\n");
+                       getdata1_cmd_fire=0;
+                       cmd_picready=1;
+                       Ql_StartTimer(&tm11);
+                     }*/
+					// tot=Ql_strlen((char *)buffer11);
+					 //OUT_D1EBUG(textBuf,"tot=%d\r\n",tot);
+				 for(count =0;count<ucamdatalen;count++)
+                    {   stuck_ptr=0;
+                        if(cam_uart_readbuffer[count]=='\0')                        
+                        {
+                          //OUT_D1EBUG(textBuf,"Null detected\r\n");
+                          //Ql_strncat((char *)cam_readbuffer,(char *)"A",1);
+                      //    OUT_D1EBUG(textBuf,"%c\r\n",buffer[count]);
+                          cam_readbuffer[count11]='A';
+                     //     OUT_D1EBUG(textBuf,"%c",cam_readbuffer[count11]);
+                          nullindex[nullarry]=count11;
+                           nullarry++;
+                           count11++;
+                        
+                        }
+                        else
+                        {
+                        stuck_ptr=0;
+                          //Ql_strncat((char *)cam_readbuffer,(char *)buffer[count],1);
+                     //     OUT_D1EBUG(textBuf,"buffer[count]=%c\r\n",buffer[count]);
+                          cam_readbuffer[count11]=cam_uart_readbuffer[count];
+                     //     OUT_D1EBUG(textBuf,"%c",cam_readbuffer[count11]);
+                          if((cam_uart_readbuffer[count] - '!' - 'd' )== 'z')
+                          	{
+                     //     	OUT_D1EBUG(textBuf,"\r\n  FF found.\r\n");
+                       //   	 OUT_D1EBUG(textBuf,"%c",cam_readbuffer[count11]);
+                          	count++;
+                          	count11++;
+                          	if((cam_uart_readbuffer[count] - '!' - 'd' )== 'T')
+                          	  {
+                          	    OUT_D1EBUG(textBuf,"\r\n  d9 found.\r\n");
+                          	    cam_readbuffer[count11]=cam_uart_readbuffer[count];
+                     //     	     OUT_D1EBUG(textBuf,"%c",cam_readbuffer[count11]);
+                     			Ql_StopTimer(&get_img);
+								 get_img.timerId =0;
+                          	     spped_capt();
+                          	    break;
+                          	    
+                          	  }
+                          	  else
+                          	  {
+                          	  count--;
+                          	  count11--;
+                          	  } 
+                          	 } 
+                          	 
+                      //    nullindex[nullarry]=count11;
+                         
+                          
+                           count11++;
+                        }
+                   
+                    }
+                    /*
+                     for(count =0;count<ucamdatalen;count++)
+                     {
+                        //if(*(buffer11+count))                        
+                  //      OUT_D1EBUG(textBuf,"\r\nin count for loop.\r\n");
+								if((cam_uart_readbuffer[count] - '!' - 'd' )== 'z') //to find 0xff
+								{
+									ffFound = 1;
+									OUT_D1EBUG(textBuf,"\r\n  FF found.\r\n");
+									fcount = 1;
+									cam_readbuffer[count11]=cam_uart_readbuffer[count];
+									count11++;
+								}
+								else if((fcount == 1) && (ffFound == 1))
+								{
+									fcount = 0;
+									if((cam_uart_readbuffer[count] - '!' - 'c' )== 'T') //to find 0xd8
+									{
+									fcount = 2;
+									 d8Found = 1;
+									 OUT_D1EBUG(textBuf,"\r\n  D8 found.\r\n");
+									 //cam_readbuffer[count11]=buffer[count-1];
+									 //count11++;
+									 cam_readbuffer[count11]=cam_uart_readbuffer[count];
+									 count11++;
+									
+									}
+									else if ((cam_uart_readbuffer[count] - '!' - 'd' )== 'T') //to find 0xd9
+									{
+									 d9Found = 1;
+									 OUT_D1EBUG(textBuf,"\r\n  D9 found.\r\n");
+									 cam_readbuffer[count11]=cam_uart_readbuffer[count];
+									 count11++;
+									 
+									 spped_capt();
+									 
+									}
+									//else
+									//{
+									 ffFound = 0;
+									//}
+									if(d8Found == 1 && fcount != 2 && (d9Found == 0))
+									{
+									// cam_readbuffer[count11]=buffer[count];
+									// count11++;
+									  if(cam_uart_readbuffer[count])                        
+                        				{
+                         				 //OUT_D1EBUG(textBuf,"Null detected\r\n");
+                         				 //Ql_strncat((char *)cam_readbuffer,(char *)"A",1);
+                        		  		// OUT_D1EBUG(textBuf,"*(buffer11+count)=%c--%d\r\n",buffer[count],count);
+                         				//// cam_readbuffer[count11]=buffer11[count];
+                           				//cam_readbuffer[count11]=*(buffer11+count);
+                           				cam_readbuffer[count11]=cam_uart_readbuffer[count];
+                     					//   	OUT_D1EBUG(textBuf,"cam_readbuffer[count11]=%c--%d--%d\r\n",cam_readbuffer[count11],count,count11);
+                        				OUT_D1EBUG(textBuf,"data=%c",cam_readbuffer[count11]);
+                        				count11++;
+                        			 	}
+                        			 	else
+                        				{
+                          				//Ql_strncat((char *)cam_readbuffer,(char *)buffer[count],1);
+                          				//OUT_D1EBUG(textBuf,"buffer[count]=%c\r\n",buffer[count]);
+                          				cam_readbuffer[count11]='A';
+                          
+                         				 nullindex[nullarry]=count11;
+                          
+                     
+                          
+                         			 	//OUT_D1EBUG(textBuf,"*(buffer11+null)=%c--%d\r\n",buffer[count],count);
+                  //      			 	OUT_D1EBUG(textBuf,"cam_readbuffer[null11]=%c--%d--%d\r\n",cam_readbuffer[count11],count,count11);
+                        		//		OUT_D1EBUG(textBuf,"%c",cam_readbuffer[count11]);
+                         				nullarry++;
+                         				count11++;
+                          				//cam_readbuffer[count11]='\\0';
+                          				//OUT_D1EBUG(textBuf,"cam_readbuffer[null]=%c\r\n",cam_readbuffer[count11]);
+                       				 	}									
+									}
+									
+								}
+								else if((d8Found == 1) && (d9Found == 0))
+								 {
+									 if(cam_uart_readbuffer[count])                        
+                        			{
+                         				 //OUT_D1EBUG(textBuf,"Null detected\r\n");
+                         				 //Ql_strncat((char *)cam_readbuffer,(char *)"A",1);
+                        		  		// OUT_D1EBUG(textBuf,"*(buffer11+count)=%c--%d\r\n",buffer[count],count);
+                         				//// cam_readbuffer[count11]=buffer11[count];
+                           				//cam_readbuffer[count11]=*(buffer11+count);
+                           				cam_readbuffer[count11]=cam_uart_readbuffer[count];
+                     					//   	OUT_D1EBUG(textBuf,"cam_readbuffer[count11]=%c--%d--%d\r\n",cam_readbuffer[count11],count,count11);
+                        				OUT_D1EBUG(textBuf,"data=%c",cam_readbuffer[count11]);
+                        			 }
+                       			 	else
+                        			{
+                          				//Ql_strncat((char *)cam_readbuffer,(char *)buffer[count],1);
+                          				//OUT_D1EBUG(textBuf,"buffer[count]=%c\r\n",buffer[count]);
+                          				cam_readbuffer[count11]='A';
+                          
+                         				 nullindex[nullarry]=count11;
+                          
+                     
+                          
+                         			 	//OUT_D1EBUG(textBuf,"*(buffer11+null)=%c--%d\r\n",buffer[count],count);
+                  //      			 	OUT_D1EBUG(textBuf,"cam_readbuffer[null11]=%c--%d--%d\r\n",cam_readbuffer[count11],count,count11);
+                        		//		OUT_D1EBUG(textBuf,"%c",cam_readbuffer[count11]);
+                         				nullarry++;
+                          				//cam_readbuffer[count11]='\\0';
+                          				//OUT_D1EBUG(textBuf,"cam_readbuffer[null]=%c\r\n",cam_readbuffer[count11]);
+                       				 }
+                    
+                       					count11++;
+                   				 }
+                    //Ql_FreeMemory(buffer11);
+                    //OUT_D1EBUG(textBuf,"cam_readbufferbefore=%s\r\n",cam_readbuffer);
+                   //OUT_D1EBUG(textBuf,"Ql_strlen((char *)cam_readbuffer)=%d\r\n",Ql_strlen((char *)cam_readbuffer));
+                  }*/
+
+               // }   
+            //   OUT_D1EBUG(textBuf,"\r\nThe image sent.\r\n"); 
+                return;
+             }
+             
+     return;
+}
+            
+            
+
+            
+ void cam_timer(void)
+  {
+       // TODO: specify what you want to happen when the interval for cm_timer elapes
+				
+    //  OUT_D1EBUG(textBuf,"The cm_timer raises for %d time(s).\r\n", ++cnt);
+//       mailstr[6]='\0';
+//      OUT_D1EBUG(textBuf,"mailstr=%s\r\n",mailstr);
+//      Ql_SendToUart(ql_uart_port3,(u8*)mailstr,Ql_strlen((char *)mailstr));
+
+
+			if( synctimer==1)
+			   {
+			   synctimer=0;
+			   OUT_D1EBUG(textBuf,"\r\n sync_timer===1 \n");
+			   OUT_D1EBUG(textBuf,"r\n Synchronise_cmd=%d\r\n",Synchronise_cmd);
+			   OUT_D1EBUG(textBuf,"r\n mCurrSpeed=%f\r\n",mCurrSpeed);
+                 //if((Synchronise_cmd == 1)  && (mCurrSpeed > 3.00000))
+                 if(Synchronise_cmd == 1)
+                 {
+                    OUT_D1EBUG(textBuf,"r\n cam_sync_cmd=%s\r\n",cam_sync_cmd);
+                   Ql_SendToUart(ql_uart_port3,&cam_sync_cmd[0],6);                
+                //   timer_sync.timeoutPeriod = Ql_MillisecondToTicks(500);
+				   OUT_D1EBUG(textBuf,"\r\n Starting timer timer_sync 7\n"); 
+				   timer_sync.timerId =0;      
+				   tm_ret=Ql_StartTimer(&timer_sync);  
+				   OUT_D1EBUG(textBuf,"\r\n timer_sync with timer ID in cam1 _1=%d\r\n", tm_ret);
+                   Synchronise_cmd_fire=1;                 
+                   //Synchronise_cmd=0;
+                 }
+
+                 if(Initialize_cmd == 1)
+                 {
+                    OUT_D1EBUG(textBuf,"r\n cam_init_cmd=%s\r\n",cam_init_cmd);
+                    Ql_SendToUart(ql_uart_port3,&cam_init_cmd[0],6);                
+               //     timer_sync.timeoutPeriod = Ql_MillisecondToTicks(500);
+					OUT_D1EBUG(textBuf,"\r\n Starting timer timer_sync 8\n"); 
+					timer_sync.timerId =0;   
+					tm_ret=Ql_StartTimer(&timer_sync);  
+					OUT_D1EBUG(textBuf,"\r\n timer_sync with timer ID in cam1 _2=%d\r\n", tm_ret);
+					Initialize_cmd=0; 
+				    Initialize_cmd_fire=1; 
+					               
+                 }
+       
+                
+               }  
+                if( firsttimer==1)
+				{
+				firsttimer=0;
+				OUT_D1EBUG(textBuf,"\r\nTimer UP.. data overwriting..\r\n"); 
+				dump_cam_wrt_cnt = cam_wrt_cnt;
+				dump_cam_wrt_cnt2 = cam_wrt_cnt2;   //cam 2
+				 //OUT_D1EBUG(textBuf,"camera.c file read dump_cam_wrt_cnt2=%d\r\n",dump_cam_wrt_cnt2);
+				////write dump_cam_wrt_cnt
+				fun_dump_cam_wrt_cnt();
+				fun_dump_cam2_wrt_cnt();
+				cam_wrt_cnt=0;
+				cam_wrt_cnt2=0;						//cam2
+				fun_cam_wrt_cnt();
+				fun_cam2_wrt_cnt();
+				++ovrwr_flg;
+				OUT_D1EBUG(textBuf,"\r\nThe timer_1 up.\r\n"); 
+				// Ql_StartTimer(&timer_1);
+				 //Ql_StartTimer(&onesectimer); 
+				 
+				
+				}
+				
+				if( timer_tm==1)
+				{
+				 timer_tm=0; 
+		//		 timer_sync.timeoutPeriod = Ql_MillisecondToTicks(500);
+				 OUT_D1EBUG(textBuf,"\r\nStarting timer timer_sync 4\n"); 
+				 timer_sync.timerId =0;
+				 tm_ret=Ql_StartTimer(&timer_sync);
+				//RR// OUT_D1EBUG(textBuf,"\r\timer_sync with timer ID in cam1 3=%d\r\n", tm_ret);
+				
+				}
+				 if( stucktimer==1)
+				{
+				   stucktimer=0;
+				   ++ stuck_ptr;
+				   if(stuck_ptr >=3)
+				   {
+				    OUT_D1EBUG(textBuf,"\r\nCamera got stucked__C1.\r\n");
+				   count11=0; 
+ 					cam_length=0;
+ 					cam_datalen=0;
+ 		
+ 					nullarry=0;
+ 		
+ 					 ffFound = 0;
+ 					 d9Found = 0;
+ 					 d8Found = 0; 
+				   takepic_cmd_fire = 0;
+				   snapshot_cmd_fire =0;
+				   snapshot_cmd=0;
+				   getdata_cmd=0;
+				   Ql_memset((char *)cam_readbuffer,'\0',sizeof(cam_readbuffer));
+				   Ql_memset((char *)cam_final_readbuffer,'\0',sizeof(cam_final_readbuffer));
+				   Ql_memset((char *)nullindex,0,sizeof(nullindex));
+				   
+				//   Synchronise_cmd = 1;
+				//   Ql_StartTimer(&timer_sync);
+				 /*   if(stop_img_capt == 0)
+ 					{
+ 					 reset_cam_flg=1;
+ 					 OUT_D1EBUG(textBuf,"\r\nReset comand Fired.\r\n");
+ 					 Ql_SendToUart(ql_uart_port3,&cam_reset_cmd[0],6);
+ 					 
+				//    takepic_cmd=1;
+	   			//	take_pic_data();
+	   				}*/
+	   				
+				   }	   
+				   
+				
+			//	 Ql_StartTimer(&timer_stuck); 
+				 
+				
+				}
+				if( imageget==1)
+				{
+				getdata_cmd_fire=0;
+				stop_img_capt=0;
+				imageget=0;       
+                spped_capt();
+                }
+     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////     
+       
+         /*           
+                if(Packetsize_cmd == 1)
+                {
+                   OUT_D1EBUG(textBuf,"cam_Packetsize_cmd=%s\r\n",cam_pack_size);
+                   Ql_SendToUart(ql_uart_port3,&cam_pack_size[0],6);                
+//                   Ql_StartTimer(&tm);  
+					Packetsize_cmd=0; 
+				 Packetsize_cmd_fire=1; 
+					               
+                }
+
+				
+                if(takepic_cmd == 1)
+                {
+                   OUT_D1EBUG(textBuf,"cam_takepic_cmd=%s\r\n",cam_takepic_cmd);
+                   Ql_SendToUart(ql_uart_port3,&cam_takepic_cmd[0],6);                
+//                   Ql_StartTimer(&tm);   
+					takepic_cmd=0;                                
+					takepic_cmd_fire=1;
+                
+                }
+                
+                if(snapshot_cmd_fire == 1)
+                {
+                   OUT_D1EBUG(textBuf,"cam_snapshot_cmd=%s\r\n",cam_snapshot_cmd);
+                   Ql_SendToUart(ql_uart_port3,&cam_snapshot_cmd[0],6);  
+                   snapshot_cmd=1;
+                   snapshot_cmd_fire=0;              
+//                   Ql_StartTimer(&tm);                                                   
+                
+                }
+                
+                if(getdata_cmd == 1)
+                {
+                   OUT_D1EBUG(textBuf,"cam_getdata_cmd=%s\r\n",cam_getdata_cmd);
+                   Ql_SendToUart(ql_uart_port3,&cam_getdata_cmd[0],6);
+//                   Ql_StartTimer(&tm);  
+                   //cmd_picready=1; 
+                   getdata_cmd=0;
+                   getdata_cmd_fire=1;          
+                   //Ql_StartTimer(&tm11);  
+                                                                                     
+                }
+                
+             */   
+ //////////////////////////////////////////////////////////////////////////////////////////
+                /*if(getdata1_cmd == 1)
+                {
+                   OUT_D1EBUG(textBuf,"cam_getdata1_cmd=%s\r\n",cam_getdata1_cmd);
+                   OUT_D1EBUG(textBuf,"cam_coun123=%d\r\n",cam_coun123);
+                   Ql_SendToUart(ql_uart_port3,&cam_getdata1_cmd[0],6); 
+                   getdata1_cmd_fire=1;  
+                   getdata1_cmd=0;             
+                 //Ql_StartTimer(&tm11);                                                                 
+                }*/
+           /*     
+                if(cmd_picready == 1)
+                {
+                    unsigned int i=0;
+                    
+                    unsigned char Indexcam_length_buff[4];
+					unsigned char NullArray_buff[4];
+					count11++;
+               //     nullarry++;
+                    cam_readbuffer[count11]='\0';
+                    nullindex[nullarry]='\0';
+                     //OUT_D1EBUG(textBuf,"Ql_strlen((char *)cam_readbuffer)=%d\r\n",Ql_strlen((char *)cam_readbuffer));
+//                     AsciiTohex((u8 *)cam_readbuffer,Ql_strlen((char *)cam_readbuffer));
+                    // OUT_D1EBUG(textBuf,"cam_readbuffer pic=%s\r\n",cam_readbuffer);  
+						//OUT_D1EBUG(textBuf,"cam_coun12312=%d\r\n",cam_coun123);  
+						cmd_picready=0;  
+						OUT_D1EBUG(textBuf,"count11******=%d\r\n",count11); 
+						OUT_D1EBUG(textBuf,"nullarry******=%d\r\n",nullarry);
+						while(i < nullarry)
+							{
+							Ql_memset((char *)NullArray_buff,0,sizeof(NullArray_buff));
+						//	Ql_itoa((char **)NullArray_buff,nullindex[i],10);
+							Ql_strcat((char *)NullArray_buff,(char *)(ix_Itoa(nullindex[i])));
+						//	OUT_D1EBUG(textBuf,"NullArray_buff******=%c\r\n",NullArray_buff);
+							Ql_strcat((char *)IndexFile,(char *)NullArray_buff);
+							Ql_strcat((char *)IndexFile," ");
+								i++;
+							} 
+						//	OUT_D1EBUG(textBuf,"nullarry*****************===%s",IndexFile);
+							
+		//r/			OUT_D1EBUG(textBuf,"nullarry*****************===%s",nullindex);
+		///r/			OUT_D1EBUG(textBuf,"cam_readbuffer***********===%s",cam_readbuffer);
+					//	OUT_D1EBUG(textBuf,"nullarry*****************===%s",nullindex);
+				//		for(i=0;i<nullarry;i++)
+				//		{
+				//		  OUT_D1EBUG(textBuf,"%d ",nullindex[i]); 
+				//		} 
+						 cat_all();
+					//	OUT_D1EBUG(textBuf,"Image sent\r\n");          
+           // //            AsciiTohex();
+                     
+                       
+                }
+                */
+/*                if (cnt < 20)
+                {
+                    Ql_StartTimer(&tm);
+                }
+                else
+                {
+                    OUT_D1EBUG(textBuf,"\r\nThe cm_timer stops.\r\n");                
+                    //Ql_DebugTrace("\r\nThe cm_timer stops.\r\n");
+                }*/
+      return;
+}
+         
+ 
+
+//void AsciiTohex(u8 *ptr, int len)
+/*
+void AsciiTohex()
+{
+
+    int ct;
+	unsigned char Disp_array[4];
+	unsigned char lsb_PMF_Data ;
+	unsigned char msb_PMF_Data;
+	u32 len=0;
+	
+	ct=0;
+	len=Ql_strlen((char *)cam_readbuffer);
+	OUT_D1EBUG(textBuf,"len=%d\r\n",len);
+	for(ct=0;ct<len;ct++)
+//    while(ct != len)
+	{
+
+//  	  msb_PMF_Data = *(ptr+i);
+//	  lsb_PMF_Data = *(ptr+i); 
+//      OUT_D1EBUG(textBuf,"i22=%d cam_readbuffer[i]=%c\r\n",i,cam_readbuffer[i]); 
+      //OUT_D1EBUG(textBuf,"\r\ncam_readbuffer[i]=%s\r\n",Disp_array); 
+  	  msb_PMF_Data = cam_readbuffer[ct];
+      lsb_PMF_Data = cam_readbuffer[ct];    
+
+      msb_PMF_Data &= 0xF0;
+	  msb_PMF_Data = msb_PMF_Data >> 4;
+	
+ 	  if(msb_PMF_Data >= 0x00 && msb_PMF_Data <= 0x09) 
+	  {
+		 msb_PMF_Data += 0x30;
+		 //adl_atSendResponse ( ADL_AT_RSP, "\r\nmsb_PMF_Data >= 0x00 && <= 0x09\r\n");
+		//UARTprintf("msb_PMF_Data 1st:%c\n",msb_PMF_Data);
+	  }    
+	  else if((msb_PMF_Data > 0x09) && (msb_PMF_Data <= 0x0F))
+      {
+		msb_PMF_Data += 0x37;
+		//adl_atSendResponse ( ADL_AT_RSP, "\r\nmsb_PMF_Data >= 0x09 && <= 0x0F\r\n");
+		//UARTprintf("msb_PMF_Data 2nd:%c\n",msb_PMF_Data);	
+	  }
+ 	
+	
+	
+	lsb_PMF_Data &= 0x0F;  
+	if(lsb_PMF_Data >=0x00 && lsb_PMF_Data <= 0x09) 
+	{
+		lsb_PMF_Data += 0x30;
+		//adl_atSendResponse ( ADL_AT_RSP, "\r\nlsb_PMF_Data >=0x00 &&  <= 0x09\r\n");
+		//UARTprintf("lsb_PMF_Data 1st:%c\n",lsb_PMF_Data);
+	} 
+    else if((lsb_PMF_Data > 0x09) && (lsb_PMF_Data <= 0x0F))
+    {
+		lsb_PMF_Data += 0x37;
+		//adl_atSendResponse ( ADL_AT_RSP, "\r\nlsb_PMF_Data >=0x00 &&  <= 0x0F\r\n");
+		//UARTprintf("lsb_PMF_Data 2nd:%c\n",lsb_PMF_Data);
+    }
+	
+	Disp_array[0] = msb_PMF_Data ;	
+	Disp_array[1] = lsb_PMF_Data ;
+//	cam_readbuffer11[ct]=Disp_array[0];
+//	ct++;
+//	cam_readbuffer11[ct]=Disp_array[1];
+//    Disp_array[2]='\0';
+    Ql_strncat((char *)cam_readbuffer11,(char *)Disp_array,2);
+ //   OUT_D1EBUG(textBuf,"\r\nDisp_array=%s\r\n",Disp_array);
+//    ct++;
+   // OUT_D1EBUG(textBuf,"%s,",Disp_array);
+  }
+//OUT_D1EBUG(textBuf,"\r\ni 11=%d\r\n",ct);   
+ OUT_D1EBUG(textBuf,"\r\ncam_readbuffer11=%s\r\n",cam_readbuffer11); 
+ OUT_D1EBUG(textBuf,"\r\ncam_readbuffer11 len=%d\r\n",Ql_strlen((char *)cam_readbuffer11)); 
+  
+}*/
+
+
+/*-------------------------------------------------------------------------*/
+/*  Function   : ix_Retchar				                                   */
+/*-------------------------------------------------------------------------*/
+/*  Object     : Return Char					               			   */
+/*-------------------------------------------------------------------------*/
+/*char ix_Retchar(unsigned int a)
+{
+	char ch;
+	ch = 0x30 + a;
+	return ch;
+}*/
+/*-------------------------------------------------------------------------*/
+/*  Function   : ix_Itoa				                                   */
+/*-------------------------------------------------------------------------*/
+/*  Object     : Convert Interger to Ascii					               */
+/*-------------------------------------------------------------------------*/
+/*char *ix_Itoa(signed long num)
+{
+	char *retstr;
+	unsigned char strTemp[15] = {'\0'};
+	unsigned char i = 0, j = 0;
+
+	if (num < 0)
+	{
+		ItoaStr[j] = 0x2D;
+		j++;
+		num = num * (-1);
+	}
+		
+	if ((num >= 0) && (num <= 9))
+	{
+		ItoaStr[j] = ix_Retchar(num);
+		j++;
+	}
+	else
+	{
+		while(1)
+		{
+			strTemp[i] = ix_Retchar(num % 10);
+			i++;
+			num = num / 10;
+			if (num<10)
+			{
+				strTemp[i] = ix_Retchar(num);
+				i++;
+				do
+				{
+					i--;
+					ItoaStr[j] = strTemp[i];
+					j++;
+				}while(i != 0);
+				break;
+			}
+		}
+	}
+	ItoaStr[j] = '\0';
+	retstr = (char *)ItoaStr;
+	return retstr;
+}
+*/
+void cat_all(void)
+{
+	u16 len,fileret;
+	unsigned int j=0,k, f_RE_read_len;
+	//getdata_cmd_fire=0;
+	stuck_ptr=0;
+	cam1_stk_flg=0;
+	onestuck1=0;
+	images ++;
+	// OUT_D1EBUG(textBuf,"********In CAT ALL*******\r\n");
+	 
+	f_RE_read_len=Ql_strlen((char *)cam_readbuffer);
+	//OUT_D1EBUG(textBuf,"iMAGE DATA cam_length cam_readbuffer=%d", f_RE_read_len);
+	 
+	//OUT_D1EBUG(textBuf,"########total images=%d\r\n",images);
+	//OUT_D1EBUG(textBuf,"@@@@@@@@@@@@@@@@@@@@@@@@@@ Data ovrrited counter =%d   @@@@@@@@@@@@@@@@@@@@@\r\n",ovrwr_flg);
+	
+	Ql_memset((char *)cam_final_readbuffer,0,sizeof(cam_final_readbuffer));
+	Ql_strcat((char *)cam_final_readbuffer,(char *)cam_readbuffer);
+//	Ql_strcat((char *)cam_final_readbuffer,"Transworld_CameraIndex_130913,101010:");
+	Ql_strcat((char *)cam_final_readbuffer,"Transworld_CameraIndex_");
+	Ql_strcat((char *)cam_final_readbuffer,(char *)DATE);
+//	//OUT_D1EBUG(textBuf,"########DATE=%s\r\n",DATE);
+	Ql_strcat((char *)cam_final_readbuffer,",");
+	Ql_strncat((char *)cam_final_readbuffer,(char *)TIME,6);
+//	//OUT_D1EBUG(textBuf,"########TIME=%s\r\n",TIME);
+	Ql_strcat((char *)cam_final_readbuffer,":");          
+	f_read_len=Ql_strlen((char *)cam_final_readbuffer);
+	 //OUT_D1EBUG(textBuf,"cam_final_readbuffer_len=%d",f_read_len);
+	Ql_strcat((char *)cam_final_readbuffer,(char *)IndexFile);
+	Ql_strcat((char *)cam_final_readbuffer,"RBA");
+	Ql_memset((char *)IndexFile,'\0',sizeof(IndexFile));
+//	Ql_memset((char *)nullindex,'\0',sizeof(nullindex));
+	f_read_len=Ql_strlen((char *)cam_final_readbuffer);
+	 //OUT_D1EBUG(textBuf,"cam_final_readbuffer_len=%d",f_read_len);
+	Ql_memset((char *)cam_readbuffer,'\0',sizeof(cam_readbuffer));
+
+	if(f_read_len >=3500)
+	{
+	    cam_tw_filewrite((char *)cam_final_readbuffer);
+	    OUT_D1EBUG(textBuf,"Image sent\r\n");
+
+	}
+	else
+	{
+	 	camindicatorflag=2;
+	 	timerstarted=0;
+	 	Synchronise_cmd=1;
+		//Synchronise_cmd2=1;
+	 	timer_sync.timerId =0;
+	 	Ql_StartTimer(&timer_sync);
+	}
+
+ 	count11=0;
+ 	cam_length=0;
+ 	cam_datalen=0;
+ 	nullarry=0;
+ 	ffFound = 0;
+ 	d9Found = 0;
+ 	d8Found = 0;
+ 		  
+}
+
+void new_file(char *sendbuff)
+{
+
+	s32 retf;
+	s32 ret1;
+	s32 ret2;
+ 	u32 writeedlen;
+ 	s32 filehandle_FTP;
+ 	u32 sendbuff_len=0;
+ 	u16 len,fileret;
+ 	    char modem_str[30];
+	unsigned int j=0,k,tp;
+ 	
+ 	sen_fl=0;
+ 	OUT_D1EBUG(textBuf,"@@@@@@@@@@@@@@@@@@@@@ In new_file @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@2\r\n");
+ 	
+ 	if(filecounter==0)
+ 	{
+ 		fileposition=0;
+
+ 	}
+
+ 	Ql_strcat((char *)sendbuff,"RBA");
+ 	sendbuff_len=Ql_strlen((char *)sendbuff);
+ 	OUT_D1EBUG(textBuf,"###### sendbuff_len=%d\r\n",sendbuff_len);
+
+	OUT_D1EBUG(textBuf,"###### filecounter=%d\r\n",filecounter);
+	OUT_D1EBUG(textBuf,"$$$$$$ fileposition=%d\r\n",fileposition);
+    retf = Ql_FileOpenEx((u8*)pfile_new,QL_FS_CREATE);
+	OUT_D1EBUG(textBuf,"file open retf=%d\r\n",retf);
+	OUT_D1EBUG(textBuf,"file QL_RET_OK=%d\r\n",QL_RET_OK);
+
+	if(retf >= QL_RET_OK)
+    {
+   	    filehandle_FTP = retf;
+   	    //ret = Ql_FileSeek(filehandle_FTP,ACCcam_wrt_cnt,QL_FS_FILE_BEGIN);
+		ret2 = Ql_FileSeek(filehandle_FTP,fileposition,QL_FS_FILE_BEGIN);
+		//OUT_D1EBUG(textBuf,"twBuffer=%s\r\n",tw);
+	    retf = Ql_FileWrite(filehandle_FTP, (u8*)sendbuff,sendbuff_len,&writeedlen);
+	    OUT_D1EBUG(textBuf,"file Write retf=%d\r\n",retf);
+	    OUT_D1EBUG(textBuf,"file Write writeedlen***=%d\r\n",writeedlen);
+		//writeedlen +=1;
+		fileposition=fileposition+writeedlen;
+		OUT_D1EBUG(textBuf,"file Write fileposition after+1 ***=%d\r\n",fileposition);
+	    Ql_FileClose(filehandle_FTP);
+	    filehandle_FTP = -1;	
+	    Ql_memset((char *)sendbuff,'\0',sizeof(sendbuff));
+
+	    if((filecounter>=13) || (read_comp==1))
+	    {
+	    	++fileincr;
+	    	fun_img_cnt();
+	    	//write image number
+	    	x=fileposition;
+	    	filecounter=0;
+	    	readcount=readcount-x;
+	    	fun_cam_read_cnt();
+	    	OUT_D1EBUG(textBuf,"file read readcount=%lu\r\n",readcount);
+	    	OUT_D1EBUG(textBuf,"file read xxxxxxxxxx=%lu\r\n",x);
+	   	    Ql_memset((char *)FTPFILENAME,'\0',sizeof(FTPFILENAME));
+	   	    //Ql_strcat((char *)FTPFILENAME,(char *)pfile_FTPUID);
+	   	    Ql_strcat((char *)FTPFILENAME,(char *)CAMUID);
+	   	    Ql_strcat((char *)FTPFILENAME,(char *)bulk_n);
+	   	    Ql_strcat((char *)FTPFILENAME,(char *)(ix_Itoa(fileincr)));
+	   	    Ql_strcat((char *)FTPFILENAME,"R");
+	   	    Ql_strcat((char *)FTPFILENAME,(char *)pfile_FTPTXT);
+	   	    OUT_D1EBUG(textBuf,"file FTPFILENAME=%s\r\n",FTPFILENAME);
+	   	    //Ql_StartTimer(&timer_ftp);
+	   	    OUT_D1EBUG(textBuf,"file write successful\r\n");
+	   		cam_fl_up_flag=1;
+			FTP_TX_Flag=1;
+	        cam_cmd_idx = 1;
+            SendAtCmd();
+            OUT_D1EBUG(textBuf,"file sending successful\r\n");
+	    }
+	    else
+	    {
+	    	filecounter++;
+	    	Ql_memset(readbuffer_cam,'\0',35000);
+	    	Ql_memset(sendbuffer_cam,'\0',35000);
+	    	tw_fileread();
+	    }
+    }
+
+	Ql_memset((char *)sendbuff,'\0',sizeof(sendbuff));
+	sendbuff_len=0;
+	//OUT_D1EBUG(textBuf,"new file function ends.\r\n");
+	return;
+}	
+
+void spped_capt(void)
+{
+	unsigned int i=0,n_read_len;
+    unsigned char Indexcam_length_buff[4];
+    unsigned char NullArray_buff[8];
+	cam1_stk_flg=0;
+	onestuck1=0;										///cam stuck flag
+	count11++;
+    //nullarry++;
+    //Ql_StartTimer(&get_img);
+    stuck_ptr=0;
+    cam_readbuffer[count11]='\0';
+    nullindex[nullarry]='\0';
+  	cmd_picready=0;
+
+	while(i < nullarry)
+	{
+		Ql_memset((char *)NullArray_buff,0,sizeof(NullArray_buff));
+		//Ql_itoa((char **)NullArray_buff,nullindex[i],10);
+		Ql_strcat((char *)NullArray_buff,(char *)(ix_Itoa(nullindex[i])));
+		//OUT_D1EBUG(textBuf,"NullArray_buff******=%c\r\n",NullArray_buff);
+		Ql_strcat((char *)IndexFile,(char *)NullArray_buff);
+		Ql_strcat((char *)IndexFile," ");
+		i++;
+	}
+	cat_all();
+}
+
+void take_pic_cmd_fun(void)
+{
+	//OUT_D1EBUG(textBuf,"In take_pic_cmd_fun \r\n");
+ 	stuck_ptr=0;
+
+ 	if(takepic_cmd_fire == 1)
+ 	{
+ 		OUT_D1EBUG(textBuf,"takepic_cmd_cmd=1\r\n");
+		takepic_cmd_fire = 0;
+		snapshot_cmd_fire =1;
+		take_pic_data();
+ 	}
+	else if(snapshot_cmd == 1)
+    {
+		OUT_D1EBUG(textBuf,"snapshot_cmd == 1\r\n");
+        snapshot_cmd=0;
+        getdata_cmd=1;
+        take_pic_data();
+    }
+ 	return;
+}
+
+void take_pic_data(void)
+{
+	//OUT_D1EBUG(textBuf,"In take_pic_data \r\n");
+	stuck_ptr=0;
+	cam1_stk_flg=0;
+	onestuck1=0;											///cam stuck flag
+
+	if(takepic_cmd == 1)
+    {
+		//OUT_D1EBUG(textBuf,"cam_takepic_cmd=%s\r\n",cam_takepic_cmd);
+		Ql_SendToUart(ql_uart_port3,&cam_takepic_cmd[0],6);
+		//Ql_StartTimer(&tm);
+		takepic_cmd=0;
+		takepic_cmd_fire=1;
+    }
+                
+    if(snapshot_cmd_fire == 1)
+    {
+        //OUT_D1EBUG(textBuf,"cam_snapshot_cmd=%s\r\n",cam_snapshot_cmd);
+        Ql_SendToUart(ql_uart_port3,&cam_snapshot_cmd[0],6);
+        snapshot_cmd=1;
+        snapshot_cmd_fire=0;
+        //Ql_StartTimer(&tm);
+    }
+                
+    if((camcaptureflag==1) && (getdata_cmd == 1) && (stop_img_capt==0))
+    {
+       //OUT_D1EBUG(textBuf,"cam_getdata_cmd=%s\r\n",cam_getdata_cmd);
+       Ql_SendToUart(ql_uart_port3,&cam_getdata_cmd[0],6);
+       //Ql_StartTimer(&tm);
+       //cmd_picready=1;
+       getdata_cmd=0;
+       get_img.timerId =0;
+       tm_ret=Ql_StartTimer(&get_img);
+       OUT_D1EBUG(textBuf,"\r\Started get_img with timer ID in cam1 _1=%d\r\n", tm_ret);
+       getdata_cmd_fire=1;
+       //Ql_StartTimer(&tm11);
+    }
+    return;
+}
+//File write in SD card
+void cam_tw_filewrite(char *writebuffer)
+{
+    s32 wrfl_ret;
+     s32 retf;
+     s32 ret_flsk;
+    u32 writeedlen;
+    u32 readedlen;
+	char *ptr;
+	s32 *filesize;
+	u32 writbuffer_len=0;
+	s32 filehandle_imgdata;
+	int j=0,k;
+	cam1_stk_flg=0;
+	onestuck1=0;										///cam stuck flag
+	unsigned char readbuf[25000];
+	stuck_ptr=0;
+	writbuffer_len=Ql_strlen((char *)writebuffer);
+	 OUT_D1EBUG(textBuf,"in file write writbuffer_len=%d: \r\n",writbuffer_len);		
+	
+	//if(cam_wrt_cnt <= 2500000)
+	//if(cam_wrt_cnt <= 5242880)
+ 	//if(cam_wrt_cnt <= 104857600)
+ 	if(cam_wrt_cnt <= 43200000)					//30 sec for 24 hrs
+    {
+	    OUT_D1EBUG(textBuf,"cam_wrt_cnt=%d: \r\n",cam_wrt_cnt);		       
+	    // wrfl_ret = Ql_FileOpenEx((u8*)"Imagedata.txt",QL_FS_CREATE);
+	    wrfl_ret = Ql_FileOpenEx(PATH_CAMERA,QL_FS_CREATE);
+		OUT_D1EBUG(textBuf,"file open retf=%d\r\n",wrfl_ret);
+		//OUT_D1EBUG(textBuf,"file QL_RET_OK=%d\r\n",QL_RET_OK);
+
+		if(wrfl_ret >= QL_RET_OK)
+		{
+			filehandle_imgdata = wrfl_ret;
+			ret_flsk = Ql_FileSeek(filehandle_imgdata,cam_wrt_cnt,QL_FS_FILE_BEGIN);
+			OUT_D1EBUG(textBuf,"file Ql_FileSeek =%d\r\n",ret_flsk);
+			//OUT_D1EBUG(textBuf,"twBuffer=%s\r\n",tw);
+			retf = Ql_FileWrite(filehandle_imgdata,(u8*)writebuffer,Ql_strlen((char*)writebuffer),&writeedlen);
+			OUT_D1EBUG(textBuf,"file Write retf=%d\r\n",retf);
+	        OUT_D1EBUG(textBuf,"file *********writeedlen =%d\r\n",writeedlen);
+	        cam_wrt_cnt=cam_wrt_cnt+writbuffer_len;
+ 	 		fun_cam_wrt_cnt();
+ 		    Ql_FileClose(filehandle_imgdata);
+ 		    filehandle_imgdata = -1;
+ 		    //OUT_D1EBUG(textBuf,"file write successful\r\n");
+   		}
+		else
+		{
+   		    OUT_D1EBUG(textBuf,"ERROR in file writing\r\n");
+
+   		    if(error_wrt==0)
+   		    {
+   		    	////CW stamp
+   		    	Gen_CW();
+   		    	OUT_D1EBUG(textBuf,"Generate CW stamp.\r\n");
+   			}
+   			error_wrt+=1;
+   			if(error_wrt>=600)
+   			{
+   				error_wrt=0;
+   			}
+   		}
+	}
+ 	else
+	{
+		//OUT_D1EBUG(textBuf,"Memory Full\r\n");
+		//	cam_wrt_cnt=0;
+		dump_cam_wrt_cnt = cam_wrt_cnt;
+		////write dump_cam_wrt_cnt
+		fun_dump_cam_wrt_cnt();
+		cam_wrt_cnt=0;
+		fun_cam_wrt_cnt();
+		CAM_backup_flg=1;
+		fun_cam_Backup_flg();
+		//++ovrwr_flg;
+	}
+	return;
+}	
+
+//File write in internal memory
+/*
+void cam_tw_filewrite(char *writebuffer)
+{
+    s32 wrfl_ret;
+     s32 retf;
+     s32 ret_flsk;
+    u32 writeedlen;
+    u32 readedlen;
+	char *ptr;
+	s32 *filesize;
+	u32 writbuffer_len=0;
+	s32 filehandle_imgdata;
+	int j=0,k;
+	
+	unsigned char readbuf[25000];
+	stuck_ptr=0;
+	writbuffer_len=Ql_strlen((char *)writebuffer);
+	 OUT_D1EBUG(textBuf,"in file write writbuffer_len=%d: \r\n",writbuffer_len);		
+	
+	if(cam_wrt_cnt <= 2500000)
+ //   if(cam_wrt_cnt <= 5242880)
+    {
+	    OUT_D1EBUG(textBuf,"cam_wrt_cnt=%d: \r\n",cam_wrt_cnt);		       
+	
+	     wrfl_ret = Ql_FileOpenEx((u8*)"Imagedata.txt",QL_FS_CREATE);
+		//OUT_D1EBUG(textBuf,"file open retf=%d\r\n",wrfl_ret);
+		//OUT_D1EBUG(textBuf,"file QL_RET_OK=%d\r\n",QL_RET_OK);
+	    if(wrfl_ret >= QL_RET_OK)
+ 	   {
+    		
+	    filehandle_imgdata = wrfl_ret;	
+		ret_flsk = Ql_FileSeek(filehandle_imgdata,cam_wrt_cnt,QL_FS_FILE_BEGIN);	    
+		//OUT_D1EBUG(textBuf,"file Ql_FileSeek =%d\r\n",ret_flsk);
+	//	OUT_D1EBUG(textBuf,"twBuffer=%s\r\n",tw);		
+	    retf = Ql_FileWrite(filehandle_imgdata,(u8*)writebuffer,Ql_strlen((char*)writebuffer),&writeedlen);
+	    
+	   //OUT_D1EBUG(textBuf,"file Write retf=%d\r\n",retf);
+	    
+        //OUT_D1EBUG(textBuf,"file *********writeedlen =%d\r\n",writeedlen);
+        
+        
+       
+ 		
+
+	//	ret2 = Ql_FileSeek(filehandle_FTP,0,QL_FS_FILE_BEGIN);
+		
+		
+	//	 ret1 = Ql_FileRead(filehandle_FTP, (u8 *)readbuffer_cam,f_read_len, &readedlen); 
+	//	 OUT_D1EBUG(textBuf,"file FileRead=%d\r\n",ret1);
+		 
+	//	 OUT_D1EBUG(textBuf,"filehandle_FTP=%d readedlen=%d \r\n",filehandle_FTP,readedlen);
+ //        OUT_D1EBUG(textBuf,"FTP_read_Data = %s\r\n",readbuffer_cam); 
+		 
+		 while(j<f_read_len)
+	  {
+	  	for(k=0;k<200;++k);
+		OUT_D1EBUG(textBuf,"%c",readbuffer_cam[j]);
+       		j++;
+       		
+ 		}
+ 		
+ 	//	cam_wrt_cnt=cam_wrt_cnt+writbuffer_len;             ///////remove this///////////
+ 		
+ 	//	fun_cam_wrt_cnt();									///////remove this//////
+ 		// need to write save data fun
+ 		//OUT_D1EBUG(textBuf,"file write count=%d\r\n",cam_wrt_cnt);
+ 		 ret_flsk = Ql_FileSeek(filehandle_imgdata,0,QL_FS_FILE_BEGIN);
+		
+		OUT_D1EBUG(textBuf,"file Ql_FileSeek before reading=%d\r\n",ret_flsk);
+		
+		
+		 ret_flsk = Ql_FileRead(filehandle_imgdata,(u8 *)readbuf,cam_wrt_cnt, &readedlen); 
+		 OUT_D1EBUG(textBuf,"file FileRead=%d\r\n",ret_flsk);
+		 
+		 OUT_D1EBUG(textBuf,"filehandle_FTP=%d readedlen=%d \r\n",filehandle_imgdata,readedlen);
+ //        OUT_D1EBUG(textBuf,"FTP_read_Data = %s\r\n",readbuffer_cam); 
+		 OUT_D1EBUG(textBuf,"file read\r\n");
+		 while(j<cam_wrt_cnt)
+	   {
+	  	for(k=0;k<200;++k);
+		OUT_D1EBUG(textBuf,"%c",readbuf[j]);
+       		j++;
+       		
+ 		}
+ 		
+	    Ql_FileClose(filehandle_imgdata);
+	    filehandle_imgdata = -1;	
+	    //OUT_D1EBUG(textBuf,"file write successful\r\n");
+	    
+   
+   		}
+
+   
+	
+	}
+	
+	else
+	{
+		//OUT_D1EBUG(textBuf,"Memory Full\r\n");
+	//	cam_wrt_cnt=0;
+				dump_cam_wrt_cnt = cam_wrt_cnt;
+				
+				////write dump_cam_wrt_cnt
+				fun_dump_cam_wrt_cnt();
+				cam_wrt_cnt=0;
+				fun_cam_wrt_cnt();
+	//	++ovrwr_flg;
+		
+	}
+	return;
+}	
+*/
+
+//FOR SD CARD
+void tw_fileread(void)
+{
+	//int i=0,x=0,j,k,img;
+    int i=0,j,k,img;
+    s32 ret_r;
+    s32 ret_refl,fileret; 
+    //char *ptr1;
+	u32 filehandle_readfl;
+    u32 size;
+    u32 freespace;
+ 	u32 Diff_read=0;
+    u32 writeedlen;
+    u32 readedlen;
+    //datareading=1;
+    //fun_datareading();
+	in_cam_rou=1;
+	camdumpflag=0;
+	x=0;
+	OUT_D1EBUG(textBuf,"**********************in tw_fileread**********************\r\n");
+
+	//fileret=Ql_FileOpenEx((u8*)"8011_002736A.txt",QL_FS_CREATE);
+	//  OUT_D1EBUG(textBuf,"file format open fileret=%d\r\n",fileret);
+ 	Ql_StopTimer(&timer_1); 
+	timer_1.timerId =0;
+ 	//Ql_StopTimer(&onesecdummy);
+	//onesecdummy.timerId =0;
+	OUT_D1EBUG(textBuf,"file read readcount=%lu\r\n",readcount);
+	OUT_D1EBUG(textBuf,"file read dump_cam_wrt_cnt=%lu\r\n",dump_cam_wrt_cnt);
+
+	if(CAM_backup_flg ==1)
+	{
+		if(readcount < dump_cam_wrt_cnt)
+		{
+			ret_refl = Ql_FileOpenEx(PATH_CAMERA,QL_FS_CREATE);
+			//ret_refl = Ql_FileOpenEx((u8*)pfile_imgdata,QL_FS_CREATE);
+			OUT_D1EBUG(textBuf,"Readfile open ret=%d: \r\n",ret_refl);
+			read_comp=0;
+		
+			if(ret_refl >= QL_RET_OK)
+			{
+				filehandle_readfl = ret_refl;
+				Ql_memset(readbuffer_cam,'\0',35000);
+				Ql_memset(sendbuffer_cam,'\0',35000);
+				ret_refl = Ql_FileSeek(filehandle_readfl, readcount, QL_FS_FILE_BEGIN);
+				OUT_D1EBUG(textBuf,"Readfile_seek_ret=%d: \r\n",ret_refl);
+				ret_refl = Ql_FileRead(filehandle_readfl, (unsigned char *)readbuffer_cam,35000, &readedlen);
+				OUT_D1EBUG(textBuf,"\r\n Ql_FileRead()=%d: readedlen=%d\r\n",ret_refl, readedlen);
+				//	OUT_D1EBUG(textBuf,"readbuffer_cam= %s\r\n",readbuffer_cam);
+				Ql_FileClose(filehandle_readfl);
+				filehandle_readfl = -1;
+
+				for(img=0;img<35000;img++)
+				{
+					if(readbuffer_cam[x] == 'R')
+					{
+						//  OUT_D1EBUG(textBuf,"%d\r\n",x);
+						//  OUT_D1EBUG(textBuf,"*****%%%%I found\r\n");
+						sendbuffer_cam[i]=readbuffer_cam[x];
+						//	OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[i]);
+						i++;
+						x++;
+
+						if(readbuffer_cam[x] == 'B')
+						{
+							//  OUT_D1EBUG(textBuf,"%d\r\n",x);
+							//  OUT_D1EBUG(textBuf,"*****%%%%I found\r\n");
+							sendbuffer_cam[i]=readbuffer_cam[x];
+							//	OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[i]);
+							i++;
+							x++;
+
+							if(readbuffer_cam[x] == 'A')
+							{
+								x++;
+								//OUT_D1EBUG(textBuf,"%d\r\n",x);
+								--i;
+								sendbuffer_cam[i]='\0';
+								--i;
+								sendbuffer_cam[i]='\0';
+								--i;
+								sendbuffer_cam[i]='\0';
+								//readcount++;
+								//OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[i]);
+								////Send image
+								//break;
+								OUT_D1EBUG(textBuf,"\r\n *****%%%%%%sendbuffer_cam cam_length=%d\r\n",Ql_strlen((char *)sendbuffer_cam));
+								//OUT_D1EBUG(textBuf,"%d\r\n",x);
+								/*	for(j=0;j<i;++j)
+	      		     	 	 	 {
+	  	  	          	  	  	  	  for(k=0;k<100;++k);
+		   	          	  	  	  	  OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[j]);
+ 		    	     	 	 	 }
+								 */
+								readcount=readcount+x;
+								fun_cam_read_cnt();
+ 		    	     
+								Diff_read=dump_cam_wrt_cnt-readcount;
+								OUT_D1EBUG(textBuf,"__++++Diff_read___+++====%d",Diff_read);
+
+								//if(Diff_read<=30000)
+								if(readcount >= dump_cam_wrt_cnt)
+								{
+									read_comp=1;
+								}
+								OUT_D1EBUG(textBuf,"calling new_file() function.\r\n");
+								//Ql_Sleep(1000);
+								new_file((char *)sendbuffer_cam);
+								//	OUT_D1EBUG(textBuf,"again in twfileread function.\r\n");
+								//	Ql_memset(readbuffer_cam,'\0',35000);
+								//Ql_memset(sendbuffer_cam,'\0',35000);
+								//  readcount=readcount+x;
+								// fun_cam_read_cnt();
+								/*   if(ftpcamsendflag==1)
+								{
+									ftpcamsendflag=0;
+									tw_fileread();
+								}
+								 */
+								//////////read count save
+								//OUT_D1EBUG(textBuf,"readcount====%lu",x);
+								if(readcount >= dump_cam_wrt_cnt)   // check the flg for data send thtough FTP
+								{
+									return;
+								}
+								break;
+							}
+						}
+						else
+						{
+							//OUT_D1EBUG(textBuf,"%d\r\n",x);
+							sendbuffer_cam[i]=readbuffer_cam[x];
+							//OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[i]);
+							i++;
+							x++;
+							//OUT_D1EBUG(textBuf,"%c",readcount);
+						}
+					}
+					else
+					{
+						//OUT_D1EBUG(textBuf,"%d\r\n",x);
+						sendbuffer_cam[i]=readbuffer_cam[x];
+						//OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[i]);
+						i++;
+						x++;
+						//OUT_D1EBUG(textBuf,"%c",readcount);
+					}
+					//  break;
+				}
+
+			}
+			else
+			{
+				OUT_D1EBUG(textBuf,"Error in file reading\r\n");
+
+				if(error_read==0)
+				{
+					////CR stamp
+					Gen_CR();
+					OUT_D1EBUG(textBuf,"Generate CR stamp.\r\n");
+				}
+
+				error_read+=1;
+
+				if(error_read>=600)
+				{
+					error_read=0;
+				}
+			}
+		}
+		else
+		{
+			OUT_D1EBUG(textBuf,"file read readcount=%lu\r\n",readcount);
+			OUT_D1EBUG(textBuf,"file read dump_cam_wrt_cnt=%lu\r\n",dump_cam_wrt_cnt);
+			OUT_D1EBUG(textBuf,"@@@@@@@@@@@@@@@@@@@#################### File read complited##################### @@@@@@@@@@@@@@@@@@@@@@r\n");
+			CAM_backup_flg=0;
+			fun_cam_Backup_flg();
+			readcount=0;
+			fun_cam_read_cnt();
+			cam_tx.timerId =0;
+			Ql_StartTimer(&cam_tx);
+
+		}
+	}
+	else if(CAM_backup_flg ==0)
+	{
+		if(readcount < cam_wrt_cnt)
+		{
+			ret_refl = Ql_FileOpenEx(PATH_CAMERA,QL_FS_CREATE);
+			//ret_refl = Ql_FileOpenEx((u8*)pfile_imgdata,QL_FS_CREATE);
+			OUT_D1EBUG(textBuf,"Readfile open ret=%d: \r\n",ret_refl);
+			read_comp=0;
+
+			if(ret_refl >= QL_RET_OK)
+			{
+				filehandle_readfl = ret_refl;
+	       		Ql_memset(readbuffer_cam,'\0',35000);
+	       		Ql_memset(sendbuffer_cam,'\0',35000);
+	       		ret_refl = Ql_FileSeek(filehandle_readfl, readcount, QL_FS_FILE_BEGIN);
+				OUT_D1EBUG(textBuf,"Readfile_seek_ret=%d: \r\n",ret_refl);
+		        ret_refl = Ql_FileRead(filehandle_readfl, (unsigned char *)readbuffer_cam,35000, &readedlen);
+				OUT_D1EBUG(textBuf,"\r\n Ql_FileRead()=%d: readedlen=%d\r\n",ret_refl, readedlen);
+				//	OUT_D1EBUG(textBuf,"readbuffer_cam= %s\r\n",readbuffer_cam);
+				Ql_FileClose(filehandle_readfl);
+				filehandle_readfl = -1;
+
+				for(img=0;img<35000;img++)
+				{
+					if(readbuffer_cam[x] == 'R')
+					{
+						//  OUT_D1EBUG(textBuf,"%d\r\n",x);
+						//  OUT_D1EBUG(textBuf,"*****%%%%I found\r\n");
+						sendbuffer_cam[i]=readbuffer_cam[x];
+						//	OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[i]);
+						i++;
+						x++;
+
+						if(readbuffer_cam[x] == 'B')
+						{
+							//  OUT_D1EBUG(textBuf,"%d\r\n",x);
+							//  OUT_D1EBUG(textBuf,"*****%%%%I found\r\n");
+							sendbuffer_cam[i]=readbuffer_cam[x];
+							//	OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[i]);
+							i++;
+							x++;
+
+							if(readbuffer_cam[x] == 'A')
+							{
+								x++;
+								//OUT_D1EBUG(textBuf,"%d\r\n",x);
+								--i;
+								sendbuffer_cam[i]='\0';
+								--i;
+								sendbuffer_cam[i]='\0';
+								--i;
+								sendbuffer_cam[i]='\0';
+								//readcount++;
+								//OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[i]);
+								////Send image
+								//break;
+								OUT_D1EBUG(textBuf,"\r\n *****%%%%%%sendbuffer_cam cam_length=%d\r\n",Ql_strlen((char *)sendbuffer_cam));
+								//OUT_D1EBUG(textBuf,"%d\r\n",x);
+								/*	for(j=0;j<i;++j)
+		      		     	 	 {
+		  	  	          	  	  	  for(k=0;k<100;++k);
+			   	          	  	  	  OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[j]);
+	 		    	     	 	 }
+								 */
+								readcount=readcount+x;
+								fun_cam_read_cnt();
+
+								Diff_read=cam_wrt_cnt-readcount;
+								OUT_D1EBUG(textBuf,"__++++Diff_read___+++====%d",Diff_read);
+
+								//if(Diff_read<=30000)
+								if(readcount >= cam_wrt_cnt)
+								{
+									read_comp=1;
+								}
+								OUT_D1EBUG(textBuf,"calling new_file() function.\r\n");
+								//Ql_Sleep(1000);
+								new_file((char *)sendbuffer_cam);
+								//	OUT_D1EBUG(textBuf,"again in twfileread function.\r\n");
+								//	Ql_memset(readbuffer_cam,'\0',35000);
+								//Ql_memset(sendbuffer_cam,'\0',35000);
+								//  readcount=readcount+x;
+								// fun_cam_read_cnt();
+								/*   if(ftpcamsendflag==1)
+								{
+									ftpcamsendflag=0;
+									tw_fileread();
+								}
+								*/
+								//////////read count save
+								//OUT_D1EBUG(textBuf,"readcount====%lu",x);
+								if(readcount >= cam_wrt_cnt)   // check the flg for data send thtough FTP
+								{
+									return;
+								}
+								break;
+							}
+						}
+						else
+						{
+							//OUT_D1EBUG(textBuf,"%d\r\n",x);
+							sendbuffer_cam[i]=readbuffer_cam[x];
+							//OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[i]);
+							i++;
+							x++;
+							//OUT_D1EBUG(textBuf,"%c",readcount);
+						}
+					}
+					else
+					{
+						//OUT_D1EBUG(textBuf,"%d\r\n",x);
+						sendbuffer_cam[i]=readbuffer_cam[x];
+						//OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[i]);
+						i++;
+						x++;
+						//OUT_D1EBUG(textBuf,"%c",readcount);
+					}
+					//  break;
+				}
+
+			}
+			else
+			{
+				OUT_D1EBUG(textBuf,"Error in file reading\r\n");
+
+				if(error_read==0)
+	   		    {
+					////CR stamp
+					Gen_CR();
+					OUT_D1EBUG(textBuf,"Generate CR stamp.\r\n");
+	   			}
+
+	   			error_read+=1;
+
+	   			if(error_read>=600)
+	   			{
+	   				error_read=0;
+	   			}
+			}
+		}
+		else
+		{
+			OUT_D1EBUG(textBuf,"file read readcount=%lu\r\n",readcount);
+			OUT_D1EBUG(textBuf,"file read cam_wrt_cnt=%lu\r\n",cam_wrt_cnt);
+			OUT_D1EBUG(textBuf,"############## File read done, with back up flag == 0 ################\n");
+			CAM_backup_flg=0;
+			fun_cam_Backup_flg();
+			cam_tx.timerId =0;
+			Ql_StartTimer(&cam_tx);
+			return;
+		}
+	}
+}
+
+//FOR INTERNAL MEMORY
+/*
+void tw_fileread(void)
+{
+
+     int i=0,x=0,j,k,img;   
+    s32 ret_r;
+    s32 ret_refl,fileret; 
+//	char *ptr1;
+	u32 filehandle_readfl;
+
+    u32 size;
+    u32 freespace;
+ 
+    u32 writeedlen;
+    u32 readedlen;
+    datareading=1;
+    fun_datareading();
+	in_cam_rou=1;
+	camdumpflag=0;
+OUT_D1EBUG(textBuf,"**********************in tw_fileread**********************\r\n");	
+
+//fileret=Ql_FileOpenEx((u8*)"8011_002736A.txt",QL_FS_CREATE);
+//  OUT_D1EBUG(textBuf,"file format open fileret=%d\r\n",fileret); 
+ 	Ql_StopTimer(&timer_1); 
+ 	Ql_StopTimer(&onesectimer); 
+  OUT_D1EBUG(textBuf,"file read readcount=%d\r\n",readcount);
+  OUT_D1EBUG(textBuf,"file read dump_cam_wrt_cnt=%d\r\n",dump_cam_wrt_cnt);
+if(readcount < dump_cam_wrt_cnt)
+ {  
+  
+  
+    
+	ret_refl = Ql_FileOpenEx((u8*)pfile_imgdata,QL_FS_CREATE);
+
+	OUT_D1EBUG(textBuf,"Readfile open ret=%d: \r\n",ret_refl);	
+	
+	if(ret_refl >= QL_RET_OK)
+	{
+		filehandle_readfl = ret_refl;  
+        
+
+
+   		Ql_memset(readbuffer_cam,'\0',35000);
+        Ql_memset(sendbuffer_cam,'\0',35000);
+
+
+		ret_refl = Ql_FileSeek(filehandle_readfl, readcount, QL_FS_FILE_BEGIN);
+		
+		OUT_D1EBUG(textBuf,"Readfile_seek_ret=%d: \r\n",ret_refl);	
+		
+        ret_refl = Ql_FileRead(filehandle_readfl, (unsigned char *)readbuffer_cam,35000, &readedlen);
+		
+		OUT_D1EBUG(textBuf,"\r\n Ql_FileRead()=%d: readedlen=%d\r\n",ret_refl, readedlen);
+
+	//	OUT_D1EBUG(textBuf,"readbuffer_cam= %s\r\n",readbuffer_cam);
+
+		Ql_FileClose(filehandle_readfl);
+		filehandle_readfl = -1;
+	for(img=0;img<35000;img++)
+	  {	
+		if(readbuffer_cam[x] == 'R')
+		  {
+		//  OUT_D1EBUG(textBuf,"%d\r\n",x);
+		//  OUT_D1EBUG(textBuf,"*****%%%%I found\r\n");
+			sendbuffer_cam[i]=readbuffer_cam[x];
+		//	OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[i]);
+			i++;
+			x++;
+			
+			if(readbuffer_cam[x] == 'B')
+		  	  {
+			//  OUT_D1EBUG(textBuf,"%d\r\n",x);
+			//  OUT_D1EBUG(textBuf,"*****%%%%I found\r\n");
+				sendbuffer_cam[i]=readbuffer_cam[x];
+			//	OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[i]);
+				i++;
+				x++;
+			  
+				if(readbuffer_cam[x] == 'A')
+			  	{
+			 		x++;
+			  
+			  //	  OUT_D1EBUG(textBuf,"%d\r\n",x);
+					--i;
+					sendbuffer_cam[i]='\0';
+					--i;
+					sendbuffer_cam[i]='\0';
+					--i;
+					sendbuffer_cam[i]='\0';
+				//	readcount++;
+			//		OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[i]);
+					////Send image
+					//break;
+				
+					OUT_D1EBUG(textBuf,"\n*****%%%%%%sendbuffer_cam cam_length=%d\r\n",Ql_strlen((char *)sendbuffer_cam));
+				//	OUT_D1EBUG(textBuf,"%d\r\n",x);
+					for(j=0;j<i;++j)
+	      		     {
+	  	  	          for(k=0;k<100;++k);
+		   	          OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[j]);
+ 		    	     }
+ 		    	     
+					new_file((char *)sendbuffer_cam);
+					OUT_D1EBUG(textBuf,"again in twfileread function.\r\n");
+					
+					
+					Ql_memset(readbuffer_cam,'\0',35000);
+       			    Ql_memset(sendbuffer_cam,'\0',35000);
+       			    readcount=readcount+x;
+       			    fun_cam_read_cnt();
+       			  if(ftpcamsendflag==1)
+					{
+					ftpcamsendflag=0;
+					tw_fileread();
+					}
+					
+       			    //////////read count save
+       			    OUT_D1EBUG(textBuf,"readcount====%d",x);
+       		    	if(readcount >= dump_cam_wrt_cnt)   // check the flg for data send thtough FTP
+       		    	{
+						return;
+					}
+					
+					break;
+			 	} 
+			}
+			else
+		    {
+		    
+		 //   OUT_D1EBUG(textBuf,"%d\r\n",x);
+		    	sendbuffer_cam[i]=readbuffer_cam[x];
+	//	    	OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[i]);
+		    	i++;
+			    x++;
+		//	OUT_D1EBUG(textBuf,"%c",readcount);
+				
+		    }   	
+		   }	  	
+		else
+		    {
+		    
+		 //   OUT_D1EBUG(textBuf,"%d\r\n",x);
+		    	sendbuffer_cam[i]=readbuffer_cam[x];
+	//	    	OUT_D1EBUG(textBuf,"%c",sendbuffer_cam[i]);
+		    	i++;
+			    x++;
+		//	OUT_D1EBUG(textBuf,"%c",readcount);
+		        
+		    }
+		//  break;	
+		}    	 
+		
+	}        
+	else
+	{
+		OUT_D1EBUG(textBuf,"Error in file reading\r\n");
+		
+	}
+  }
+else
+  {
+  OUT_D1EBUG(textBuf,"file read readcount=%d\r\n",readcount);
+  OUT_D1EBUG(textBuf,"file read dump_cam_wrt_cnt=%d\r\n",dump_cam_wrt_cnt);
+ OUT_D1EBUG(textBuf,"@@@@@@@@@@@@@@@@@@@#################### File read complited##################### @@@@@@@@@@@@@@@@@@@@@@r\n");  
+ datareading=0;
+ fun_datareading();
+ camdumpflag=0;
+ fun_camdumpflag();
+ dump_cam_wrt_cnt=0;
+fun_dump_cam_wrt_cnt();
+ stop_img_capt=0;
+in_cam_rou=0;
+cam1dump=0;
+readcount=0;
+fun_cam_read_cnt();
+fun_cam1dump();
+fun_cam_read_cnt();
+   in_cam_rou=0;
+    if((camcaptureflag==1)&&(datareading==0)&&(camdumpflag==0))
+	  {	
+	  	timerstarted=0;
+   		Synchronise_cmd=1;
+ 		//  Ql_StopTimer(&timer_ftp); 
+   		Ql_StartTimer(&timer_sync);
+   	  }	
+   	  
+//tw_fileread2();
+
+ stop_img_capt=0;
+   readcount =0;
+   fun_cam_read_cnt();
+   in_cam_rou=0;
+   Synchronise_cmd=1;
+   Ql_StopTimer(&timer_ftp); 
+   Ql_StartTimer(&timer_sync);
+   
+   
+//   cam_cmd_idx=12;
+//   close_ftp_flg = 1;
+//   close_ftp();
+//   dump_cam_wrt_cnt=0;
+return;
+   }
+	
+}*/
+void clrcam1flags(void)
+{
+					count11=0; 
+ 					cam_length=0;
+ 					cam_datalen=0;
+ 		
+ 					nullarry=0;
+ 		
+ 					 ffFound = 0;
+ 					 d9Found = 0;
+ 					 d8Found = 0; 
+				   takepic_cmd_fire = 0;
+				   snapshot_cmd_fire =0;
+				   snapshot_cmd=0;
+				   getdata_cmd=0;
+				   Ql_memset((char *)cam_readbuffer,'\0',sizeof(cam_readbuffer));
+				   Ql_memset((char *)cam_final_readbuffer,'\0',sizeof(cam_final_readbuffer));
+				   Ql_memset((char *)nullindex,0,sizeof(nullindex));
+				   
+return;
+}
+
+void fun_cam_wrt_cnt(void)
+{
+    s32 ret1;
+    char *ptr;
+    u32 writeedlen;
+//    u32 filehandle;
+	u32 filehandle;
+	
+	ret1 = Ql_FileOpenEx((u8*)cam1_mem_loc,QL_FS_CREATE);
+//	OUT_D1EBUG(textBuf,"ret=%d\r\n",ret1);
+    cam1memwcnt=1;
+    if(ret1 >= QL_RET_OK)
+    {
+        filehandle = ret1;
+        ptr=ix_Itoa(cam_wrt_cnt);
+//      OUT_D1EBUG(textBuf,"WRITEwrtcnt1=%s\r\n",ptr);
+//      OUT_D1EBUG(textBuf,"Ql_FileOpenEx Create (%s,%08x)=%d\r\n",pfile1,QL_FS_CREATE,ret);
+//      OUT_D1EBUG(textBuf," In Write write cnt\r\n");
+        ret1 = Ql_FileSeek(filehandle,cam1memwcnt,QL_FS_FILE_BEGIN);
+        ret1 = Ql_FileWrite(filehandle, (u8*)ptr,8,&writeedlen);
+        OUT_D1EBUG(textBuf,"\r\n Ql_Filecam_wrt_cnt()=%d: writeedlen=%d\r\n",ret1, writeedlen);
+        OUT_D1EBUG(textBuf,"cam_wrt_cnt=%s\r\n",ptr);
+        Ql_FileClose(filehandle);
+	    filehandle = -1;
+    }	
+    else
+    {
+       OUT_D1EBUG(textBuf,"error in cam_wrt_cnt write\r\n");
+    }
+
+
+}
+void cam_mem_loc_read(void)
+{
+     s32 ret;
+     u32 readedlen1;     
+     u32 filehandle;
+     char cam_temp_read_buff[50];
+     char cam_temp_dumpflg_buff[3];
+     
+     ret = Ql_FileOpenEx((u8*)cam1_mem_loc,QL_FS_CREATE);
+		
+     
+     if(ret >= QL_RET_OK)
+     {
+		filehandle = ret;
+		cam1memwcnt=1;
+		///// Camera wrt count read
+		Ql_memset((ascii *)cam_temp_read_buff,0,sizeof(cam_temp_read_buff));
+		ret = Ql_FileSeek(filehandle,cam1memwcnt, QL_FS_FILE_BEGIN);  
+        ret = Ql_FileRead(filehandle, (u8 *)cam_temp_read_buff,8, &readedlen1);
+        OUT_D1EBUG(textBuf,"cam_temp_read_buff Ql_FileRead() = %d: readedlenfl = %d\r\n",ret, readedlen1);	
+
+        cam_wrt_cnt=Ql_atoi(cam_temp_read_buff);
+        OUT_D1EBUG(textBuf,"cam_wrt_cnt in camera file = %d\r\n",cam_wrt_cnt);	        
+
+		///// Camera dump count read
+		cam1memwcnt=10;
+		Ql_memset((ascii *)cam_temp_dumpflg_buff,0,sizeof(cam_temp_dumpflg_buff));
+		ret = Ql_FileSeek(filehandle,cam1memwcnt, QL_FS_FILE_BEGIN);  
+        ret = Ql_FileRead(filehandle, (u8 *)cam_temp_dumpflg_buff,1, &readedlen1);
+        OUT_D1EBUG(textBuf,"cam_temp_dumpflg_buff Ql_FileRead() = %d: readedlenfl = %d\r\n",ret, readedlen1);	
+
+        camdumpflag=Ql_atoi(cam_temp_dumpflg_buff);
+        OUT_D1EBUG(textBuf,"camdumpflag in camera file = %d\r\n",camdumpflag);	 
+
+        cam1memwcnt=12;
+        Ql_memset((ascii *)cam_temp_dumpflg_buff,0,sizeof(cam_temp_dumpflg_buff));
+        ret = Ql_FileSeek(filehandle,cam1memwcnt, QL_FS_FILE_BEGIN);
+        ret = Ql_FileRead(filehandle, (u8 *)cam_temp_dumpflg_buff,1, &readedlen1);
+        OUT_D1EBUG(textBuf,"cam_temp_dumpflg_buff Ql_FileRead() = %d: readedlenfl = %d\r\n",ret, readedlen1);
+
+        CAM_backup_flg=Ql_atoi(cam_temp_dumpflg_buff);
+        OUT_D1EBUG(textBuf,"CAM_backup_flg in camera file = %d\r\n",CAM_backup_flg);
+
+        Ql_FileClose(filehandle);
+		filehandle = -1;
+      }
+      else
+	  {
+    	 OUT_D1EBUG(textBuf,"Error in cam_wrt_cnt reading**1\r\n");
+	  }
+}
+
+void fun_camdumpflag(void)
+{
+    s32 ret1;
+    char *ptr;
+    u32 writeedlen;
+	u8 camdump_wcnt=0;        ///file memory location
+    u32 filehandle;
+
+	ret1 = Ql_FileOpenEx((u8*)cam1_mem_loc,QL_FS_CREATE);
+//	OUT_D1EBUG(textBuf,"ret=%d\r\n",ret1);
+  //  wcnt=5+30+75+8+8+8+8+8+5+8+8+8+8+8+8+8+8+8+8+8+1;
+	camdump_wcnt=10;
+    if(ret1 >= QL_RET_OK)
+    {
+        filehandle = ret1;
+        ptr=ix_Itoa(camdumpflag);
+   //      //\\//\\OUT_D1EBUG(textBuf,"MRW IMG count file read dump_cam_wrt_cnt2=%d\r\n",dump_cam_wrt_cnt2);
+//      OUT_D1EBUG(textBuf,"WRITEwrtcnt1=%s\r\n",ptr);
+//      OUT_D1EBUG(textBuf,"Ql_FileOpenEx Create (%s,%08x)=%d\r\n",pfile1,QL_FS_CREATE,ret);
+//      OUT_D1EBUG(textBuf," In Write write cnt\r\n");
+        ret1 = Ql_FileSeek(filehandle,camdump_wcnt,QL_FS_FILE_BEGIN);
+        ret1 = Ql_FileWrite(filehandle, (u8*)ptr,1,&writeedlen);
+        OUT_D1EBUG(textBuf,"\r\n camdumpflag=%d: writeedlen=%d\r\n",ret1, writeedlen);
+        OUT_D1EBUG(textBuf,"camdumpflag in camera file=%s\r\n",ptr);
+        Ql_FileClose(filehandle);
+	    filehandle = -1;
+    }	
+    else
+    {
+       OUT_D1EBUG(textBuf,"error camdumpflag write\r\n");
+    }
+}
+
+void fun_cam_Backup_flg(void)
+{
+    s32 ret1;
+    char *ptr;
+    u32 writeedlen;
+	u8 camdump_wcnt=0;        ///file memory location
+    u32 filehandle;
+
+	ret1 = Ql_FileOpenEx((u8*)cam1_mem_loc,QL_FS_CREATE);
+//	OUT_D1EBUG(textBuf,"ret=%d\r\n",ret1);
+  //  wcnt=5+30+75+8+8+8+8+8+5+8+8+8+8+8+8+8+8+8+8+8+1;
+	camdump_wcnt=12;
+    if(ret1 >= QL_RET_OK)
+    {
+        filehandle = ret1;
+        ptr=ix_Itoa(CAM_backup_flg);
+   //      //\\//\\OUT_D1EBUG(textBuf,"MRW IMG count file read dump_cam_wrt_cnt2=%d\r\n",dump_cam_wrt_cnt2);
+//      OUT_D1EBUG(textBuf,"WRITEwrtcnt1=%s\r\n",ptr);
+//      OUT_D1EBUG(textBuf,"Ql_FileOpenEx Create (%s,%08x)=%d\r\n",pfile1,QL_FS_CREATE,ret);
+//      OUT_D1EBUG(textBuf," In Write write cnt\r\n");
+        ret1 = Ql_FileSeek(filehandle,camdump_wcnt,QL_FS_FILE_BEGIN);
+        ret1 = Ql_FileWrite(filehandle, (u8*)ptr,1,&writeedlen);
+        OUT_D1EBUG(textBuf,"\r\n CAM_backup_flg ret=%d: writeedlen=%d\r\n",ret1, writeedlen);
+        OUT_D1EBUG(textBuf,"CAM_backup_flg in camera file=%s\r\n",ptr);
+        Ql_FileClose(filehandle);
+	    filehandle = -1;
+    }
+    else
+    {
+       OUT_D1EBUG(textBuf,"error CAM_backup_flg write\r\n");
+    }
+}
+void Gen_CW(void)
+{
+    char CWstring[90]; 
+
+
+	Ql_strncpy(CWstring,UID,7);
+	Ql_strncat(CWstring,"_CW,",6);
+
+	Ql_strcat(CWstring,GPRMC);
+
+//    OUT_D1EBUG(textBuf,"GPRMC111=%s:\r\n",GPRMC);
+
+    
+    ix_Itoa(mCurrSpeed);
+	//	OUT_D1EBUG(textBuf,"FtoaStrcurre%s\r\n",ItoaStr);
+	Ql_strcat(CWstring,(char *)ItoaStr);///mCurrSpeed speed
+
+	Ql_strncat(CWstring,",",1);
+	Ql_strcat(CWstring,(char *)(ix_Itoa(mTotDist)));
+	Ql_strncat(CWstring,",",1);
+	Ql_strncat(CWstring,"0.0",5);		//PDOP
+    Ql_strncat(CWstring,",",1);
+	Ql_strncat(CWstring,STAT,1);			//Status (A/V)
+	Ql_strncat(CWstring,"\r\n",2);
+//	OUT_D1EBUG(textBuf,"%s\r\n",SIStampString);	
+    OUT_D1EBUG(textBuf,"CWstring=%s:\r\n",CWstring);
+
+	tw_filewrite((char *)CWstring);	
+
+    
+}
+void Gen_CR(void)
+{
+    char CRstring[90]; 
+	Ql_strncpy(CRstring,UID,7);
+	Ql_strncat(CRstring,"_CR,",6);
+	Ql_strcat(CRstring,GPRMC);
+
+//    OUT_D1EBUG(textBuf,"GPRMC111=%s:\r\n",GPRMC);
+
+    
+    ix_Itoa(mCurrSpeed);
+	//	OUT_D1EBUG(textBuf,"FtoaStrcurre%s\r\n",ItoaStr);
+	Ql_strcat(CRstring,(char *)ItoaStr);///mCurrSpeed speed
+
+	Ql_strncat(CRstring,",",1);
+	Ql_strcat(CRstring,(char *)(ix_Itoa(mTotDist)));
+	Ql_strncat(CRstring,",",1);
+	Ql_strncat(CRstring,"0.0",5);		//PDOP
+    Ql_strncat(CRstring,",",1);
+	Ql_strncat(CRstring,STAT,1);			//Status (A/V)
+	Ql_strncat(CRstring,"\r\n",2);
+//	OUT_D1EBUG(textBuf,"%s\r\n",SIStampString);	
+    OUT_D1EBUG(textBuf,"CRstring=%s:\r\n",CRstring);
+ 
+	tw_filewrite((char *)CRstring);	  
+}
+
+///////  Stamp for Camera message DUMP  //////
+void Gen_CA(void)
+{
+    char CAstring[110]; 
+
+
+	Ql_strncpy(CAstring,UID,7);
+	Ql_strncat(CAstring,"_CA,",6);
+
+	Ql_strcat(CAstring,GPRMC);
+
+	 Ql_strcat(CAstring,(char *)(ix_Itoa(readcount)));			//cam 1 read count
+	 Ql_strncat(CAstring,",",1);
+	 Ql_strcat(CAstring,(char *)(ix_Itoa(dump_cam_wrt_cnt)));			//cam 1 dump count
+	 Ql_strncat(CAstring,",",1);
+	 Ql_strcat(CAstring,(char *)(ix_Itoa(readcount22)));			//cam 2 read count
+	 Ql_strncat(CAstring,",",1);
+	 Ql_strcat(CAstring,(char *)(ix_Itoa(dump_cam_wrt_cnt2)));			//cam 1 dump count
+	 Ql_strncat(CAstring,",",1);
+	 Ql_strncat(CAstring,STAT,1);			//Status (A/V)
+	Ql_strncat(CAstring,"\r\n",2);
+    OUT_D1EBUG(textBuf,"CAstring=%s:\r\n",CAstring);
+ 
+	tw_filewrite((char *)CAstring);	  
+}
+
+void Gen_TC(void)
+{
+    char TCstring[110]; 
+
+
+	Ql_strncpy(TCstring,UID,7);
+	Ql_strncat(TCstring,"_TC,",6);
+
+	 Ql_strcat(TCstring,GPRMC);
+	 Ql_strcat(TCstring,(char *)(ix_Itoa(readcount)));			//cam 1 read count
+	 Ql_strncat(TCstring,",",1);
+	 Ql_strcat(TCstring,(char *)(ix_Itoa(dump_cam_wrt_cnt)));			//cam 1 dump count
+	 Ql_strncat(TCstring,",",1);
+	 Ql_strcat(TCstring,(char *)(ix_Itoa(readcount22)));			//cam 2 read count
+	 Ql_strncat(TCstring,",",1);
+	 Ql_strcat(TCstring,(char *)(ix_Itoa(dump_cam_wrt_cnt2)));			//cam 1 dump count
+	 Ql_strncat(TCstring,",",1);
+   
+	Ql_strncat(TCstring,STAT,1);			//Status (A/V)
+	Ql_strncat(TCstring,"\r\n",2);
+    OUT_D1EBUG(textBuf,"TCstring=%s:\r\n",TCstring);
+ 
+	tw_filewrite((char *)TCstring);	  
+}
+
+
+void Gen_TD1(void)
+{
+    char TD1string[110]; 
+
+
+	Ql_strncpy(TD1string,UID,7);
+	Ql_strncat(TD1string,"_TD1,",6);
+
+	 Ql_strcat(TD1string,GPRMC);
+	 Ql_strcat(TD1string,(char *)(ix_Itoa(readcount)));			//cam 1 read count
+	 Ql_strncat(TD1string,",",1);
+	 Ql_strcat(TD1string,(char *)(ix_Itoa(dump_cam_wrt_cnt)));			//cam 1 dump count
+	 Ql_strncat(TD1string,",",1);
+	 Ql_strcat(TD1string,(char *)(ix_Itoa(readcount22)));			//cam 2 read count
+	 Ql_strncat(TD1string,",",1);
+	 Ql_strcat(TD1string,(char *)(ix_Itoa(dump_cam_wrt_cnt2)));			//cam 1 dump count
+	 Ql_strncat(TD1string,",",1);
+   
+	Ql_strncat(TD1string,STAT,1);			//Status (A/V)
+	Ql_strncat(TD1string,"\r\n",2);
+    OUT_D1EBUG(textBuf,"TD1string=%s:\r\n",TD1string);
+ 
+	tw_filewrite((char *)TD1string);	  
+}
+
+void Gen_TD2(void)
+{
+    char TD2string[110]; 
+
+
+	Ql_strncpy(TD2string,UID,7);
+	Ql_strncat(TD2string,"_TD2,",6);
+
+	 Ql_strcat(TD2string,GPRMC);
+	 Ql_strcat(TD2string,(char *)(ix_Itoa(readcount)));			//cam 1 read count
+	 Ql_strncat(TD2string,",",1);
+	 Ql_strcat(TD2string,(char *)(ix_Itoa(dump_cam_wrt_cnt)));			//cam 1 dump count
+	 Ql_strncat(TD2string,",",1);
+	 Ql_strcat(TD2string,(char *)(ix_Itoa(readcount22)));			//cam 2 read count
+	 Ql_strncat(TD2string,",",1);
+	 Ql_strcat(TD2string,(char *)(ix_Itoa(dump_cam_wrt_cnt2)));			//cam 1 dump count
+	 Ql_strncat(TD2string,",",1);
+   
+	Ql_strncat(TD2string,STAT,1);			//Status (A/V)
+	Ql_strncat(TD2string,"\r\n",2);
+    OUT_D1EBUG(textBuf,"TD1string=%s:\r\n",TD2string);
+ 
+	tw_filewrite((char *)TD2string);	  
+}

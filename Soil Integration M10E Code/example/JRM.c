@@ -1,0 +1,4415 @@
+////JRM _V1.0
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<math.h>
+#include "ql_trace.h"
+#include "ql_timer.h"
+#include "ql_type.h"
+#include "ql_stdlib.h"
+#include "ql_appinit.h"
+#include "ql_interface.h"
+#include "ql_audio.h"
+#include "ql_pin.h"
+#include "Ql_multitask.h"
+#include "Ql_tcpip.h"
+#include "Ql_error.h"
+#include "ql_sms.h"
+#include "Fun.h"
+#include "ql_fcm.h"
+#include "GPS.h"
+#include "GSM_GPRS.h"
+#include "SEND_DATA.h"
+#include "TCP_IP.h"
+#include "MRW.h"  
+#include "para_read.h" 
+#include "GPRMC.h" 
+#include "Ql_filesystem.h"
+#include "sms_handle.h" 
+#include "fota.h" 
+#include "JRM.h" 
+#include "JRM_RD.h"
+#include "Ql_error.h"
+
+/************************************************************************************************************
+ * Debug
+ *************************************************************************************************************/
+#define DEBUG_ENABLE 1
+#if DEBUG_ENABLE > 0
+#define OUT_D1EBUG(x,...)  \
+		Ql_memset((x),0,100);  \
+		Ql_sprintf((x),__VA_ARGS__);   \
+		Ql_SendToUart(ql_uart_port2,(u8 *)(x),Ql_strlen(x));
+#else
+#define OUT_D1EBUG(x,...)
+#endif
+
+/*************************************************************************************************************/
+
+/*-------------------------------------------------------------------------*/
+/*								Globals									   */
+/*-------------------------------------------------------------------------*/
+
+#define EPSILON 1.0e-7
+
+#define flt_equals(a, b) (fabs((a)-(b)) < EPSILON)
+
+
+#define Scan_count 10
+#define Total_count 20
+
+extern char textBuf[1000];
+u32 JRM_zone_array[1500];
+u32 m=0; 
+u32 last_zone_location=0;   					///for array element address
+
+//#define  PATH_JRM ((u8 *)"SD:UI71.txt")
+u8 JRM_status_file[20] ="JRM_MEM_DATA.txt";
+u8 PATH_JRM[30];
+
+char JRM_temp_readbuffer[55];
+char JRM_extra_readbuffer[55];
+char JRM_temp_readbuffer2[55];
+char JRM_extra_readbuffer2[55];
+char JRM_swap_readbuffer[55];
+
+//char JRM_strbuffer[55];
+extern QlTimer JRM_timer,jrm,jrm_delayripit,onoff;
+extern QlTimer zone_scanning,jrm_nextstation,osbuzzer,deviation_tmr;
+
+int FirstPOID=0;
+int LastPOID=0;
+int array_add=0;
+u32 JRM_readcount=0;
+u32 zone_address_mem=0;
+u32 detected_zone_address_mem=0;
+u32 curr_zone_address=0;
+u32 detect_zone_addr=0;
+
+extern char LAT[];
+extern char LONG[];
+
+/////////////seperation buffer
+char databaseLAT[10];
+char databaseLOG[10];
+char databaseDIST[10];
+char databaseLED[10];
+char databasePOID[10];
+int  int_databasePOID=0;
+double mDataBaseLat1=0;
+double mDataBaseLong1=0;
+double dbdist1=0;
+//second string
+char databaseLAT2[10];
+char databaseLOG2[10];
+char databaseDIST2[10];
+char databaseLED2[10];
+char databasePOID2[10];
+int  int_databasePOID2=0;
+int  detected_POID=0;
+
+int IN_FRWD=0;
+///reverse zone 
+char rev_databaseLAT[10];
+char rev_databaseLOG[10];
+char rev_databaseDIST[10];
+char rev_databaseLED[10];
+char rev_databasePOID[10];
+char rev_zone_readbuffer[55];
+u32 rev_zone_address_mem=0;
+char rev_temp_readbuffer[50];
+u32 rev_int_databasePOID=0;
+extern int jrm_cntr;
+double mDataBaseLat2=0;
+double mDataBaseLong2=0;
+double dbdist2=0;
+double LO_CurrLat=0;
+double LO_CurrLong=0;
+//double mDist1=0;
+//double mDist2=0;
+
+float mDist1=0;
+float mDist2=0;
+
+char prev_LED[9];
+char curr_LED[9];
+char next_LED[9];
+extern bool flagfr2;
+extern bool flagfr30;
+
+int Height=0;
+double dbdist3=0;
+int DvZone=0,CurrZone=0;
+extern double mCurrSpeed;      ////for zone deviation
+bool Zone_Detection_Flag=FALSE;
+bool Zone_DV_Flag=FALSE;
+u32 jx=0,rx=0,mx=0;
+u32 jz=0,rz=0,mz=0,xx=0,extra_jz=0,xx_rev=0;
+
+///for find direction function
+float mdistdirection=0;
+double mdistdireCompair = 0.000000;
+bool Returnj=0 ,Forwardj=0;
+int comp=0;
+bool JRM_ON_Flg=0;
+bool detected=0;
+double mDataBaseLat11=0,mDataBaseLong11=0,mDataBaseLat22=0,mDataBaseLong22=0,dbdist11=0,dbdist22=0;
+//u32 zone_address_mem;
+int JRM_Max_Count=0;
+int Start_count=0;
+int Start_Pt=0;
+float db=0;
+double xyz=0.000000;
+bool firstDV=0;
+extern double mCurrSpeed;
+double addition=0,difference=0;
+//int Start_Pt=0;
+int twenty_cntr=0;
+int rev_flag=0,for_flag=0;
+
+extern int osbuzzer_flg;
+extern unsigned char FtoaStr[];
+extern unsigned char ItoaStr[];
+//Variables for GPS data
+extern char STAT[2];
+extern char GPRMC[90];
+extern char UID[];
+//Variables for data transmission to server
+//char readbuffer[100] = "UI8000_SI,021011,081505,1831.4990,N,07354.4629,E,000.0,000.6,0,0.0,A\r\n";
+extern char readbuffer[];
+extern ascii mSpeedAscii[];
+extern double mTotDist;
+int buzzflg=0;
+extern int mOverSpeedLimit;
+int BUZZ_COUNTER=0;
+bool onoff_buzz=FALSE;
+int os_buzz_unsb_flg=1;
+extern double mCurrLat;
+extern double mCurrLong;
+extern int mOverSpeedLimit1;
+extern int mOverSpeedLimit2;
+///JRM_ROUT_download
+int Read_Comp=0;
+char FTPFILENAME[20];
+extern char jrmstatus[10];
+extern char no_files[3];
+extern char route_id[10];
+extern bool ftp_rt_data;
+extern u16  ftp_rt_cmd_idx;
+extern u8 rt_dwnld_fail_flag,rt_jrm_incmp_flag;
+int lz=0;
+extern u32 rt_retry_cnt;
+extern char Unit_Type[35];
+bool preZoneflg=0;
+
+bool OSRed=FALSE;
+bool OSYellow=FALSE;
+
+//////////////////////////////////////////////////////////////used to scan all rout for addresses of zones//////////////////////////////////////////////////
+void jrm_rout_readcount(void)
+{
+	int i=0,x=0,j=0,k=0,s=0,l=0,img=0;
+
+	s32 ret_r,f_RE_read_len;
+	s32 ret_refl,fileret;
+	//char *ptr1;
+	u32 filehandle_readfl;
+
+	u32 size,lll;
+	u32 freespace;
+
+	u32 writeedlen;
+	u32 readedlen;
+	//	OUT_D1EBUG(textBuf,"**********************in jrm_rout_readcount**********************\r\n");
+
+	//R_OUT_D1EBUG(textBuf,"file read dump_cam_wrt_cnt=%d\r\n",dump_cam_wrt_cnt);
+	jrm_cntr=0;
+	//	OUT_D1EBUG(textBuf,"JRM PATH (Rout) =%s \r\n",PATH_JRM);
+	ret_refl = Ql_FileOpenEx(PATH_JRM,QL_FS_READ_ONLY);
+
+	// OUT_D1EBUG(textBuf,"JRM Readfile open ret=%d: \r\n",ret_refl);
+	////R_OUT_D1EBUG(textBuf,"JRM JRM_readcount=%d: \r\n",JRM_readcount);
+	if(ret_refl >= QL_RET_OK)
+	{
+		filehandle_readfl = ret_refl;  
+		if(JRM_readcount==0)
+		{
+			JRM_zone_array[m]=JRM_readcount;
+			m++;
+		}
+
+
+		Ql_memset(JRM_temp_readbuffer,'\0',55);
+		Ql_memset(JRM_extra_readbuffer,'\0',55);
+		//  Ql_memset(JRM_strbuffer,'\0',55);
+
+		OUT_D1EBUG(textBuf,"JRM_readcount=%d \r\n",JRM_readcount);
+
+		ret_refl = Ql_FileSeek(filehandle_readfl, JRM_readcount, QL_FS_FILE_BEGIN);
+
+		////R_OUT_D1EBUG(textBuf,"JRM_Readfile_seek_ret=%d: \r\n",ret_refl);
+
+		ret_refl = Ql_FileRead(filehandle_readfl, (unsigned char *)JRM_extra_readbuffer,50, &readedlen);
+
+		////R_OUT_D1EBUG(textBuf,"\r\n JRM_Ql_FileRead()=%d: readedlen=%d\r\n",ret_refl, readedlen);
+		lz++;
+		f_RE_read_len=Ql_strlen((char *)JRM_extra_readbuffer);
+		// OUT_D1EBUG(textBuf,"JRM JRM_extra_readbuffer length=%d: \r\n",f_RE_read_len);
+		//  OUT_D1EBUG(textBuf,"JRM zone number=%d \r\n",lz);
+		////R_OUT_D1EBUG(textBuf,"JRM_extra_readbuffer=%s: \r\n",JRM_extra_readbuffer);
+
+
+		Ql_FileClose(filehandle_readfl);
+		filehandle_readfl = -1;
+		if(JRM_extra_readbuffer[0]=='#' && JRM_extra_readbuffer[1]=='D')
+		{
+			for(i=1;JRM_extra_readbuffer[i]!='#';i++)
+			{
+				if(JRM_extra_readbuffer[i]=='@')
+				{
+					Read_Comp=1;
+					OUT_D1EBUG(textBuf," Found @ , END OF ROUT.....\r\n");
+				}
+			}
+			JRM_readcount=JRM_readcount+i;
+			OUT_D1EBUG(textBuf,"JRM_temp_readbuffer in for=%s,i=%d,j=%d: \r\n",JRM_extra_readbuffer,i,l);
+		}
+		if((JRM_readcount>0) && (Read_Comp==0))
+		{
+			JRM_zone_array[m]=JRM_readcount;
+			OUT_D1EBUG(textBuf,"JRM_readcount=%d,JRM_zone_array[%d]=%d \r\n",JRM_readcount,m,JRM_zone_array[m]);
+			m++;
+		}
+		//if(f_RE_read_len>=1 && f_RE_read_len<=50)
+		if(f_RE_read_len>=1)
+		{
+			//  if(f_RE_read_len==40 || f_RE_read_len==39 || f_RE_read_len==37 ||f_RE_read_len==36 )
+			if(Read_Comp==1)
+			{
+				Ql_StopTimer(&JRM_timer);
+				//JRM_timer.timerId =0;
+				Read_Comp=0;
+				m--;
+				last_zone_location=m;
+				OUT_D1EBUG(textBuf,"last_zone_location after scanning complited=%d \r\n",last_zone_location);
+				lll=last_zone_location-2;								//used to store last zone location
+				//R_OUT_D1EBUG(textBuf,"lll=%d: \r\n",lll);
+				//reas_zone_stamp();
+				zone_address_mem=0;
+				FirstPOID=POID_LED(1);
+				LastPOID=POID_LED(lll);									//last zone location point ID stored in lll
+				//R_OUT_D1EBUG(textBuf,"FirstPOID=%d: \r\n",FirstPOID);
+				//R_OUT_D1EBUG(textBuf,"LastPOID=%d: \r\n",LastPOID);
+				jrm_rout_scanning();
+			}
+			else
+			{
+				JRM_timer.timerId =0;
+				Ql_StartTimer(&JRM_timer);
+				OUT_D1EBUG(textBuf," Started JRM_timer1.....\r\n");
+			}
+		}
+	}
+	//if(Read_Comp!=1)
+	//multiple_calls();
+}
+
+////////////////test//////////////////////
+void multiple_calls(void)
+{
+	int ijk=0,kk=0,ll=0;
+	//for (ijk=0;Read_Comp!=1;ijk++)
+	while(Read_Comp!=1)
+	{
+		Ql_Sleep(100);
+		//temp_delay();
+		//R_OUT_D1EBUG(textBuf,"JRM FOR..2\r\n");
+		jrm_rout_readcount();
+	}
+}
+
+void temp_delay(void)
+{
+	int kk=0,ll=0;
+	while(kk<=9999999)
+	{
+		kk++;
+	}
+	//for(kk=0;kk<=9999999;kk++)
+	//for(ll=0;ll<=9999999;ll++);
+}
+////////////////test//////////////////////
+/*
+void reas_zone_stamp(void)
+{
+
+ 	//R_OUT_D1EBUG(textBuf,"JRM last_zone_location ret=%d: \r\n",last_zone_location);
+ //for(jx=0;jx<=last_zone_location;jx++)
+
+	 //R_OUT_D1EBUG(textBuf,"JRM jx=%d: \r\n",jx);
+	 if(jx<=last_zone_location)
+	 {
+	 curr_zone_address=JRM_zone_array[jx];
+	 //jz=jx+1;
+	 jz=jx;
+	 xx=jz+7;
+	 xx_rev=jz-7;
+
+	 //R_OUT_D1EBUG(textBuf,"JRM curr_zone_address ret=%d: \r\n",curr_zone_address);
+////R_OUT_D1EBUG(textBuf,"JRM JRM_zone_array ret=%d: \r\n",JRM_zone_array[jx]);
+	 if(JRM_extra_readbuffer[0]=='#')
+	  {
+	 // Ql_StartTimer(&jrm);
+	   jrm_rout_scanning();
+	  }
+// for(rx=0;rx<95000000;rx++);
+	 jx++;
+	 }
+}*/
+
+
+void jrm_rout_scanning(void)
+{
+	int i=0,x=0,j=0,k,l,img;
+
+	s32 ret_r,f_RE_read_len;
+	s32 ret_refl,fileret;
+	//char *ptr1;
+	u32 filehandle_readfl;
+	u32 file_size=0;
+	u32 size;
+	u32 freespace;
+
+	u32 writeedlen;
+	u32 readedlen;
+	OUT_D1EBUG(textBuf,"***in jrm_rout_scanning***\r\n");
+	jrm_cntr=0;
+	//R_OUT_D1EBUG(textBuf,"file read dump_cam_wrt_cnt=%d\r\n",dump_cam_wrt_cnt);
+	Ql_FileGetSize(PATH_JRM,&file_size);				////file size of JRm route
+	OUT_D1EBUG(textBuf,"Route File Size=%d \r\n",file_size);
+
+	ret_refl = Ql_FileOpenEx(PATH_JRM,QL_FS_READ_ONLY);
+	//ret_refl = Ql_FileOpenEx((u8*)pfile_imgdata,QL_FS_CREATE);
+	/////R_OUT_D1EBUG(textBuf,"JRM Readfile open ret=%d: \r\n",ret_refl);
+	////R_OUT_D1EBUG(textBuf,"JRM curr_zone_address=%d: \r\n",curr_zone_address);
+	if(ret_refl >= QL_RET_OK)
+	{
+		filehandle_readfl = ret_refl;  
+
+
+
+		//Ql_memset(JRM_temp_readbuffer,'\0',55);
+		//Ql_memset(JRM_extra_readbuffer,'\0',55);
+		//Ql_memset(JRM_extra_readbuffer2,'\0',55);
+		//Ql_memset(JRM_temp_readbuffer2,'\0',55);
+
+		//  Ql_memset(JRM_strbuffer,'\0',55);
+
+		OUT_D1EBUG(textBuf,"zone_address_mem=%d \r\n",zone_address_mem);
+
+		ret_refl = Ql_FileSeek(filehandle_readfl, zone_address_mem, QL_FS_FILE_BEGIN);
+		//curr_zone_address=zone_address_mem;
+
+		////R_OUT_D1EBUG(textBuf,"JRM_Readfile_seek_ret=%d: \r\n",ret_refl);
+
+		ret_refl = Ql_FileRead(filehandle_readfl, (unsigned char *)JRM_extra_readbuffer,45, &readedlen);
+
+		////R_OUT_D1EBUG(textBuf,"\r\n JRM_Ql_FileRead()=%d: readedlen=%d\r\n",ret_refl, readedlen);
+
+		f_RE_read_len=Ql_strlen((char *)JRM_extra_readbuffer);
+		////R_OUT_D1EBUG(textBuf,"JRM JRM_extra_readbuffer length=%d: \r\n",f_RE_read_len);
+
+		OUT_D1EBUG(textBuf,"JRM_buffer=%s: \r\n",JRM_extra_readbuffer);
+
+
+		Ql_FileClose(filehandle_readfl);
+		filehandle_readfl = -1;
+
+		if(JRM_extra_readbuffer[0]=='#' && JRM_extra_readbuffer[1]=='D')						//used to read single zone data
+		{
+			////R_OUT_D1EBUG(textBuf,"iiiiiiiiiiiii====%d: \r\n",i);
+			//for(i=1;((JRM_extra_readbuffer[i]!='#') ||(JRM_extra_readbuffer[i]!='$')) ;i++);
+			//for(i=1;(JRM_extra_readbuffer[i]!='$'|| JRM_extra_readbuffer[i+1]!='#');i++);
+			for(i=1;JRM_extra_readbuffer[i]!='#';i++);
+			////R_OUT_D1EBUG(textBuf,"iiiiiiiiiiiii====%d: \r\n",i);
+
+			if(i>50)																				//used for last zone data
+			{
+				for(i=1;JRM_extra_readbuffer[i]!='$';i++);
+				i++;
+				////R_OUT_D1EBUG(textBuf,"iiiiiiiiiiiii====%d: \r\n",i);
+			}
+
+			for(k=3,l=0;k<(i-1);k++,l++)															//used to store only lat,long and data required
+			{
+
+				JRM_temp_readbuffer[l]=JRM_extra_readbuffer[k];
+				// //R_OUT_D1EBUG(textBuf,"JRM_temp_readbuffer in for=%s,i=%d,,j=%d: \r\n",JRM_temp_readbuffer,i,l);
+				// //R_OUT_D1EBUG(textBuf,"JRM_extra_readbuffer in for=%s,i=%d,,j=%d: \r\n",JRM_extra_readbuffer,i,l);
+
+				//j++;
+			}
+			JRM_temp_readbuffer[l]='\0';
+			//  JRM_readcount=JRM_readcount+i;
+			////R_OUT_D1EBUG(textBuf,"JRM_temp_readbuffer in for=%s,i=%d,,j=%d: \r\n",JRM_temp_readbuffer,i,l);
+			OUT_D1EBUG(textBuf,"JRM_temp_readbuffer scaned from memory in for=%s\r\n",JRM_temp_readbuffer);
+
+		}
+
+		if((zone_address_mem==0) || ((array_add==curr_zone_address)&&(curr_zone_address==CurrZone)))	//copy the detected zone twice
+		{	
+			Ql_memset(JRM_temp_readbuffer2,'\0',55);
+			OUT_D1EBUG(textBuf,"1.JRM curr_zone_address ret in ****IF***=%d: \r\n",curr_zone_address);
+			OUT_D1EBUG(textBuf,"2..JRM CurrZone == curr_zone_address ret in ****IF***=%d: \r\n",CurrZone);
+			OUT_D1EBUG(textBuf,"3...JRM array_add ret in ****IF***=%d: \r\n",array_add);
+
+			OUT_D1EBUG(textBuf,"JRM zone_address_mem ret in ****IF***=%d: \r\n",zone_address_mem);
+			OUT_D1EBUG(textBuf,"DvZone=%d\r\n",DvZone);
+			Ql_strcpy((char *)JRM_temp_readbuffer2,(char *)JRM_temp_readbuffer);
+		}
+		else
+		{	
+			//
+			OUT_D1EBUG(textBuf,"JRM zone_address_mem ret in ****ELSE***=%d: \r\n",zone_address_mem);
+			Ql_memset(JRM_swap_readbuffer,'\0',55);
+			Ql_strcpy((char *)JRM_swap_readbuffer,(char *)JRM_temp_readbuffer);
+			Ql_memset(JRM_temp_readbuffer,'\0',55);
+			Ql_strcpy((char *)JRM_temp_readbuffer,(char *)JRM_temp_readbuffer2);
+			Ql_strcpy((char *)JRM_temp_readbuffer2,(char *)JRM_swap_readbuffer);
+			OUT_D1EBUG(textBuf," JRM_temp_readbuffer=%s \r\n",JRM_temp_readbuffer);
+			OUT_D1EBUG(textBuf," JRM_temp_readbuffer2=%s \r\n",JRM_temp_readbuffer2);
+		}
+
+		//JRM_file_sepration((char *)JRM_temp_readbuffer);
+		JRM_file_sepration((char *)JRM_temp_readbuffer,(char *)JRM_temp_readbuffer2);
+		Ql_memset(JRM_temp_readbuffer,'\0',55);
+
+
+	}
+}
+
+
+void JRM_file_sepration(char *jrm_sepr_buffer,char *jrm_sepr_buffer2)
+{
+
+	//LO_CurrLat=JRM_atofd((char *)LAT);						//GPS current lat
+	//LO_CurrLong=JRM_atofd((char *)LONG);					//GPS current long
+	LO_CurrLat=mCurrLat;
+	LO_CurrLong=mCurrLong;
+	int i,j,k,l,m,n;
+	int iz,jz,kz,lz,mz,nz;
+	OUT_D1EBUG(textBuf,"check ***CurrZone***=%d \r\n",CurrZone);
+	OUT_D1EBUG(textBuf,"check ##last_zone_location#=%d \r\n",last_zone_location);
+
+	OUT_D1EBUG(textBuf,"before JRM_file_sepration array_add=%d \r\n",array_add);
+	curr_zone_address=array_add;
+	////R_OUT_D1EBUG(textBuf,"before JRM_file_sepration curr_zone_address=%d \r\n",curr_zone_address);
+
+	if(Returnj == TRUE)
+	{
+		//curr_zone_address=array_add-1;
+		if(array_add==0)
+		{
+			array_add=last_zone_location;
+		}
+		else
+		{
+			array_add=array_add-1;                  //to decrement zone by 1
+		}
+		OUT_D1EBUG(textBuf,"file )reverse( array_add=%d \r\n",array_add);
+	}
+	else
+	{
+		if(array_add==last_zone_location)
+		{
+			array_add=0;
+		}
+		else
+		{
+			array_add+=1;              //to increment zone by 1
+		}
+
+		OUT_D1EBUG(textBuf,"file )Forward( array_add=%d \r\n",array_add);
+	}
+
+	zone_address_mem=JRM_zone_array[array_add];
+	OUT_D1EBUG(textBuf,"file zone_address_mem((())) =%d \r\n",zone_address_mem);
+
+	xyz=tw_DistFromLatAndLong(JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong),JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong));
+	jrm_nextstation.timeoutPeriod = Ql_MillisecondToTicks(500);
+	Ql_StopTimer(&jrm_nextstation);
+	//jrm_nextstation.timerId =0;
+	////R_OUT_D1EBUG(textBuf,"after JRM_file_sepration array_add=%d \r\n",array_add);
+	OUT_D1EBUG(textBuf,"after JRM_file_sepration curr_zone_address=%d \r\n",curr_zone_address);
+	OUT_D1EBUG(textBuf,"JRM_buffer=%s \r\n",jrm_sepr_buffer);
+	OUT_D1EBUG(textBuf,"JRM_buffer2=%s \r\n",jrm_sepr_buffer2);
+
+	for(i=0;jrm_sepr_buffer[i]!=',';i++)
+	{
+		databaseLAT[i]=jrm_sepr_buffer[i];
+	}
+	databaseLAT[i]='\0';
+	i++;
+
+	mDataBaseLat1=JRM_atofd((char *)databaseLAT);
+
+	for(i,j=0;jrm_sepr_buffer[i]!=',';i++,j++)
+	{
+		databaseLOG[j]=jrm_sepr_buffer[i];
+	}
+	databaseLOG[j]='\0';
+	i++;
+
+	mDataBaseLong1=JRM_atofd((char *)databaseLOG);
+
+	//for(i;jrm_sepr_buffer[i]!=',';i++);
+	//i++;
+
+	for(i,k=0;jrm_sepr_buffer[i]!=',';i++,k++)
+	{
+		databaseDIST[k]=jrm_sepr_buffer[i];
+	}
+	databaseDIST[k]='\0';
+	i++;
+
+	dbdist1=JRM_atofd((char *)databaseDIST);
+
+
+	for(i,l=0;jrm_sepr_buffer[i]!=',';i++,l++)
+	{
+		databaseLED[l]=jrm_sepr_buffer[i];
+	}
+	databaseLED[l]='\0';
+	i++;
+	n=i+4;
+	for(i,m=0;i<n;i++,m++)
+	{
+		databasePOID[m]=jrm_sepr_buffer[i];
+	}
+	databasePOID[m]='\0';
+	// db_databasePOID=JRM_atofd((char *)databasePOID);
+	//  i++;
+
+	////R_OUT_D1EBUG(textBuf,"iiiiiiiiiiiii====%d: \r\n",i);
+	////R_OUT_D1EBUG(textBuf,"databaseLAT buffer=%s \r\n",databaseLAT);
+	////R_OUT_D1EBUG(textBuf,"mDataBaseLat1=%lf\r\n",mDataBaseLat1);
+	////R_OUT_D1EBUG(textBuf,"databaseLOG buffer=%s \r\n",databaseLOG);
+	////R_OUT_D1EBUG(textBuf,"mDataBaseLong1=%lf\r\n",mDataBaseLong1);
+	////R_OUT_D1EBUG(textBuf,"databaseDIST buffer=%s \r\n",databaseDIST);
+	////R_OUT_D1EBUG(textBuf,"dbdist1=%lf\r\n",dbdist1);
+	////R_OUT_D1EBUG(textBuf,"databaseLED buffer=%s \r\n",databaseLED);
+	////R_OUT_D1EBUG(textBuf,"databasePOINTID buffer=%s \r\n",databasePOID);
+	int_databasePOID=Ql_atoi(databasePOID);
+	////R_OUT_D1EBUG(textBuf,"###########   int_databasePOID=%d \r\n",int_databasePOID);
+	////R_OUT_D1EBUG(textBuf,"###########  mLong buffer=%s \r\n",LONG);
+
+
+	////R_OUT_D1EBUG(textBuf,"mDataBaseLat1=%lf\r\n",db_databasePOID);
+
+
+	////for secon string
+
+	for(iz=0;jrm_sepr_buffer2[iz]!=',';iz++)
+	{
+		databaseLAT2[iz]=jrm_sepr_buffer2[iz];
+	}
+	databaseLAT2[iz]='\0';
+	iz++;
+
+	mDataBaseLat2=JRM_atofd((char *)databaseLAT2);
+
+	for(iz,jz=0;jrm_sepr_buffer2[iz]!=',';iz++,jz++)
+	{
+		databaseLOG2[jz]=jrm_sepr_buffer2[iz];
+	}
+	databaseLOG2[jz]='\0';
+	iz++;
+
+	mDataBaseLong2=JRM_atofd((char *)databaseLOG2);
+
+	for(iz,kz=0;jrm_sepr_buffer2[iz]!=',';iz++,kz++)
+	{
+		databaseDIST2[kz]=jrm_sepr_buffer2[iz];
+	}
+	databaseDIST2[kz]='\0';
+	iz++;
+
+	dbdist2=JRM_atofd((char *)databaseDIST2);
+
+
+	for(iz,lz=0;jrm_sepr_buffer2[iz]!=',';iz++,lz++)
+	{
+		databaseLED2[lz]=jrm_sepr_buffer2[iz];
+	}
+	databaseLED2[lz]='\0';
+	iz++;
+	nz=iz+4;
+	for(iz,mz=0;iz<nz;iz++,mz++)
+	{
+		databasePOID2[mz]=jrm_sepr_buffer2[iz];
+	}
+	databasePOID2[mz]='\0';
+	// db_databasePOID=JRM_atofd((char *)databasePOID);
+	//  i++;
+
+	////R_OUT_D1EBUG(textBuf,"iiiiiiiiiiiiizzzzzzzzzzzz====%d: \r\n",iz);
+	////R_OUT_D1EBUG(textBuf,"databaseLAT buffer2=%s \r\n",databaseLAT2);
+	////R_OUT_D1EBUG(textBuf,"mDataBaseLat2=%lf\r\n",mDataBaseLat2);
+	////R_OUT_D1EBUG(textBuf,"databaseLOG buffer2=%s \r\n",databaseLOG2);
+	////R_OUT_D1EBUG(textBuf,"mDataBaseLong2=%lf\r\n",mDataBaseLong2);
+	////R_OUT_D1EBUG(textBuf,"databaseDIST buffer2=%s \r\n",databaseDIST2);
+	////R_OUT_D1EBUG(textBuf,"dbdist2=%lf\r\n",dbdist2);
+	////R_OUT_D1EBUG(textBuf,"databaseLED buffer2=%s \r\n",databaseLED2);
+	////R_OUT_D1EBUG(textBuf,"databasePOINTID buffer2=%s \r\n",databasePOID2);
+	int_databasePOID2=Ql_atoi(databasePOID2);
+	////R_OUT_D1EBUG(textBuf,"###########   int_databasePOID2=%d \r\n",int_databasePOID2);
+
+	OUT_D1EBUG(textBuf,"#detected_POID Forward #=%d \r\n",detected_POID);
+	OUT_D1EBUG(textBuf,"#detected_POID Reverse #=%d \r\n",rev_int_databasePOID);
+	OUT_D1EBUG(textBuf,"LO_CurrLat=%lf\r\n",LO_CurrLat);
+	OUT_D1EBUG(textBuf,"LO_CurrLong=%lf\r\n",LO_CurrLong);
+
+
+	if(Zone_Detection_Flag==FALSE)
+	{
+		tw_findcurrentpos_Once();
+	}
+	else if (Zone_Detection_Flag==TRUE)
+	{
+		tw_findcurrentpos();
+	}
+
+	//zone_address_mem=JRM_zone_array[array_add];
+	return;
+}
+
+//void_JRM_scanning_fun(void)
+
+double tw_DistFromLatAndLong(double lat1,double long1,double lat2,double long2)
+{
+	double x = 0.000000,y = 0.000000;
+	double roundedValue=0.0;
+	double dist = 0.000000;
+	////R_OUT_D1EBUG(textBuf,"in tw_DistFromLatAndLong lat1=%lf\r\n",lat1);
+	////R_OUT_D1EBUG(textBuf,"in tw_DistFromLatAndLong long1=%lf\r\n",long1);
+	////R_OUT_D1EBUG(textBuf,"in tw_DistFromLatAndLong lat2=%lf\r\n",lat2);
+	////R_OUT_D1EBUG(textBuf,"in tw_DistFromLatAndLong long2=%lf\r\n",long2);
+	//Ql_Sleep(200);
+	x = (69.1 * (lat2 - lat1));
+	y = (53.0 * (long2 - long1));
+	dist = 1.6 * (sqrt(x * x + y * y));
+	//Ql_Sleep(200);
+	//dist = (1.6 * (tw_sqrt(x * x + y * y)));
+	//dist-=0.000156;
+	////R_OUT_D1EBUG(textBuf,"in tw_DistFromLatAndLong x=%lf\r\n",x);
+	////R_OUT_D1EBUG(textBuf,"in tw_DistFromLatAndLong y=%lf\r\n",y);
+	////R_OUT_D1EBUG(textBuf,"in tw_DistFromLatAndLong dist=%lf\r\n",dist);
+	//Ql_Sleep(200);     
+	return dist;
+	//roundedValue=floorf(dist * 100 + 0.5) / 100;
+	//roundedValue = ceilf(dist * 100) / 100;
+	//roundedValue =floorf(dist * 100) / 100;
+	//return roundedValue;
+}
+
+
+//tw_DistFromLatAndLong(JRM_DM2DD(mDataBaseLat11),JRM_DM2DD(mDataBaseLong11),JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong));
+
+double JRM_atofd(char *s)
+{
+	double a = 0.0;
+	//double roundedValue=0.0;
+	int e = 0;
+	int c;
+
+	c = *s;
+	for(c = *s++;c!='\0' && isdigita(c);*s++)
+	{	
+		a = a*10.0 + (c - '0');
+		c = *s;   	 	
+	}
+
+	if(c == '.')
+	{          c=*s;
+	for(c = *s++;c!='\0' && isdigita(c);*s++)
+	{
+		a = a * 10.0 + (c - '0');
+		e = e - 1;
+		c = *s;
+	}
+	}
+
+	if (c == 'e' || c == 'E')
+	{
+		int sign = 1;
+		int i = 0;
+
+		c = *s++;
+		if (c == '+')
+			c = *s++;
+		else if (c == '-')
+		{
+			c = *s++;
+			sign = -1;
+		}
+
+		if((isdigita(c))>=0)
+		{
+			i = i*10 + (c - '0');
+			c = *s++;
+		}
+		e += i*sign;
+	}
+
+	for(e;e >= 0;e--);
+	{
+		a *= 10.0;	
+	}
+
+	for(e;e <= 0;e++)
+	{
+		a *= 0.1;	
+	}	
+
+	//roundedValue = ceilf(a * 100) / 100;
+	//return roundedValue;
+	return a;
+}
+
+
+double JRM_DM2DD(double mInput)/*07353.2166*/
+
+{
+	double mOutput;
+	int x = (int)(mInput/100);
+	mOutput = x + ((mInput - (x * 100)) / 60);
+	return mOutput;
+	//Ql_DebugTrace("mOutput=%lf\r\n",mOutput);
+
+}
+
+void tw_findcurrentpos_Once(void)
+{
+	int Zone_loc;
+
+	//double xyz=0.000000;
+	OUT_D1EBUG(textBuf,"***in tw_findcurrentpos_Once***\r\n");
+	//jrm_rout_scanning();
+
+	if(Returnj == TRUE)
+	{
+		OUT_D1EBUG(textBuf,"In return journey \r\n");
+
+		mDist1=tw_DistFromLatAndLong(JRM_DM2DD(mDataBaseLat1),JRM_DM2DD(mDataBaseLong1),JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong));
+
+		mDist2=tw_DistFromLatAndLong(JRM_DM2DD(mDataBaseLat2),JRM_DM2DD(mDataBaseLong2),JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong));
+
+
+		dbdist3=0.00;
+		dbdist3=(dbdist1-mDist1);
+
+		OUT_D1EBUG(textBuf,"mDist1=%lf\r\n",mDist1);
+		OUT_D1EBUG(textBuf,"mDist2=%lf\r\n",mDist2);
+		////R_OUT_D1EBUG(textBuf,"dbdist1=%lf\r\n",dbdist1);
+		////R_OUT_D1EBUG(textBuf,"dbdist2=%lf\r\n",dbdist2);
+		////R_OUT_D1EBUG(textBuf,"dbdist3=%lf\r\n",dbdist3);
+
+		if(flt_equals(mDist1,xyz)&& (int_databasePOID != detected_POID ))
+		{
+
+			OUT_D1EBUG(textBuf,"In return journy one \r\n");
+			addition = (mDist1 + mDist2);
+
+			difference = (dbdist1  - dbdist2);
+			//detected_POID=int_databasePOID;
+
+			mDataBaseLat11 = mDataBaseLat1;
+			mDataBaseLong11 = mDataBaseLong1;
+			mDataBaseLat22 = mDataBaseLat2;
+			mDataBaseLong22 = mDataBaseLong2;
+			Ql_StopTimer(&deviation_tmr);
+			//fn_makeLEDON((char *)databaseLED);
+			// OUT_D1EBUG(textBuf,"ZONE DETECTED in RJ 1..color=%s,point ID=%s \r\n",databaseLED,databasePOID);
+			////R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone color=%s,point ID=%s \r\n",databaseLED,databasePOID);
+			////R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone point ID=%s \r\n",databasePOID);
+
+			//Ql_memset(prev_LED,'\0',3);
+			Ql_strcpy((char *)prev_LED,(char *)databaseLED);
+			// OUT_D1EBUG(textBuf,"prev_LED:::::%s\r\n",prev_LED);
+
+			Zone_Detection_Flag= TRUE;
+			Zone_loc =curr_zone_address+1;
+			Start_Pt= Zone_loc;
+			//Start_Pt= curr_zone_address;
+			JRM_Max_Count=0;
+			//fn_finddirection();
+
+
+			dbdist11 = dbdist1;
+			dbdist22 = dbdist2;
+
+
+			CurrZone = curr_zone_address;
+			zone_address_mem=JRM_zone_array[CurrZone];
+			OUT_D1EBUG(textBuf,"file zone_address_mem(((1))) =%d \r\n",zone_address_mem);
+			detected_zone_address_mem=zone_address_mem;
+
+			rev_zone_address_mem=JRM_zone_array[(CurrZone-1)];
+			Rev_zone_seperation(rev_zone_address_mem);
+			detected_POID=int_databasePOID;
+			Ql_memset(curr_LED,'\0',sizeof(curr_LED));
+			Ql_strcpy((char *)curr_LED,(char *)rev_databaseLED);
+			OUT_D1EBUG(textBuf,"rev_databaseLED_1=%s\r\n",rev_databaseLED);
+			OUT_D1EBUG(textBuf,"curr_LED_1=%s\r\n",curr_LED);
+
+			fn_makeLEDON((char *)rev_databaseLED);
+
+			fn_finddirection();
+
+			if( Start_Pt == 0)
+			{
+
+				Returnj=FALSE;
+				fun_JRM_Dir_Write();
+				Forwardj= TRUE;
+				Zone_Detection_Flag= TRUE;
+
+			}
+
+		}
+		/*else if(flt_equals(mDist2,xyz))
+			{
+
+				addition = (mDist1 + mDist2);
+
+				difference = (dbdist1  - dbdist2);
+				detected_POID=int_databasePOID2;
+
+				mDataBaseLat11 = mDataBaseLat1;
+				mDataBaseLong11 = mDataBaseLong1; 
+				mDataBaseLat22 = mDataBaseLat2;
+				mDataBaseLong22 = mDataBaseLong2;
+
+				fn_makeLEDON((char *)databaseLED2);
+				//R_OUT_D1EBUG(textBuf,"ZONE DETECTED\r\n");
+				//R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone color=%s \r\n",databaseLED2);
+				//R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone point ID=%s \r\n",databasePOID2);
+
+
+				Zone_Detection_Flag= TRUE;	
+				Zone_loc =curr_zone_address+1;
+				Start_Pt= Zone_loc;
+				//Start_Pt= curr_zone_address;
+				JRM_Max_Count=0;
+				fn_finddirection();
+
+
+				dbdist11 = dbdist1;
+				dbdist22 = dbdist2;	
+
+
+                CurrZone = curr_zone_address;
+
+
+				if( Start_Pt == 0)
+				{
+
+						Returnj=FALSE;
+						Forwardj= TRUE;
+						Zone_Detection_Flag= TRUE;
+
+				}			
+
+
+			}		
+		 */
+
+		//else if((dbdist3 > dbdist1) &&  (dbdist3 < dbdist2))
+		else if((dbdist3 > dbdist2) &&  (dbdist3 < dbdist1))
+		{
+
+			addition = (mDist1 + mDist2);
+
+			difference= (dbdist1  - dbdist2);
+
+
+			if(((double)mDist1) == ((double)mDist2))
+			{
+
+				if(((double)mDist2)<= ((double)difference) && (int_databasePOID2 != detected_POID ))
+				{
+					////R_OUT_D1EBUG(textBuf,"addition=%lf\r\n",addition);
+					////R_OUT_D1EBUG(textBuf,"difference=%lf\r\n",difference);
+					OUT_D1EBUG(textBuf,"In return journey two \r\n");
+					detected_POID=int_databasePOID2;
+					OUT_D1EBUG(textBuf,"##1##In return journey Copying POID value = %d\r\n",detected_POID);
+					rev_int_databasePOID=detected_POID;
+					mDataBaseLat11 = mDataBaseLat1;
+					mDataBaseLong11 = mDataBaseLong1;
+					mDataBaseLat22 = mDataBaseLat2;
+					mDataBaseLong22 = mDataBaseLong2;
+					Ql_StopTimer(&deviation_tmr);
+					fn_makeLEDON((char *)databaseLED2);
+					// OUT_D1EBUG(textBuf,"ZONE DETECTED at 2,color=%s, point ID=%s \r\n",databaseLED2,databasePOID2);
+					////R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone color=%s \r\n",databaseLED2);
+					////R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone point ID=%s \r\n",databasePOID2);
+					Zone_Detection_Flag= TRUE;
+
+					//Ql_memset(prev_LED,'\0',3);
+					Ql_strcpy((char *)prev_LED,(char *)databaseLED2);
+					// OUT_D1EBUG(textBuf,"prev_LED:::::%s\r\n",prev_LED);
+
+					Zone_loc =curr_zone_address+1;
+					Start_Pt= Zone_loc;
+
+					JRM_Max_Count=0;
+					fn_finddirection();
+
+
+					dbdist11 = dbdist1;
+					dbdist22 = dbdist2;
+
+
+					CurrZone = curr_zone_address;
+					zone_address_mem=JRM_zone_array[CurrZone];
+					OUT_D1EBUG(textBuf,"file zone_address_mem(((2))) =%d \r\n",zone_address_mem);
+					detected_zone_address_mem=zone_address_mem;
+					/*
+								rev_zone_address_mem=JRM_zone_array[(CurrZone-1)];
+								Rev_zone_seperation(rev_zone_address_mem);
+								detected_POID=int_databasePOID;
+								Ql_strcpy((char *)curr_LED,(char *)rev_databaseLED);
+								fn_makeLEDON((char *)rev_databaseLED);
+
+								fn_finddirection();
+					 */
+					if(Start_Pt ==0)
+					{
+
+						Returnj=FALSE;
+						fun_JRM_Dir_Write();
+						Forwardj= TRUE;
+						Zone_Detection_Flag= TRUE;
+
+					}
+
+				}
+				else
+				{
+
+					tw_ripit();
+				}
+
+			}
+			else
+			{
+				if(((double)mDist2)<= ((double)difference) && (int_databasePOID2 != detected_POID )) ///  equal condition changed to <=  on 25 May 2011
+				{
+
+					////R_OUT_D1EBUG(textBuf,"addition=%lf\r\n",addition);
+					////R_OUT_D1EBUG(textBuf,"difference=%lf\r\n",difference);
+					OUT_D1EBUG(textBuf,"In return journey Three \r\n");
+					detected_POID=int_databasePOID2;
+					OUT_D1EBUG(textBuf,"##2##In return journey Copying POID value = %d\r\n",detected_POID);
+					rev_int_databasePOID=detected_POID;
+					mDataBaseLat11 = mDataBaseLat1;
+					mDataBaseLong11 = mDataBaseLong1;
+					mDataBaseLat22 = mDataBaseLat2;
+					mDataBaseLong22 = mDataBaseLong2;
+					Ql_StopTimer(&deviation_tmr);
+					fn_makeLEDON((char *)databaseLED2);
+					// OUT_D1EBUG(textBuf,"ZONE DETECTED in 3...color=%s,point ID=%s\r\n",databaseLED2,databasePOID2);
+					////R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone color=%s \r\n",databaseLED2);
+					////R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone point ID=%s \r\n",databasePOID2);
+					Zone_Detection_Flag= TRUE;
+					Zone_loc =curr_zone_address+1;
+					Start_Pt= Zone_loc;
+					//Start_Pt= curr_zone_address;
+
+					//Ql_memset(prev_LED,'\0',3);
+					Ql_strcpy((char *)prev_LED,(char *)databaseLED2);
+					// OUT_D1EBUG(textBuf,"prev_LED:::::%s\r\n",prev_LED);
+
+					JRM_Max_Count=0;
+					fn_finddirection();
+
+
+					dbdist11 = dbdist1;
+					dbdist22 = dbdist2;
+
+					CurrZone = curr_zone_address;
+					zone_address_mem=JRM_zone_array[CurrZone];
+					OUT_D1EBUG(textBuf,"file zone_address_mem(((3))) =%d \r\n",zone_address_mem);
+					detected_zone_address_mem=zone_address_mem;
+					/*
+								rev_zone_address_mem=JRM_zone_array[(CurrZone-1)];
+								Rev_zone_seperation(rev_zone_address_mem);
+								detected_POID=int_databasePOID;
+								Ql_strcpy((char *)curr_LED,(char *)rev_databaseLED);
+								fn_makeLEDON((char *)rev_databaseLED);
+								fn_finddirection();
+					 */
+					if( Start_Pt == 0)
+					{
+
+						Returnj=FALSE;
+						fun_JRM_Dir_Write();
+						Forwardj= TRUE;
+						Zone_Detection_Flag= TRUE;
+
+					}
+
+				}
+				else
+				{
+
+					tw_ripit();
+				}
+			}
+
+		}
+		else
+		{
+			tw_ripit();
+		}
+
+
+	}
+	//else if(Forwardj=TRUE)
+	else
+	{
+		IN_FRWD=1;
+		OUT_D1EBUG(textBuf,"In forward journy\r\n");
+		mDist1=tw_DistFromLatAndLong(JRM_DM2DD(mDataBaseLat1),JRM_DM2DD(mDataBaseLong1),JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong));
+
+		mDist2=tw_DistFromLatAndLong(JRM_DM2DD(mDataBaseLat2),JRM_DM2DD(mDataBaseLong2),JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong));
+
+
+
+		////R_OUT_D1EBUG(textBuf,"mDist1=%lf\r\n",mDist1);
+		////R_OUT_D1EBUG(textBuf,"mDist2=%lf\r\n",mDist2);
+
+		dbdist3=0.00;
+		dbdist3=mDist1+dbdist1;
+
+		//flt_equals(a, b);
+		OUT_D1EBUG(textBuf,"flt_equals(mDist1,xyz)=%d\r\n",flt_equals(mDist1,xyz));
+		OUT_D1EBUG(textBuf,"flt_equals(mDist2,xyz)=%d\r\n",flt_equals(mDist2,xyz));
+		OUT_D1EBUG(textBuf,"xyz=%lf\r\n",xyz);
+		OUT_D1EBUG(textBuf,"mDist1=%lf\r\n",mDist1);
+		OUT_D1EBUG(textBuf,"mDist2=%lf\r\n",mDist2);
+		////R_OUT_D1EBUG(textBuf,"dbdist1=%lf\r\n",dbdist1);
+		////R_OUT_D1EBUG(textBuf,"dbdist2=%lf\r\n",dbdist2);
+		////R_OUT_D1EBUG(textBuf,"dbdist3=%lf\r\n",dbdist3);
+
+
+		if(flt_equals(mDist1,xyz)&& (int_databasePOID != detected_POID ))
+			//if((!(mDist1 < 0.000000)) && (!(mDist1 > 0.000000)))
+		{
+			OUT_D1EBUG(textBuf,"In forward journy  5\r\n");
+			addition = (mDist1 + mDist2);
+
+			difference = (dbdist2  - dbdist1);
+			detected_POID=int_databasePOID;
+
+			mDataBaseLat11 = mDataBaseLat1;
+			mDataBaseLong11 = mDataBaseLong1;
+			mDataBaseLat22 = mDataBaseLat2;
+			mDataBaseLong22 = mDataBaseLong2;
+			Ql_StopTimer(&deviation_tmr);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLat11=%lf\r\n",mDataBaseLat11);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLong11=%lf\r\n",mDataBaseLong11);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLat22=%lf\r\n",mDataBaseLat22);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLong22=%lf\r\n",mDataBaseLong22);
+			OUT_D1EBUG(textBuf,"LO_CurrLat=%lf\r\n",LO_CurrLat);
+			OUT_D1EBUG(textBuf,"LO_CurrLong=%lf\r\n",LO_CurrLong);
+
+			fn_makeLEDON((char *)databaseLED);
+			//fn_prezone_detection(zonecolor);
+			OUT_D1EBUG(textBuf,"curr_zone_address=%d \r\n",curr_zone_address);
+			detect_zone_addr=curr_zone_address;
+
+			zone_address_mem=JRM_zone_array[curr_zone_address];
+			OUT_D1EBUG(textBuf,"file zone_address_mem(((4))) =%d \r\n",zone_address_mem);
+			Zone_Detection_Flag= TRUE;
+
+			//Ql_memset(prev_LED,'\0',3);
+			Ql_strcpy((char *)prev_LED,(char *)databaseLED);
+			OUT_D1EBUG(textBuf,"prev_LED:::::%s\r\n",prev_LED);
+
+			Zone_loc =curr_zone_address-1;
+			Start_Pt= Zone_loc;
+			//Start_Pt= curr_zone_address;
+			JRM_Max_Count=0;
+			//fn_finddirection();
+			fn_finddirection();
+
+
+			dbdist11 = dbdist1;
+			dbdist22 = dbdist2;
+			///////////For Deviation checking- 6Jun 2011 Bhagyashri
+			//PrevZone = CurrZone;
+			CurrZone = curr_zone_address;
+			zone_address_mem=JRM_zone_array[CurrZone];
+			OUT_D1EBUG(textBuf,"file zone_address_mem(((6))) =%d \r\n",zone_address_mem);
+			detected_zone_address_mem=zone_address_mem;
+
+			OUT_D1EBUG(textBuf,"ZONE DETECTED in 6 ..color=%s,point ID=%s\r\n",databaseLED,databasePOID);
+			////R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone color=%s \r\n",databaseLED);
+			////R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone point ID=%s \r\n",databasePOID);
+
+			//after_detection();
+
+			/*
+				if( Start_Pt == (last_zone_location-3))
+				{
+
+					Returnj=TRUE;
+					Forwardj= FALSE;
+					Zone_Detection_Flag= TRUE;
+					//Start_Pt= curr_zone_address;
+					//JRM_Max_Count=0;
+				}						
+			 */
+		}
+		else if(flt_equals(mDist2,xyz) && (int_databasePOID2 != detected_POID ))
+		{
+			OUT_D1EBUG(textBuf,"In forward journy  7\r\n");
+			addition = (mDist1 + mDist2);
+			difference = (dbdist2  - dbdist1);
+			detected_POID=int_databasePOID2;
+			//fn_makeLEDON(zonecolor);
+			//fn_prezone_detection(zonecolor);
+
+			mDataBaseLat11 = mDataBaseLat1;
+			mDataBaseLong11 = mDataBaseLong1;
+			mDataBaseLat22 = mDataBaseLat2;
+			mDataBaseLong22 = mDataBaseLong2;
+			Ql_StopTimer(&deviation_tmr);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLat11=%lf\r\n",mDataBaseLat11);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLong11=%lf\r\n",mDataBaseLong11);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLat22=%lf\r\n",mDataBaseLat22);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLong22=%lf\r\n",mDataBaseLong22);
+			OUT_D1EBUG(textBuf,"LO_CurrLat=%lf\r\n",LO_CurrLat);
+			OUT_D1EBUG(textBuf,"LO_CurrLong=%lf\r\n",LO_CurrLong);
+
+			fn_makeLEDON((char *)databaseLED2);
+
+			zone_address_mem=JRM_zone_array[curr_zone_address];
+			OUT_D1EBUG(textBuf,"file zone_address_mem(((7))) =%d \r\n",zone_address_mem);
+			OUT_D1EBUG(textBuf,"curr_zone_address=%d \r\n",curr_zone_address);
+			detect_zone_addr=curr_zone_address;
+			Zone_Detection_Flag= TRUE;
+
+			//Ql_memset(prev_LED,'\0',3);
+			Ql_strcpy((char *)prev_LED,(char *)databaseLED2);
+			OUT_D1EBUG(textBuf,"prev_LED:::::%s\r\n",prev_LED);
+
+			Zone_loc =curr_zone_address-1;
+			Start_Pt= Zone_loc;
+			//Start_Pt= curr_zone_address;
+			JRM_Max_Count=0;
+			fn_finddirection();
+
+
+
+
+
+			dbdist11 = dbdist1;
+			dbdist22 = dbdist2;
+			///////////For Deviation checking- 6Jun 2011 Bhagyashri
+			//PrevZone = CurrZone;
+			CurrZone = curr_zone_address;
+			zone_address_mem=JRM_zone_array[CurrZone];
+			OUT_D1EBUG(textBuf,"file zone_address_mem(((8))) =%d \r\n",zone_address_mem);
+			detected_zone_address_mem=zone_address_mem;
+
+
+			OUT_D1EBUG(textBuf,"ZONE DETECTED in 8..color=%s,point ID=%s\r\n",databaseLED2,databasePOID2);
+			////R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone color=%s \r\n",databaseLED2);
+			////R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone point ID=%s \r\n",databasePOID2);
+			//fn_finddirection();
+			//after_detection();
+
+			/*
+				if( Start_Pt == (last_zone_location-3))
+				{
+
+					Returnj=TRUE;
+					Forwardj= FALSE;
+					Zone_Detection_Flag= TRUE;
+					//Start_Pt= curr_zone_address;
+					//JRM_Max_Count=0;
+				}						
+			 */
+
+		}
+
+		//else if((dbdist3 > dbdist2) &&  (dbdist3 < dbdist1))
+		else if((dbdist3 > dbdist1) &&  (dbdist3 < dbdist2))
+		{
+
+			OUT_D1EBUG(textBuf,"IN other loop*****(dbdist3 > dbdist1) &&  (dbdist3 < dbdist2)***8\r\n");
+			addition = (mDist1 + mDist2);
+
+			difference= (dbdist2  - dbdist1);
+
+
+			if(((double)mDist1) == ((double)mDist2))
+			{
+				if(((double)mDist2)<= ((double)difference)) ///  equal condition changed to <=  on 25 May 2011
+				{
+
+					OUT_D1EBUG(textBuf,"IN other loop***9\r\n");
+					//fn_prezone_detection(zonecolor);
+					////adl_atSendResponse (ADL_AT_RSP,"\r\nconfirmly 1st zone********");
+					//R_OUT_D1EBUG(textBuf,"addition=%lf\r\n",addition);
+					//R_OUT_D1EBUG(textBuf,"difference=%lf\r\n",difference);
+					Zone_Detection_Flag= TRUE;
+					//curr_zone_address = curr_zone_address -1;
+
+					//Start_Pt= curr_zone_address;
+					JRM_Max_Count=0;
+					detected_POID=int_databasePOID;
+					mDataBaseLat11 = mDataBaseLat1;
+					mDataBaseLong11 = mDataBaseLong1;
+					mDataBaseLat22 = mDataBaseLat2;
+					mDataBaseLong22 = mDataBaseLong2;
+					Ql_StopTimer(&deviation_tmr);
+					zone_address_mem=JRM_zone_array[curr_zone_address];
+					OUT_D1EBUG(textBuf,"file zone_address_mem(((9))) =%d \r\n",zone_address_mem);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLat11=%lf\r\n",mDataBaseLat11);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLong11=%lf\r\n",mDataBaseLong11);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLat22=%lf\r\n",mDataBaseLat22);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLong22=%lf\r\n",mDataBaseLong22);
+					OUT_D1EBUG(textBuf,"LO_CurrLat=%lf\r\n",LO_CurrLat);
+					OUT_D1EBUG(textBuf,"LO_CurrLong=%lf\r\n",LO_CurrLong);
+
+					fn_makeLEDON((char *)databaseLED);
+
+					//Ql_memset(prev_LED,'\0',3);
+					Ql_strcpy((char *)prev_LED,(char *)databaseLED);
+					OUT_D1EBUG(textBuf,"prev_LED:::::%s\r\n",prev_LED);
+
+					Zone_loc =curr_zone_address-1;
+					Start_Pt= Zone_loc;
+
+					OUT_D1EBUG(textBuf,"curr_zone_address=%d \r\n",curr_zone_address);
+					detect_zone_addr=curr_zone_address;
+					fn_finddirection();
+
+					dbdist11 = dbdist1;
+					dbdist22 = dbdist2;
+
+					//PrevZone = CurrZone;
+					CurrZone = curr_zone_address;
+					zone_address_mem=JRM_zone_array[CurrZone];
+					OUT_D1EBUG(textBuf,"file zone_address_mem(((11))) =%d \r\n",zone_address_mem);
+					detected_zone_address_mem=zone_address_mem;
+
+					OUT_D1EBUG(textBuf,"ZONE DETECTED 10..color=%s,point ID=%s  \r\n",databaseLED,databasePOID);
+					////R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone color=%s \r\n",databaseLED);
+					////R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone point ID=%s \r\n",databasePOID);
+					//fn_finddirection();
+					//after_detection();
+					//fn_makeLEDON((char *)databaseLED);
+					/*
+						if(Start_Pt == (last_zone_location-3))
+						{
+							////adl_atSendResponse (ADL_AT_RSP,"\r\nIn return J assigning ");
+							//curr_zone_address = 300 + (last_zone_location - 1);
+							//curr_zone_address = curr_zone_address - 15;
+							//curr_zone_address = 301;
+							Returnj=TRUE;
+							Forwardj= FALSE;
+							Zone_Detection_Flag= TRUE;
+							//Start_Pt= curr_zone_address;
+							//JRM_Max_Count=0;
+						}
+					 */
+				}
+				else
+				{
+					tw_ripit();
+				}
+			}
+			else
+			{
+				if(((double)mDist2)<= ((double)difference)) ///  equal condition changed to <=  on 25 May 2011
+					//if(((double)addition) <= ((double)difference)) ///  equal condition changed to <= on 25 May 2011
+				{
+
+					OUT_D1EBUG(textBuf,"IN other loop***11\r\n");
+					//fn_prezone_detection(zonecolor);
+					////adl_atSendResponse (ADL_AT_RSP,"\r\nconfirmly 1st zone***********\r\n");
+					//R_OUT_D1EBUG(textBuf,"addition=%lf\r\n",addition);
+					//R_OUT_D1EBUG(textBuf,"difference=%lf\r\n",difference);
+					detected_POID=int_databasePOID;
+					mDataBaseLat11 = mDataBaseLat1;
+					mDataBaseLong11 = mDataBaseLong1;
+					mDataBaseLat22 = mDataBaseLat2;
+					mDataBaseLong22 = mDataBaseLong2;
+					Ql_StopTimer(&deviation_tmr);
+					curr_zone_address=curr_zone_address-1;
+					zone_address_mem=JRM_zone_array[curr_zone_address];
+					OUT_D1EBUG(textBuf,"file zone_address_mem(((12))) =%d \r\n",zone_address_mem);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLat11=%lf\r\n",mDataBaseLat11);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLong11=%lf\r\n",mDataBaseLong11);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLat22=%lf\r\n",mDataBaseLat22);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLong22=%lf\r\n",mDataBaseLong22);
+					OUT_D1EBUG(textBuf,"LO_CurrLat=%lf\r\n",LO_CurrLat);
+					OUT_D1EBUG(textBuf,"LO_CurrLong=%lf\r\n",LO_CurrLong);
+
+					fn_makeLEDON((char *)databaseLED);
+					OUT_D1EBUG(textBuf,"curr_zone_address=%d \r\n",curr_zone_address);
+					detect_zone_addr=curr_zone_address;
+					Zone_Detection_Flag= TRUE;
+
+					//Ql_memset(prev_LED,'\0',3);
+					Ql_strcpy((char *)prev_LED,(char *)databaseLED);
+					OUT_D1EBUG(textBuf,"prev_LED:::::%s\r\n",prev_LED);
+
+					Zone_loc =curr_zone_address-1;
+					Start_Pt= Zone_loc;
+					//Start_Pt= curr_zone_address;
+					JRM_Max_Count=0;
+					fn_finddirection();
+
+					dbdist11 = dbdist1;
+					dbdist22 = dbdist2;
+
+					//PrevZone = CurrZone;
+					CurrZone = curr_zone_address;
+					zone_address_mem=JRM_zone_array[CurrZone];
+					OUT_D1EBUG(textBuf,"file zone_address_mem(((13))) =%d \r\n",zone_address_mem);
+					detected_zone_address_mem=zone_address_mem;
+
+					OUT_D1EBUG(textBuf,"ZONE DETECTED 12..color=%s,point ID=%s\r\n",databaseLED,databasePOID);
+					////R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone color=%s \r\n",databaseLED);
+					//R_OUT_D1EBUG(textBuf,"ZONE DETECTED_zone point ID=%s \r\n",databasePOID);
+
+					//after_detection();
+					//fn_makeLEDON((char *)databaseLED);
+					/*
+						if( Start_Pt == (last_zone_location-3))
+						{
+							////adl_atSendResponse (ADL_AT_RSP,"\r\nIn return J assigning ");
+							//curr_zone_address = 300 + (last_zone_location - 1);
+							//curr_zone_address = curr_zone_address - 15;
+							//curr_zone_address = 301;
+							Returnj=TRUE;
+							Forwardj= FALSE;
+							Zone_Detection_Flag= TRUE;
+							//Start_Pt= curr_zone_address;
+							//JRM_Max_Count=0;
+						}
+					 */
+				}
+				else
+				{
+					tw_ripit();
+
+				}
+			}
+
+		}
+		else
+		{
+
+			tw_ripit();
+
+		}
+	}
+}
+
+void fn_finddirection()	
+{	
+
+	OUT_D1EBUG(textBuf,"***JRM fn_finddirection***\r\n");
+	mdistdirection = dbdist3;
+	OUT_D1EBUG(textBuf,"O mdistdireCompair=%lf\r\n",mdistdireCompair);
+	OUT_D1EBUG(textBuf,"O mdistdirection=%lf\r\n",mdistdirection);
+
+	if(comp == 0)
+	{	
+		mdistdireCompair = mdistdirection;
+		OUT_D1EBUG(textBuf,"(comp == 0),mdistdireCompair=%lf,mdistdirection=%lf\r\n",mdistdireCompair,mdistdirection);
+		OUT_D1EBUG(textBuf,"mdistdireCompair=%lf\r\n",mdistdireCompair);
+		OUT_D1EBUG(textBuf,"mdistdirection=%lf\r\n",mdistdirection);
+		comp++;
+	}
+	if(mdistdireCompair > mdistdirection)
+	{
+		comp = 0;
+
+		OUT_D1EBUG(textBuf,"(mdistdireCompair > mdistdirection),mdistdireCompair=%lf,mdistdirection=%lf\r\n",mdistdireCompair,mdistdirection);
+		///need to write in memory
+		OUT_D1EBUG(textBuf,"mdistdireCompair=%lf\r\n",mdistdireCompair);
+		OUT_D1EBUG(textBuf,"mdistdirection=%lf\r\n",mdistdirection);
+
+		Returnj = TRUE;
+		fun_JRM_Dir_Write();
+		Forwardj=FALSE; 
+		if(Returnj == TRUE)
+		{
+			//array_add-=2;
+			OUT_D1EBUG(textBuf," array_add=%d \r\n",array_add);
+			zone_address_mem=JRM_zone_array[array_add];
+			OUT_D1EBUG(textBuf,"file zone_address_mem(((14))) =%d \r\n",zone_address_mem);
+		}
+		OUT_D1EBUG(textBuf,"IN REVERSE DIRECTION\r\n");
+		//jrm_nextstation.timeoutPeriod = Ql_MillisecondToTicks(500);
+		//jrm_nextstation.timerId =0;
+		Ql_StartTimer(&jrm_nextstation);
+		OUT_D1EBUG(textBuf," Started jrm_nextstation1.....\r\n");
+		//curr_zone_address = 301;	
+		//tw_handl_Dispalynextstation	= adl_tmrSubscribe(FALSE,10, ADL_TMR_TYPE_100MS, tw_handler_Dispalynextstation);							
+	}
+	else if(mdistdireCompair < mdistdirection)
+	{
+		comp = 0;
+		OUT_D1EBUG(textBuf,"(mdistdireCompair < mdistdirection),mdistdireCompair=%lf,mdistdirection=%lf\r\n",mdistdireCompair,mdistdirection);
+		////R_OUT_D1EBUG(textBuf,"mdistdireCompair=%lf\r\n",mdistdireCompair);
+		////R_OUT_D1EBUG(textBuf,"mdistdirection=%lf\r\n",mdistdirection);
+
+		Forwardj = TRUE;
+		Returnj = FALSE;
+		fun_JRM_Dir_Write();
+
+		OUT_D1EBUG(textBuf,"IN FORWARD DIRECTION\r\n");
+		jrm_nextstation.timerId =0;
+		Ql_StartTimer(&jrm_nextstation);
+		OUT_D1EBUG(textBuf," Started jrm_nextstation2.....\r\n");
+		//curr_zone_address = 301;
+		//tw_handl_Dispalynextstation  =	adl_tmrSubscribe(FALSE,10, ADL_TMR_TYPE_100MS, tw_handler_Dispalynextstation);
+	}
+	else if(mdistdireCompair == mdistdirection)
+	{
+		OUT_D1EBUG(textBuf,"(mdistdireCompair == mdistdirection)\r\n");
+		//jrm_nextstation.timerId =0;
+		Ql_StartTimer(&jrm_nextstation);
+		OUT_D1EBUG(textBuf," Started jrm_nextstation3.....\r\n");
+		//tw_findcurrentpos(); 4nov 09
+		//tw_handl_Dispalynextstation  =	adl_tmrSubscribe(FALSE,50, ADL_TMR_TYPE_100MS, tw_handler_Dispalynextstation);
+	}
+	else  
+	{
+		OUT_D1EBUG(textBuf,"IN else\r\n");
+		Forwardj = FALSE;
+		Returnj = FALSE;
+		fun_JRM_Dir_Write();
+		//timer_finddirection = adl_tmrSubscribe(FALSE,100,ADL_TMR_TYPE_100MS,timer_handler_finddirection );
+	}	          
+}
+/*
+void after_detection(void)
+{
+
+	detected=1;
+ 	 //R_OUT_D1EBUG(textBuf,"JRM last_zone_location ret=%d: \r\n",last_zone_location);
+
+	 //R_OUT_D1EBUG(textBuf,"JRM jz=%d: \r\n",jz);
+	 //R_OUT_D1EBUG(textBuf,"JRM xx=%d: \r\n",xx);
+	 //R_OUT_D1EBUG(textBuf,"JRM xx_rev=%d: \r\n",xx_rev);
+	 if(Returnj==TRUE)
+	 {
+	 	if((twenty_cntr<=30) && (jz>xx_rev))
+	 	{
+		 //R_OUT_D1EBUG(textBuf,"inside if JRM jz=%d: \r\n",jz);
+	 	 //R_OUT_D1EBUG(textBuf,"inside if JRM xx_rev=%d: \r\n",xx_rev);
+	 	 curr_zone_address=JRM_zone_array[jz];
+	 	 //R_OUT_D1EBUG(textBuf,"JRM curr_zone_address after_detection ret=%d: \r\n",curr_zone_address);
+		 ////R_OUT_D1EBUG(textBuf,"JRM JRM_zone_array ret=%d: \r\n",JRM_zone_array[jx]);
+	 		if(JRM_extra_readbuffer[0]=='#')
+	  		{
+	 			Ql_StartTimer(&zone_scanning);
+	   			//jrm_rout_scanning();
+	  		}
+				// for(rx=0;rx<95000000;rx++);
+	 		jz--;
+	 	 }
+	 	else if(twenty_cntr<=30)
+	 	{
+	 		twenty_cntr+=1;
+	 		jz=extra_jz;
+	 		after_detection();
+	 	}
+	 	else
+	 	{
+	 		jx=0;
+	 		//reas_zone_stamp();
+	 	}
+	 }
+	 else
+	 {
+	 		if((twenty_cntr<=30) && (jz<=xx))
+	 		{
+	 		//R_OUT_D1EBUG(textBuf,"inside if JRM jz=%d: \r\n",jz);
+	 		//R_OUT_D1EBUG(textBuf,"inside if JRM xx=%d: \r\n",xx);
+	 		curr_zone_address=JRM_zone_array[jz];
+	 		//R_OUT_D1EBUG(textBuf,"JRM curr_zone_address after_detection ret=%d: \r\n",curr_zone_address);
+			////R_OUT_D1EBUG(textBuf,"JRM JRM_zone_array ret=%d: \r\n",JRM_zone_array[jx]);
+	 		if(JRM_extra_readbuffer[0]=='#')
+	  			{
+	 				Ql_StartTimer(&zone_scanning);
+	   				//jrm_rout_scanning();
+	  			}
+				// for(rx=0;rx<95000000;rx++);
+	 			jz++;
+	 		}
+	 		else if(twenty_cntr<=30 && jz!=extra_jz)
+	 		{
+	 			twenty_cntr+=1;
+	 			jz=extra_jz;
+	 			after_detection();
+	 		}
+	 		else
+	 		{
+	 			jx=0;
+	 			//reas_zone_stamp();
+	 		}
+	 }
+
+}
+ */
+void JRM_GPIO_reset(void)
+{
+	int iret;
+
+	QlPinParameter pinparameter;
+	pinparameter.pinconfigversion = QL_PIN_VERSION;
+	pinparameter.pinparameterunion.gpioparameter.pinpullenable = QL_PINPULLENABLE_ENABLE;
+	pinparameter.pinparameterunion.gpioparameter.pindirection = QL_PINDIRECTION_OUT;
+	pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_HIGH;
+
+	iret = Ql_pinSubscribe(QL_PINNAME_GPIO2, QL_PINMODE_2, &pinparameter);
+	////R_OUT_D1EBUG(textBuf,"\r\nSubscribe(%d),pin=%d,mod=%d,pul=%d,dir=%d,lev=%d\r\n",iret,QL_PINNAME_GPIO2,QL_PINMODE_1,QL_PINPULLENABLE_ENABLE,QL_PINDIRECTION_OUT,QL_PINLEVEL_HIGH);
+	//Ql_SendToUart(ql_uart_port1,buffer,Ql_strlen(buffer));
+	iret = Ql_pinSubscribe(QL_PINNAME_GPIO3, QL_PINMODE_2, &pinparameter);
+
+	if(((Ql_strstr((char *)Unit_Type,"BAT") != NULL) || (Ql_strstr((char *)Unit_Type,"bat") != NULL)) || ((Ql_strstr((char *)Unit_Type,"BATTERY") != NULL) || (Ql_strstr((char *)Unit_Type,"battery") != NULL)))
+	{
+		//	OUT_D1EBUG(textBuf,"GPIO _ This is BATTERY device... \r\n");
+		//pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_HIGH;
+		pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_LOW;
+		iret = Ql_pinSubscribe(QL_PINNAME_GPIO4, QL_PINMODE_2, &pinparameter);
+	}
+	else
+	{
+		//	OUT_D1EBUG(textBuf,"GPIO _ This is NOT BATTERY device... \r\n");
+		pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_HIGH;
+		//pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_LOW;
+		iret = Ql_pinSubscribe(QL_PINNAME_GPIO4, QL_PINMODE_2, &pinparameter);
+	}
+
+	return;
+}
+
+void JRM_GREEN_led(void)
+{
+	int iret;
+
+	QlPinParameter pinparameter;
+	//	mOverSpeedLimit=65;
+	OSRed=FALSE;
+	OSYellow=FALSE;
+	pinparameter.pinconfigversion = QL_PIN_VERSION;
+	pinparameter.pinparameterunion.gpioparameter.pinpullenable = QL_PINPULLENABLE_ENABLE;
+	pinparameter.pinparameterunion.gpioparameter.pindirection = QL_PINDIRECTION_OUT;
+	pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_LOW;
+
+	iret = Ql_pinSubscribe(QL_PINNAME_GPIO2, QL_PINMODE_2, &pinparameter);
+	////R_OUT_D1EBUG(textBuf,"\r\nSubscribe(%d),pin=%d,mod=%d,pul=%d,dir=%d,lev=%d\r\n",iret,QL_PINNAME_GPIO2,QL_PINMODE_1,QL_PINPULLENABLE_ENABLE,QL_PINDIRECTION_OUT,QL_PINLEVEL_HIGH);
+	//Ql_SendToUart(ql_uart_port1,buffer,Ql_strlen(buffer));
+	pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_LOW;
+	iret = Ql_pinSubscribe(QL_PINNAME_GPIO3, QL_PINMODE_2, &pinparameter);
+	return;
+}
+
+
+void JRM_RED_led(void)
+{
+	int iret;
+
+	QlPinParameter pinparameter;
+	//mOverSpeedLimit=30;
+	OSRed=TRUE;
+	OSYellow=FALSE;
+	pinparameter.pinconfigversion = QL_PIN_VERSION;
+	pinparameter.pinparameterunion.gpioparameter.pinpullenable = QL_PINPULLENABLE_ENABLE;
+	pinparameter.pinparameterunion.gpioparameter.pindirection = QL_PINDIRECTION_OUT;
+	pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_HIGH;
+
+	iret = Ql_pinSubscribe(QL_PINNAME_GPIO2, QL_PINMODE_2, &pinparameter);
+	////R_OUT_D1EBUG(textBuf,"\r\nSubscribe(%d),pin=%d,mod=%d,pul=%d,dir=%d,lev=%d\r\n",iret,QL_PINNAME_GPIO2,QL_PINMODE_1,QL_PINPULLENABLE_ENABLE,QL_PINDIRECTION_OUT,QL_PINLEVEL_HIGH);
+	//Ql_SendToUart(ql_uart_port1,buffer,Ql_strlen(buffer));
+	pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_LOW;
+	iret = Ql_pinSubscribe(QL_PINNAME_GPIO3, QL_PINMODE_2, &pinparameter);
+	return;
+}
+
+void JRM_YELLOW_led(void)
+{
+	int iret;
+
+	QlPinParameter pinparameter;
+	//mOverSpeedLimit=40;
+
+	///if((Zone_DV_Flag == FALSE) && ((detected_POID != 0) || (rev_int_databasePOID != 0)))
+	if((Zone_DV_Flag == FALSE) && (firstDV == 0))
+	{
+		OSRed=FALSE;
+		OSYellow=TRUE;
+	}
+
+	pinparameter.pinconfigversion = QL_PIN_VERSION;
+	pinparameter.pinparameterunion.gpioparameter.pinpullenable = QL_PINPULLENABLE_ENABLE;
+	pinparameter.pinparameterunion.gpioparameter.pindirection = QL_PINDIRECTION_OUT;
+
+	pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_LOW;
+	iret = Ql_pinSubscribe(QL_PINNAME_GPIO2, QL_PINMODE_2, &pinparameter);
+	////R_OUT_D1EBUG(textBuf,"\r\nSubscribe(%d),pin=%d,mod=%d,pul=%d,dir=%d,lev=%d\r\n",iret,QL_PINNAME_GPIO2,QL_PINMODE_1,QL_PINPULLENABLE_ENABLE,QL_PINDIRECTION_OUT,QL_PINLEVEL_HIGH);
+	//Ql_SendToUart(ql_uart_port1,buffer,Ql_strlen(buffer));
+
+	pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_HIGH;
+	iret = Ql_pinSubscribe(QL_PINNAME_GPIO3, QL_PINMODE_2, &pinparameter);
+	return;
+}
+
+void fn_makeLEDON(char *LED_COL)
+{
+	OUT_D1EBUG(textBuf,"fn_makeLEDON DETECTED=%s\r\n",LED_COL);
+	firstDV=0;
+	Start_count=0;
+	if(LED_COL[0]=='G')
+	{
+		OUT_D1EBUG(textBuf,"fn_makeLEDON green\r\n");
+		JRM_GPIO_unsub();
+		JRM_GREEN_led();
+	}
+	else if(LED_COL[0]=='Y')
+	{	
+		OUT_D1EBUG(textBuf,"fn_makeLEDON yellow\r\n");
+		JRM_GPIO_unsub();
+		JRM_YELLOW_led();
+	}		
+	else if(LED_COL[0]=='R')
+	{	
+		OUT_D1EBUG(textBuf,"fn_makeLEDON red\r\n");
+		JRM_GPIO_unsub();
+		JRM_RED_led();
+	}
+	return;
+}
+
+void JRM_GPIO_unsub(void)
+{
+	int iret;
+	OUT_D1EBUG(textBuf,"JRM_GPIO_unsub\r\n");
+	iret = Ql_pinUnSubscribe(QL_PINNAME_GPIO2);
+	OUT_D1EBUG(textBuf,"\r\nUnSubscribe(%d),pin=%d\r\n",iret,QL_PINNAME_GPIO2);
+	iret = Ql_pinUnSubscribe(QL_PINNAME_GPIO3);
+	OUT_D1EBUG(textBuf,"\r\nUnSubscribe(%d),pin=%d\r\n",iret,QL_PINNAME_GPIO3);
+	return;
+}
+
+void JRM_GPIO_buzzer_unsub(void)
+{
+	int iret;
+	////R_OUT_D1EBUG(textBuf,"JRM_GPIO_buzzer_unsub\r\n");
+	iret = Ql_pinUnSubscribe(QL_PINNAME_GPIO4);
+	////R_OUT_D1EBUG(textBuf,"\r\nUnSubscribe(%d),pin=%d\r\n",iret,QL_PINNAME_GPIO2);
+
+	return;
+}
+
+/*
+void Jrm_Zone_Deviation()
+{
+	float difference_1=0.000000,difference_11 = 0.000000,addition_11 = 0.000000,difference_2=0.000000;
+	float mDist11,mDist22;//,RmDist11,RmDist22
+
+	//Calculate the distance by passing lat long
+	mDist11 = tw_DistFromLatAndLong(JRM_DM2DD(mDataBaseLat11),JRM_DM2DD(mDataBaseLong11),JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong));
+
+	mDist22 = tw_DistFromLatAndLong(JRM_DM2DD(mDataBaseLat22),JRM_DM2DD(mDataBaseLong22),JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong));
+
+	addition_11 = (mDist11 + mDist22);
+
+	if(	Returnj == TRUE)
+	{
+		difference_11 = dbdist11 - dbdist22;
+
+	}
+	else 
+	{
+		difference_11 = dbdist22 - dbdist11;
+
+	}
+
+	difference_1= difference_11 + (1.5 * difference_11);
+
+	difference_2= difference_11 + (0.5 * difference_11);
+
+
+	if((difference_1 > addition_11) && (addition_11> difference_2))
+	{
+		//R_OUT_D1EBUG(textBuf,"\r\n Incorrect route only Deviation \r\n");
+
+		JRM_GPIO_unsub();
+	}
+	else if((addition_11 > difference_1) && (mCurrSpeed > 3.00000))
+	{
+		//R_OUT_D1EBUG(textBuf,"\r\n Incorrect route DV stamp \r\n");
+
+		JRM_GPIO_unsub();
+
+		//Jrm_Deviation_stamp ();	
+	}
+	else
+	{
+		////R_OUT_D1EBUG(textBuf,"\r\nCorrect Route \r\n");
+	}
+//}
+//*/
+
+void tw_findcurrentpos()
+{
+	//u8 datastamp[75],datastamp2[75],datastamp3[75];
+	//ascii memory_R[20],Max_C[5],Curr1[5];//start_Counter[5],
+	OUT_D1EBUG(textBuf,"*** IN tw_findcurrentpos ***\r\n");
+	int Zone_100_2,return_500_1;
+
+
+	if(	Returnj == TRUE)
+	{
+		OUT_D1EBUG(textBuf,"***in reverse journy.to find current position 1.\r\n");
+
+		OUT_D1EBUG(textBuf,"curr_LED:::::%s\r\n",curr_LED);
+
+		Start_count++;
+		//Calculate the distance by passing lat long
+		mDist1 = tw_DistFromLatAndLong(JRM_DM2DD(mDataBaseLat1),JRM_DM2DD(mDataBaseLong1),JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong));
+		mDist2 = tw_DistFromLatAndLong(JRM_DM2DD(mDataBaseLat2),JRM_DM2DD(mDataBaseLong2),JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong));
+
+		dbdist3 = 0.00;
+
+		dbdist3= (dbdist1 - mDist1);
+
+		//R_OUT_D1EBUG(textBuf,"flt_equals(mDist1,xyz)=%d\r\n",flt_equals(mDist1,xyz));
+		//R_OUT_D1EBUG(textBuf,"flt_equals(mDist2,xyz)=%d\r\n",flt_equals(mDist2,xyz));
+		//R_OUT_D1EBUG(textBuf,"xyz=%lf\r\n",xyz);
+		OUT_D1EBUG(textBuf,"mDist1=%lf\r\n",mDist1);
+		OUT_D1EBUG(textBuf,"mDist2=%lf\r\n",mDist2);
+		OUT_D1EBUG(textBuf,"dbdist1=%lf\r\n",dbdist1);
+		OUT_D1EBUG(textBuf,"dbdist2=%lf\r\n",dbdist2);
+		OUT_D1EBUG(textBuf,"dbdist3=%lf\r\n",dbdist3);
+		OUT_D1EBUG(textBuf,"mDataBaseLat1=%lf\r\n",mDataBaseLat1);
+		OUT_D1EBUG(textBuf,"mDataBaseLong1=%lf\r\n",mDataBaseLong1);
+		OUT_D1EBUG(textBuf,"mDataBaseLat2=%lf\r\n",mDataBaseLat2);
+		OUT_D1EBUG(textBuf,"mDataBaseLong2=%lf\r\n",mDataBaseLong2);
+
+		OUT_D1EBUG(textBuf,"*******dbdist3 - dbdist2*****=%lf\r\n",(dbdist3 - dbdist2));
+		OUT_D1EBUG(textBuf,"*******dbdist2 - dbdist3*****=%lf\r\n",(dbdist2 - dbdist3));
+		if(flt_equals(mDist1,xyz))                     //zone color 2
+		{
+			addition = (mDist1 + mDist2);
+
+			difference = (dbdist1  - dbdist2);
+
+			OUT_D1EBUG(textBuf,"***in reverse journy.._1 mdist=0  \r\n");
+			//fn_makeLEDON(zonecolor2);
+
+			mDataBaseLat11 = mDataBaseLat1;
+			mDataBaseLong11 = mDataBaseLong1;
+			mDataBaseLat22 = mDataBaseLat2;
+			mDataBaseLong22 = mDataBaseLong2;
+
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLat11=%lf\r\n",mDataBaseLat11);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLong11=%lf\r\n",mDataBaseLong11);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLat22=%lf\r\n",mDataBaseLat22);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLong22=%lf\r\n",mDataBaseLong22);
+			OUT_D1EBUG(textBuf,"LO_CurrLat=%lf\r\n",LO_CurrLat);
+			OUT_D1EBUG(textBuf,"LO_CurrLong=%lf\r\n",LO_CurrLong);
+
+			//  fn_makeLEDON((char *)databaseLED);
+			//Ql_memset(curr_LED,'\0',3);
+			//Ql_strcpy((char *)curr_LED,(char *)databaseLED);
+			Zone_Detection_Flag= TRUE;
+			Ql_StopTimer(&deviation_tmr);
+			//Start_count=0;
+			Zone_100_2 = curr_zone_address+1;
+			Start_Pt= Zone_100_2;
+			JRM_Max_Count=0;
+
+			if((((dbdist3 - dbdist2) <= 0.5)) && (((dbdist3 - dbdist2) > 0.0)))
+			{
+				if(curr_zone_address > 1)
+				{
+					OUT_D1EBUG(textBuf," next zone is 500 meters ahead...\r\n");
+					rev_zone_address_mem=JRM_zone_array[(Start_Pt-2)];
+					Rev_zone_seperation(rev_zone_address_mem);
+					Ql_strcpy((char *)next_LED,(char *)rev_databaseLED);
+					OUT_D1EBUG(textBuf,"rev_databaseLED_2=%s\r\n",rev_databaseLED);
+					//OUT_D1EBUG(textBuf,"curr_LED_1=%s\r\n",curr_LED);
+					OUT_D1EBUG(textBuf,"next_LED 2:::::%s\r\n",next_LED);
+					Pre_zone_detection();
+				}
+			}
+
+
+			if((int_databasePOID != detected_POID ) || (IN_FRWD==1))
+			{
+				CurrZone = curr_zone_address+1;
+				preZoneflg=0;
+				IN_FRWD=0;
+				zone_address_mem=JRM_zone_array[CurrZone];
+				OUT_D1EBUG(textBuf,"file zone_address_mem(((15))) =%d \r\n",zone_address_mem);
+				detected_zone_address_mem=zone_address_mem;
+				rev_zone_address_mem=JRM_zone_array[(CurrZone-1)];
+				Rev_zone_seperation(rev_zone_address_mem);
+				detected_POID=int_databasePOID;
+				detect_zone_addr=curr_zone_address;
+				//fn_makeLEDON((char *)databaseLED);
+				Ql_memset(curr_LED,'\0',sizeof(curr_LED));
+				Ql_strcpy((char *)curr_LED,(char *)rev_databaseLED);
+				OUT_D1EBUG(textBuf,"rev_databaseLED_3=%s\r\n",rev_databaseLED);
+				OUT_D1EBUG(textBuf,"curr_LED_3=%s\r\n",curr_LED);
+				fn_makeLEDON((char *)rev_databaseLED);
+				//zone_buzzer();
+				fn_finddirection();
+			}
+			else
+			{
+				//jrm_nextstation.timerId =0;
+				Ql_StartTimer(&jrm_nextstation);
+				OUT_D1EBUG(textBuf," Started jrm_nextstation3.....\r\n");
+			}
+
+
+			dbdist11 = dbdist1;
+			dbdist22 = dbdist2;
+
+
+			/*if((dbdist3 - dbdist2) <= 0.5)
+				{												
+					db = (dbdist3 - dbdist2);
+
+					return_500_1 = curr_zone_address-1;
+
+					if(return_500_1 > 0)
+					{
+						//adl_flhRead(F_JRM,return_500_1,75,(u8 *)datastamp3);
+						//wm_memset((ascii *)par73,0,sizeof(par73));
+						//wm_memset((ascii *)zonecolor3,0,sizeof(zonecolor3));
+						//wm_strGetParameterString((ascii *)par73,(ascii *)datastamp3,5);
+
+						//wm_strncat((ascii *)zonecolor3,par73,8);
+
+						//fn_prezone_detection(zonecolor3);
+					}
+					else
+					{							
+					}
+
+				}
+				else
+				{if(CurrZone == 1)
+				{
+					Returnj =FALSE;
+					Forwardj=TRUE; 
+				}
+				}*/
+			if( detected_POID == FirstPOID)
+			{
+
+				Returnj=FALSE;
+				fun_JRM_Dir_Write();
+				Forwardj= TRUE;
+				Zone_Detection_Flag= TRUE;
+
+			}
+
+
+
+		}
+		/*
+			else if(flt_equals(mDist2,xyz))
+			{
+
+				addition = (mDist1 + mDist2);
+
+				difference = (dbdist1  - dbdist2); 
+
+
+
+
+						//fn_makeLEDON(zonecolor2); 
+
+						mDataBaseLat11 = mDataBaseLat1;
+						mDataBaseLong11 = mDataBaseLong1; 
+						mDataBaseLat22 = mDataBaseLat2;
+						mDataBaseLong22 = mDataBaseLong2;
+
+						//R_OUT_D1EBUG(textBuf,"***in reverse journy.._2 mdist2=0  \r\n");
+
+						//R_OUT_D1EBUG(textBuf,"mDataBaseLat11=%lf\r\n",mDataBaseLat11);
+						//R_OUT_D1EBUG(textBuf,"mDataBaseLong11=%lf\r\n",mDataBaseLong11);
+						//R_OUT_D1EBUG(textBuf,"mDataBaseLat22=%lf\r\n",mDataBaseLat22);
+						//R_OUT_D1EBUG(textBuf,"mDataBaseLong22=%lf\r\n",mDataBaseLong22);
+						//R_OUT_D1EBUG(textBuf,"LO_CurrLat=%lf\r\n",LO_CurrLat);
+						//R_OUT_D1EBUG(textBuf,"LO_CurrLong=%lf\r\n",LO_CurrLong);
+
+						//fn_makeLEDON((char *)databaseLED2);
+						//Ql_memset(curr_LED,'\0',3);
+						Ql_strcpy((char *)curr_LED,(char *)databaseLED2);
+
+
+						Zone_Detection_Flag= TRUE;
+						Zone_100_2 = curr_zone_address+1;
+						Start_Pt= Zone_100_2;
+
+						JRM_Max_Count=0;
+						if((int_databasePOID2 != detected_POID ))
+						{
+							CurrZone = curr_zone_address;
+							zone_address_mem=JRM_zone_array[CurrZone];
+							detected_zone_address_mem=zone_address_mem;
+							//R_OUT_D1EBUG(textBuf,"@@@@@In reverse journy case 2..\r\n");
+							fn_makeLEDON((char *)databaseLED2);
+							detected_POID=int_databasePOID2;
+							detect_zone_addr=curr_zone_address;
+							zone_buzzer();
+							//fn_finddirection();
+						}
+						else
+						{
+							jrm_nextstation.timeoutPeriod = Ql_MillisecondToTicks(500);
+							Ql_StartTimer(&jrm_nextstation);
+						}
+
+						dbdist11 = dbdist1;
+						dbdist22 = dbdist2;	
+
+						if( detected_POID == FirstPOID)
+						{
+
+							Returnj=FALSE;
+							Forwardj= TRUE;
+							Zone_Detection_Flag= TRUE;
+
+						}	
+
+
+
+						//CurrZone = curr_zone_address;
+
+
+
+				}*/
+		else if((dbdist3 > dbdist2) &&  (dbdist3 < dbdist1))
+		{
+
+			addition = (mDist1 + mDist2);
+
+			difference = (dbdist1  - dbdist2);
+
+			if(((double)mDist1 == (double)mDist2))
+			{
+
+				if(((double)mDist2)<= ((double)difference)) ///  equal condition changed to <=  on 25 May 2011
+				{
+
+
+					//fn_makeLEDON(zonecolor2);
+
+					mDataBaseLat11 = mDataBaseLat1;
+					mDataBaseLong11 = mDataBaseLong1;
+					mDataBaseLat22 = mDataBaseLat2;
+					mDataBaseLong22 = mDataBaseLong2;
+
+					OUT_D1EBUG(textBuf,"***in reverse journey.._3 mdist1=mdist2 < diff  \r\n");
+
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLat11=%lf\r\n",mDataBaseLat11);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLong11=%lf\r\n",mDataBaseLong11);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLat22=%lf\r\n",mDataBaseLat22);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLong22=%lf\r\n",mDataBaseLong22);
+					OUT_D1EBUG(textBuf,"LO_CurrLat=%lf\r\n",LO_CurrLat);
+					OUT_D1EBUG(textBuf,"LO_CurrLong=%lf\r\n",LO_CurrLong);
+
+					//fn_makeLEDON((char *)databaseLED2);
+					//Ql_memset(curr_LED,'\0',3);
+					Ql_memset(curr_LED,'\0',sizeof(curr_LED));
+					Ql_strcpy((char *)curr_LED,(char *)databaseLED2);
+
+					Ql_StopTimer(&deviation_tmr);
+					Zone_Detection_Flag= TRUE;
+					Zone_100_2 = curr_zone_address+1;
+					Start_Pt= Zone_100_2;
+
+					JRM_Max_Count=0;
+
+					if((dbdist3 - dbdist2) <= 0.5)
+					{
+						if(curr_zone_address > 1)
+						{
+							OUT_D1EBUG(textBuf," next zone is 500 meters ahead...\r\n");
+							rev_zone_address_mem=JRM_zone_array[(Start_Pt-2)];
+							Rev_zone_seperation(rev_zone_address_mem);
+							Ql_strcpy((char *)next_LED,(char *)rev_databaseLED);
+							OUT_D1EBUG(textBuf,"rev_databaseLED_4=%s\r\n",rev_databaseLED);
+							//OUT_D1EBUG(textBuf,"curr_LED_1=%s\r\n",curr_LED);
+							OUT_D1EBUG(textBuf,"next_LED 4:::::%s\r\n",next_LED);
+							Pre_zone_detection();
+						}
+					}
+
+					if((int_databasePOID2 != detected_POID ) || (IN_FRWD==1))
+					{
+						CurrZone = curr_zone_address;
+						IN_FRWD=0;
+						preZoneflg=0;
+						zone_address_mem=JRM_zone_array[CurrZone];
+						OUT_D1EBUG(textBuf,"file zone_address_mem(((16))) =%d \r\n",zone_address_mem);
+						detected_zone_address_mem=zone_address_mem;
+						//rev_zone_address_mem=JRM_zone_array[(CurrZone-1)];
+						//Rev_zone_seperation(rev_zone_address_mem);
+						// OUT_D1EBUG(textBuf,"rev_databaseLED buffer=%s \r\n",rev_databaseLED);
+						// OUT_D1EBUG(textBuf,"rev_databasePOID buffer=%s \r\n",rev_databasePOID);
+						// OUT_D1EBUG(textBuf,"@@@@@In reverse journy case 3==%d.\r\n",CurrZone);
+						fn_makeLEDON((char *)databaseLED2);
+						//Ql_strcpy((char *)curr_LED,(char *)rev_databaseLED);
+						//fn_makeLEDON((char *)rev_databaseLED);
+						detected_POID=int_databasePOID2;
+						OUT_D1EBUG(textBuf,"##3##In return journey Copying POID value = %d\r\n",detected_POID);
+						rev_int_databasePOID=detected_POID;
+						detect_zone_addr=curr_zone_address;
+						//zone_buzzer();
+						fn_finddirection();
+					}
+					else
+					{
+						//jrm_nextstation.timerId =0;
+						Ql_StartTimer(&jrm_nextstation);
+						OUT_D1EBUG(textBuf," Started jrm_nextstation4.....\r\n");
+					}
+
+					dbdist11 = dbdist1;
+					dbdist22 = dbdist2;
+
+
+					/*if((dbdist3 - dbdist2) <= 0.5)
+						{															
+							db = (dbdist3 - dbdist2);
+
+							return_500_1 = curr_zone_address-1;
+
+
+						//if(return_500_1 > 300)
+						//{
+						//adl_flhRead(F_JRM,return_500_1,75,(u8 *)datastamp3);
+						//wm_memset((ascii *)par73,0,sizeof(par73));
+						//wm_memset((ascii *)zonecolor3,0,sizeof(zonecolor3));
+						//wm_strGetParameterString((ascii *)par73,(ascii *)datastamp3,5);
+						//wm_strncat((ascii *)zonecolor3,par73,8);
+						//fn_prezone_detection(zonecolor3);
+						//}
+						//else
+						//{
+						//}
+						}
+						else
+						{
+						}*/
+
+					if( detected_POID == FirstPOID)
+					{
+
+						Returnj=FALSE;
+						fun_JRM_Dir_Write();
+						Forwardj= TRUE;
+						Zone_Detection_Flag= TRUE;
+
+					}
+					//CurrZone = curr_zone_address;
+
+				}
+				else
+				{
+
+					tw_ripit();
+				}
+			}
+			else
+			{
+
+				if(((double)mDist2)<= ((double)difference))
+				{
+
+					//fn_makeLEDON(zonecolor2);
+
+					mDataBaseLat11 = mDataBaseLat1;
+					mDataBaseLong11 = mDataBaseLong1;
+					mDataBaseLat22 = mDataBaseLat2;
+					mDataBaseLong22 = mDataBaseLong2;
+
+					OUT_D1EBUG(textBuf,"***in reverse journy.._4 mdist1=mdist2 < diff  \r\n");
+
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLat11=%lf\r\n",mDataBaseLat11);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLong11=%lf\r\n",mDataBaseLong11);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLat22=%lf\r\n",mDataBaseLat22);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLong22=%lf\r\n",mDataBaseLong22);
+					OUT_D1EBUG(textBuf,"LO_CurrLat=%lf\r\n",LO_CurrLat);
+					OUT_D1EBUG(textBuf,"LO_CurrLong=%lf\r\n",LO_CurrLong);
+
+					//fn_makeLEDON((char *)databaseLED2);
+					//Ql_memset(curr_LED,'\0',3);
+					//Ql_strcpy((char *)curr_LED,(char *)databaseLED2);
+					Zone_Detection_Flag= TRUE;
+					Ql_StopTimer(&deviation_tmr);
+					//Zone_100_2 = curr_zone_address +1;
+					Zone_100_2 = curr_zone_address;
+					Start_Pt= Zone_100_2;
+
+					JRM_Max_Count=0;
+
+					if((dbdist3 - dbdist2) <= 0.5)
+					{
+						if(curr_zone_address > 1)
+						{
+							if(mDist2 ==0)
+							{
+								OUT_D1EBUG(textBuf," Device is at point ...mDist2 ==0\r\n");
+								OUT_D1EBUG(textBuf,"## m0 ##  curr_zone_address=%d\r\n",Start_Pt);
+								rev_zone_address_mem=JRM_zone_array[(Start_Pt-1)];
+								OUT_D1EBUG(textBuf,"## m0 ##  rev_zone_address_mem=%d\r\n",rev_zone_address_mem);
+								Rev_zone_seperation(rev_zone_address_mem);
+								Ql_strcpy((char *)next_LED,(char *)rev_databaseLED);
+								int_databasePOID2=Ql_atoi(rev_databaseLED);
+								OUT_D1EBUG(textBuf,"## m0 ## rev_databaseLED_5=%s\r\n",rev_databaseLED);
+								//OUT_D1EBUG(textBuf,"curr_LED_5=%s\r\n",curr_LED);
+								OUT_D1EBUG(textBuf,"## m0 ## next_LED 5:::::%s\r\n",next_LED);
+								zone_buzzer();
+							}
+							else
+							{
+								OUT_D1EBUG(textBuf," next zone is 500 meters ahead...\r\n");
+								OUT_D1EBUG(textBuf,"##  ##  curr_zone_address=%d\r\n",Start_Pt);
+								rev_zone_address_mem=JRM_zone_array[(Start_Pt-2)];
+								OUT_D1EBUG(textBuf,"##  ##  rev_zone_address_mem=%d\r\n",rev_zone_address_mem);
+								Rev_zone_seperation(rev_zone_address_mem);
+								Ql_strcpy((char *)next_LED,(char *)rev_databaseLED);
+								OUT_D1EBUG(textBuf,"rev_databaseLED_5=%s\r\n",rev_databaseLED);
+								//OUT_D1EBUG(textBuf,"curr_LED_5=%s\r\n",curr_LED);
+								OUT_D1EBUG(textBuf,"next_LED 5:::::%s\r\n",next_LED);
+								Pre_zone_detection();
+							}
+						}
+					}
+
+					if((int_databasePOID2 != detected_POID ) || (IN_FRWD==1))
+					{
+						//	int_databasePOID;
+						OUT_D1EBUG(textBuf,"detected_POID (((aass))) =%d \r\n",detected_POID);
+						OUT_D1EBUG(textBuf,"int_databasePOID (((aa))) =%d \r\n",int_databasePOID);
+						OUT_D1EBUG(textBuf,"int_databasePOID2(((bb))) =%d \r\n",int_databasePOID2);
+
+						CurrZone = curr_zone_address;
+						IN_FRWD=0;
+						preZoneflg=0;
+						zone_address_mem=JRM_zone_array[CurrZone];
+						OUT_D1EBUG(textBuf,"file zone_address_mem(((17))) =%d \r\n",zone_address_mem);
+						detected_zone_address_mem=zone_address_mem;
+						///call function
+						//rev_zone_address_mem=JRM_zone_array[(CurrZone-1)];
+						//Rev_zone_seperation(rev_zone_address_mem);
+						// OUT_D1EBUG(textBuf,"rev_databaseLED buffer=%s \r\n",rev_databaseLED);
+						// OUT_D1EBUG(textBuf,"rev_databasePOID buffer=%s \r\n",rev_databasePOID);
+						// OUT_D1EBUG(textBuf,"@@@@@In reverse journy case 4.==%d.\r\n",CurrZone);
+						fn_makeLEDON((char *)databaseLED2);
+						//Ql_strcpy((char *)curr_LED,(char *)rev_databaseLED);
+						//fn_makeLEDON((char *)rev_databaseLED);
+						detected_POID=int_databasePOID2;
+
+						OUT_D1EBUG(textBuf,"##4##In After return journey Copying POID value = %d\r\n",detected_POID);
+						rev_int_databasePOID=detected_POID;
+						detect_zone_addr=curr_zone_address;
+						//zone_buzzer();
+						fn_finddirection();
+					}
+					else
+					{
+						//jrm_nextstation.timerId =0;
+						Ql_StartTimer(&jrm_nextstation);
+						OUT_D1EBUG(textBuf," Started jrm_nextstation5.....\r\n");
+					}
+
+
+
+					dbdist11 = dbdist1;
+					dbdist22 = dbdist2;
+
+					/*
+
+						if((dbdist3 - dbdist2) <= 0.5)
+						{															
+							db = (dbdist3 - dbdist2);
+
+							return_500_1 = curr_zone_address-1;
+
+
+
+						//if(return_500_1 > 300)
+						//{
+						//adl_flhRead(F_JRM,return_500_1,75,(u8 *)datastamp3);
+						//wm_memset((ascii *)par73,0,sizeof(par73));
+						//wm_memset((ascii *)zonecolor3,0,sizeof(zonecolor3));
+						//wm_strGetParameterString((ascii *)par73,(ascii *)datastamp3,5);
+
+						//wm_strncat((ascii *)zonecolor3,par73,8);
+
+						//fn_prezone_detection(zonecolor3);
+						//}
+						//else
+						//{
+						//}
+						}
+						else
+						{
+						}*/
+					if( detected_POID == FirstPOID)
+					{
+
+						Returnj=FALSE;
+						fun_JRM_Dir_Write();
+						Forwardj= TRUE;
+						Zone_Detection_Flag= TRUE;
+
+					}
+
+					//CurrZone = curr_zone_address;
+				}
+				else
+				{
+					tw_ripit();
+				}
+			}
+		}
+		else
+		{
+
+			tw_ripit();
+		}
+	}
+	////////for forward journey
+	else
+	{
+		OUT_D1EBUG(textBuf,"IN forward direction.\r\n");
+		IN_FRWD=1;
+		//curr_zone_address = curr_zone_address + 1;
+		//zone_address_mem++;
+		Start_count++;
+		//
+		//if( curr_zone_address == (last_zone_location-2))
+		//{
+
+		//Start_count = 15;
+		//}
+
+		mDist1 = tw_DistFromLatAndLong(JRM_DM2DD(mDataBaseLat1),JRM_DM2DD(mDataBaseLong1),JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong));
+		mDist2 = tw_DistFromLatAndLong(JRM_DM2DD(mDataBaseLat2),JRM_DM2DD(mDataBaseLong2),JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong));
+
+		dbdist3=0.00;
+		dbdist3=mDist1+dbdist1;
+
+		OUT_D1EBUG(textBuf,"flt_equals(mDist1,xyz)=%d\r\n",flt_equals(mDist1,xyz));
+		OUT_D1EBUG(textBuf,"flt_equals(mDist2,xyz)=%d\r\n",flt_equals(mDist2,xyz));
+		OUT_D1EBUG(textBuf,"xyz=%lf\r\n",xyz);
+		OUT_D1EBUG(textBuf,"mDist1=%lf\r\n",mDist1);
+		OUT_D1EBUG(textBuf,"mDist2=%lf\r\n",mDist2);
+		OUT_D1EBUG(textBuf,"dbdist1=%lf\r\n",dbdist1);
+		OUT_D1EBUG(textBuf,"dbdist2=%lf\r\n",dbdist2);
+		OUT_D1EBUG(textBuf,"dbdist3=%lf\r\n",dbdist3);
+
+		OUT_D1EBUG(textBuf,"*******dbdist3 - dbdist2*****=%lf\r\n",(dbdist3 - dbdist2));
+		OUT_D1EBUG(textBuf,"*******dbdist2 - dbdist3*****=%lf\r\n",(dbdist2 - dbdist3));
+
+		if(flt_equals(mDist1,xyz))
+		{
+			//detected_POID=int_databasePOID;
+			OUT_D1EBUG(textBuf,"\r\n IT IS  AT P1** \r\n");
+			addition = (mDist1 + mDist2);
+
+			difference = (dbdist2  - dbdist1);
+
+			mDataBaseLat11 = mDataBaseLat1;
+			mDataBaseLong11 = mDataBaseLong1;
+			mDataBaseLat22 = mDataBaseLat2;
+			mDataBaseLong22 = mDataBaseLong2;
+
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLat11=%lf\r\n",mDataBaseLat11);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLong11=%lf\r\n",mDataBaseLong11);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLat22=%lf\r\n",mDataBaseLat22);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLong22=%lf\r\n",mDataBaseLong22);
+			OUT_D1EBUG(textBuf,"LO_CurrLat=%lf\r\n",LO_CurrLat);
+			OUT_D1EBUG(textBuf,"LO_CurrLong=%lf\r\n",LO_CurrLong);
+
+			zone_address_mem=JRM_zone_array[curr_zone_address];
+			OUT_D1EBUG(textBuf,"file zone_address_mem(((18))) =%d \r\n",zone_address_mem);
+			//fn_makeLEDON(zonecolor);
+			//fn_makeLEDON((char *)databaseLED);
+			OUT_D1EBUG(textBuf,"curr_zone_address=%d \r\n",curr_zone_address);
+			//detected_POID=int_databasePOID;
+			//detect_zone_addr=curr_zone_address;
+
+			//Ql_memset(curr_LED,'\0',3);
+			Ql_memset(curr_LED,'\0',sizeof(curr_LED));
+			Ql_strcpy((char *)curr_LED,(char *)databaseLED);
+			Ql_StopTimer(&deviation_tmr);
+			Zone_Detection_Flag= TRUE;
+			Zone_100_2 = curr_zone_address -1;
+			Start_Pt= Zone_100_2;
+
+			JRM_Max_Count=0;
+
+
+			if((dbdist2 - dbdist3) <= 0.5)
+			{
+				OUT_D1EBUG(textBuf," next zone is 500 meters ahead.f1..\r\n");
+				Ql_strcpy((char *)next_LED,(char *)databaseLED2);
+				OUT_D1EBUG(textBuf,"next_LED:::::%s\r\n",next_LED);
+				Pre_zone_detection();
+			}
+
+			if((int_databasePOID != detected_POID ))
+			{
+				CurrZone = curr_zone_address;
+				zone_address_mem=JRM_zone_array[CurrZone];
+				OUT_D1EBUG(textBuf,"file zone_address_mem(((19))) =%d \r\n",zone_address_mem);
+				detected_zone_address_mem=zone_address_mem;
+				preZoneflg=0;
+				fn_makeLEDON((char *)databaseLED);
+				detected_POID=int_databasePOID;
+				detect_zone_addr=curr_zone_address;
+				//zone_buzzer();
+				fn_finddirection();
+
+			}
+			else
+			{
+				//jrm_nextstation.timerId =0;
+				Ql_StartTimer(&jrm_nextstation);
+				OUT_D1EBUG(textBuf," Started jrm_nextstation6.....\r\n");
+			}
+
+			dbdist11 = dbdist1;
+			dbdist22 = dbdist2;
+			/*
+				if((dbdist2 - dbdist3) <= 0.5)
+				{
+					db = (dbdist2 - dbdist3);
+
+					fn_prezone_detection(zonecolor2);
+				}
+				else
+				{
+				}
+			 */
+			if( detected_POID == LastPOID)
+			{
+
+				Returnj=TRUE;
+				fun_JRM_Dir_Write();
+				Forwardj= FALSE;
+				Zone_Detection_Flag= TRUE;
+			}
+			//   CurrZone = curr_zone_address;
+		}
+		//else if(flt_equals(mDist2,xyz) && (int_databasePOID2 != detected_POID ))
+		else if(flt_equals(mDist2,xyz))
+		{
+			//R_OUT_D1EBUG(textBuf,"\r\n IT IS  AT P2** \r\n");
+			addition = (mDist1 + mDist2);
+
+			difference = (dbdist2  - dbdist1);
+
+			mDataBaseLat11 = mDataBaseLat1;
+			mDataBaseLong11 = mDataBaseLong1;
+			mDataBaseLat22 = mDataBaseLat2;
+			mDataBaseLong22 = mDataBaseLong2;
+
+			zone_address_mem=JRM_zone_array[curr_zone_address];
+			OUT_D1EBUG(textBuf,"file zone_address_mem(((20))) =%d \r\n",zone_address_mem);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLat11=%lf\r\n",mDataBaseLat11);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLong11=%lf\r\n",mDataBaseLong11);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLat22=%lf\r\n",mDataBaseLat22);
+			//R_OUT_D1EBUG(textBuf,"mDataBaseLong22=%lf\r\n",mDataBaseLong22);
+			OUT_D1EBUG(textBuf,"LO_CurrLat=%lf\r\n",LO_CurrLat);
+			OUT_D1EBUG(textBuf,"LO_CurrLong=%lf\r\n",LO_CurrLong);
+
+			//fn_makeLEDON(zonecolor2);
+			//fn_makeLEDON((char *)databaseLED2);
+			OUT_D1EBUG(textBuf,"curr_zone_address=%d \r\n",curr_zone_address);
+			//detected_POID=int_databasePOID;
+			//detect_zone_addr=curr_zone_address;
+
+			//Ql_memset(curr_LED,'\0',3);
+			Ql_memset(curr_LED,'\0',sizeof(curr_LED));
+			Ql_strcpy((char *)curr_LED,(char *)databaseLED2);
+			Ql_StopTimer(&deviation_tmr);
+			Zone_Detection_Flag= TRUE;
+			Zone_100_2 = curr_zone_address -1;
+			Start_Pt= Zone_100_2;
+
+			JRM_Max_Count=0;
+			if((int_databasePOID2 != detected_POID ))
+			{
+				CurrZone = curr_zone_address;
+				zone_address_mem=JRM_zone_array[CurrZone];
+				OUT_D1EBUG(textBuf,"file zone_address_mem(((21))) =%d \r\n",zone_address_mem);
+				detected_zone_address_mem=zone_address_mem;
+				preZoneflg=0;
+				fn_makeLEDON((char *)databaseLED2);
+				detected_POID=int_databasePOID2;
+				detect_zone_addr=curr_zone_address;
+				zone_buzzer();
+				//fn_finddirection();
+			}
+			else
+			{
+				//jrm_nextstation.timerId =0;
+				Ql_StartTimer(&jrm_nextstation);
+				OUT_D1EBUG(textBuf," Started jrm_nextstation7.....\r\n");
+			}
+
+			dbdist11 = dbdist1;
+			dbdist22 = dbdist2;
+
+			if( detected_POID == LastPOID)
+			{
+
+				Returnj=TRUE;
+				fun_JRM_Dir_Write();
+				Forwardj= FALSE;
+				Zone_Detection_Flag= TRUE;
+
+			}
+			/*
+				if( Start_Pt == (last_zone_location-3))
+				{
+
+					Returnj=TRUE;
+					Forwardj= FALSE;
+					Zone_Detection_Flag= TRUE;
+
+				}
+			 */
+
+			//  CurrZone = curr_zone_address;
+		}
+		else if((dbdist3 > dbdist1) &&  (dbdist3 < dbdist2))
+		{
+			OUT_D1EBUG(textBuf,"\r\n IT IS  AT PPP** \r\n");
+			addition = (mDist1 + mDist2);
+
+			difference= (dbdist2  - dbdist1);
+
+			if(((double)mDist1) == ((double)mDist2))
+			{
+				OUT_D1EBUG(textBuf,"\r\n IT IS  AT PP** \r\n");
+				if(((double)mDist2)<= ((double)difference))
+				{
+					OUT_D1EBUG(textBuf,"\r\n IT IS  AT P3** \r\n");
+					//fn_makeLEDON(zonecolor);
+
+					mDataBaseLat11 = mDataBaseLat1;
+					mDataBaseLong11 = mDataBaseLong1;
+					mDataBaseLat22 = mDataBaseLat2;
+					mDataBaseLong22 = mDataBaseLong2;
+
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLat11=%lf\r\n",mDataBaseLat11);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLong11=%lf\r\n",mDataBaseLong11);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLat22=%lf\r\n",mDataBaseLat22);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLong22=%lf\r\n",mDataBaseLong22);
+					OUT_D1EBUG(textBuf,"LO_CurrLat=%lf\r\n",LO_CurrLat);
+					OUT_D1EBUG(textBuf,"LO_CurrLong=%lf\r\n",LO_CurrLong);
+
+					//fn_makeLEDON((char *)databaseLED);
+					OUT_D1EBUG(textBuf,"curr_zone_address=%d \r\n",curr_zone_address);
+
+					zone_address_mem=JRM_zone_array[curr_zone_address];
+					//detect_zone_addr=curr_zone_address;
+					OUT_D1EBUG(textBuf,"file zone_address_mem(((22))) =%d \r\n",zone_address_mem);
+					//Ql_memset(curr_LED,'\0',3);
+					Ql_memset(curr_LED,'\0',sizeof(curr_LED));
+					Ql_strcpy((char *)curr_LED,(char *)databaseLED);
+					Ql_StopTimer(&deviation_tmr);
+					Zone_Detection_Flag= TRUE;
+					Zone_100_2 = curr_zone_address -1;
+					Start_Pt= Zone_100_2;
+
+					JRM_Max_Count=0;
+
+					if((dbdist2 - dbdist3) <= 0.5)
+					{
+						OUT_D1EBUG(textBuf," next zone is 500 meters ahead.f2..\r\n");
+						Ql_strcpy((char *)next_LED,(char *)databaseLED2);
+						OUT_D1EBUG(textBuf,"next_LED:::::%s\r\n",next_LED);
+						Pre_zone_detection();
+					}
+
+					//fn_finddirection();
+					if((int_databasePOID != detected_POID ))
+					{
+						CurrZone = curr_zone_address;
+						zone_address_mem=JRM_zone_array[CurrZone];
+						OUT_D1EBUG(textBuf,"file zone_address_mem(((23))) =%d \r\n",zone_address_mem);
+						detected_zone_address_mem=zone_address_mem;
+						preZoneflg=0;
+						fn_makeLEDON((char *)databaseLED);
+						detected_POID=int_databasePOID;
+						detect_zone_addr=curr_zone_address;
+						//zone_buzzer();
+						fn_finddirection();
+					}
+					else
+					{
+						//jrm_nextstation.timerId =0;
+						Ql_StartTimer(&jrm_nextstation);
+						OUT_D1EBUG(textBuf," Started jrm_nextstation8.....\r\n");
+					}
+
+					dbdist11 = dbdist1;
+					dbdist22 = dbdist2;
+
+					if( detected_POID == LastPOID)
+					{
+
+						Returnj=TRUE;
+						fun_JRM_Dir_Write();
+						Forwardj= FALSE;
+						Zone_Detection_Flag= TRUE;
+
+					}
+					/*
+						if((dbdist2 - dbdist3) <= 0.5)
+						{
+							db = (dbdist3 - dbdist2);
+
+							fn_prezone_detection(zonecolor2);
+						}
+						else
+						{
+						}
+
+						if( Start_Pt == (last_zone_location-3))
+						{
+
+							Returnj=TRUE;
+							Forwardj= FALSE;
+							Zone_Detection_Flag= TRUE;
+
+						}
+					 */
+					//CurrZone = curr_zone_address;
+				}
+				else
+				{
+
+					tw_ripit();
+				}
+			}
+			else
+			{
+				//if((((double)mDist2)<= ((double)difference))&& (int_databasePOID != detected_POID )) ///  equal condition changed to <=  on 25 May 2011
+				if((((double)mDist2)<= ((double)difference)))
+				{
+					OUT_D1EBUG(textBuf,"\r\n IT IS  AT P4** \r\n");
+					//fn_makeLEDON(zonecolor);
+
+					mDataBaseLat11 = mDataBaseLat1;
+					mDataBaseLong11 = mDataBaseLong1;
+					mDataBaseLat22 = mDataBaseLat2;
+					mDataBaseLong22 = mDataBaseLong2;
+
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLat11=%lf\r\n",mDataBaseLat11);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLong11=%lf\r\n",mDataBaseLong11);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLat22=%lf\r\n",mDataBaseLat22);
+					//R_OUT_D1EBUG(textBuf,"mDataBaseLong22=%lf\r\n",mDataBaseLong22);
+					OUT_D1EBUG(textBuf,"LO_CurrLat=%lf\r\n",LO_CurrLat);
+					OUT_D1EBUG(textBuf,"LO_CurrLong=%lf\r\n",LO_CurrLong);
+
+					zone_address_mem=JRM_zone_array[curr_zone_address];
+					OUT_D1EBUG(textBuf,"file zone_address_mem(((24))) =%d \r\n",zone_address_mem);
+					//fn_makeLEDON((char *)databaseLED);
+					OUT_D1EBUG(textBuf,"curr_zone_address=%d \r\n",curr_zone_address);
+
+					//detect_zone_addr=curr_zone_address;
+
+					//Ql_memset(curr_LED,'\0',3);
+					Ql_memset(curr_LED,'\0',sizeof(curr_LED));
+					Ql_strcpy((char *)curr_LED,(char *)databaseLED);
+					Ql_StopTimer(&deviation_tmr);
+					Zone_Detection_Flag= TRUE;
+					Zone_100_2 = curr_zone_address -1;
+					Start_Pt= Zone_100_2;
+					JRM_Max_Count=0;
+
+					if((dbdist2 - dbdist3) <= 0.5)
+					{
+						OUT_D1EBUG(textBuf," next zone is 500 meters ahead.f3..\r\n");
+						Ql_strcpy((char *)next_LED,(char *)databaseLED2);
+						OUT_D1EBUG(textBuf,"next_LED:::::%s\r\n",next_LED);
+						Pre_zone_detection();
+					}
+
+					if((int_databasePOID != detected_POID ))
+					{
+						CurrZone = curr_zone_address;
+						zone_address_mem=JRM_zone_array[CurrZone];
+						OUT_D1EBUG(textBuf,"file zone_address_mem(((25))) =%d \r\n",zone_address_mem);
+						detected_zone_address_mem=zone_address_mem;
+						preZoneflg=0;
+						fn_makeLEDON((char *)databaseLED);
+						detected_POID=int_databasePOID;
+						detect_zone_addr=curr_zone_address;
+						//zone_buzzer();
+						fn_finddirection();
+					}
+					else
+					{
+						//jrm_nextstation.timerId =0;
+						Ql_StartTimer(&jrm_nextstation);
+						OUT_D1EBUG(textBuf," Started jrm_nextstation9.....\r\n");
+					}
+
+					dbdist11 = dbdist1;
+					dbdist22 = dbdist2;
+
+					if( detected_POID == LastPOID)
+					{
+
+						Returnj=TRUE;
+						fun_JRM_Dir_Write();
+						Forwardj= FALSE;
+						Zone_Detection_Flag= TRUE;
+
+					}
+					/*
+						if((dbdist2 - dbdist3) <= 0.5)
+						{				
+							db = (dbdist2 - dbdist3);
+
+							fn_prezone_detection(zonecolor2);
+						}
+						else
+						{
+						}
+
+						if( Start_Pt == (last_zone_location-3))
+						{
+
+							Returnj=TRUE;
+							Forwardj= FALSE;
+							Zone_Detection_Flag= TRUE;
+
+						}								
+					 */
+					//CurrZone = curr_zone_address;
+
+				}
+				else
+				{
+					tw_ripit();
+				}
+			}
+		}
+		else
+		{
+			tw_ripit();
+		}
+	}	
+}
+
+void tw_ripit()
+{
+	OUT_D1EBUG(textBuf,"*** in tw_ripit ***\r\n");
+	OUT_D1EBUG(textBuf,"DvZone=%d\r\n",DvZone);
+	OUT_D1EBUG(textBuf,"curr_zone_address=%d\r\n",curr_zone_address);
+	OUT_D1EBUG(textBuf,"RETURN JOURNY=%d\r\n",Returnj);
+	OUT_D1EBUG(textBuf,"FORWARD JOURNY=%d\r\n",Forwardj);
+	OUT_D1EBUG(textBuf,"Start_count=%d\r\n",Start_count);
+	OUT_D1EBUG(textBuf,"Scan_count=%d\r\n",Scan_count);
+
+	//R_OUT_D1EBUG(textBuf,"mDist1=%lf\r\n",mDist1);
+	//R_OUT_D1EBUG(textBuf,"mDist2=%lf\r\n",mDist2);
+	//R_OUT_D1EBUG(textBuf,"dbdist1=%lf\r\n",dbdist1);
+	//R_OUT_D1EBUG(textBuf,"dbdist2=%lf\r\n",dbdist2);
+	//R_OUT_D1EBUG(textBuf,"dbdist3=%lf\r\n",dbdist3);
+	//R_OUT_D1EBUG(textBuf,"LO_CurrLat=%lf\r\n",LO_CurrLat);
+	//R_OUT_D1EBUG(textBuf,"LO_CurrLong=%lf\r\n",LO_CurrLong);
+	//R_OUT_D1EBUG(textBuf,"JRM_Max_Count=%d\r\n",JRM_Max_Count);
+
+
+	if(Returnj == TRUE)
+	{
+		if(Zone_Detection_Flag == TRUE)
+		{
+			//   //R_OUT_D1EBUG(textBuf,"**in reverse ***Start_count=%d\r\n",Start_count);
+			//R_OUT_D1EBUG(textBuf,"Scan_count=%d\r\n",Scan_count);
+			//R_OUT_D1EBUG(textBuf,"curr_zone_address=%d\r\n",curr_zone_address);
+			//R_OUT_D1EBUG(textBuf,"last_zone_location=%d\r\n",last_zone_location);
+			if(Start_count >= Scan_count)
+			{
+				//R_OUT_D1EBUG(textBuf,"(Start_count >= Scan_count)	\r\n");
+				//array_add=detect_zone_addr+2;
+
+				array_add=CurrZone;
+				zone_address_mem=detected_zone_address_mem;
+				OUT_D1EBUG(textBuf,"file zone_address_mem(((26))) =%d \r\n",zone_address_mem);
+				curr_zone_address=array_add;
+				//R_OUT_D1EBUG(textBuf," array_add=%d \r\n",array_add);
+				JRM_Max_Count++;
+				Start_count=0;
+				//R_OUT_D1EBUG(textBuf,"DvZone=%d\r\n",DvZone);
+				//R_OUT_D1EBUG(textBuf,"curr_zone_address=%d\r\n",curr_zone_address);
+
+				if(Zone_DV_Flag == FALSE)
+				{
+					//R_OUT_D1EBUG(textBuf,"First time zone deviation......reverse \r\n");
+					Jrm_Zone_Deviation();
+				}
+				else if((Zone_DV_Flag==TRUE) &&(detected_POID != DvZone))
+				{
+					//R_OUT_D1EBUG(textBuf,"Check zone deviation after zone change...reverse\r\n");
+					Zone_DV_Flag = FALSE;
+					Jrm_Zone_Deviation();
+				}
+				else
+				{
+					////adl_atSendResponse (ADL_AT_RSP,"\r\nElse part of devation \r\n");
+				}
+				//R_OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 1\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);
+				OUT_D1EBUG(textBuf," Started jrm_delayripit1.....\r\n");
+				//////adl_tmrUnSubscribe (TIMER_DELYRIPIT, timer_handler_DelayRipit, ADL_TMR_TYPE_100MS);
+				////TIMER_DELYRIPIT =	adl_tmrSubscribe(FALSE,5,ADL_TMR_TYPE_100MS,timer_handler_DelayRipit );//15 dec 09 first it was 10/3	
+			}
+			else
+			{
+				////adl_atSendResponse (ADL_AT_RSP,"\r\n REV  RIPIT\r\n");
+
+				if( curr_zone_address == 1)
+				{
+					OUT_D1EBUG(textBuf," TT curr_zone_address == 1.....\r\n");
+
+					//zone_address_mem=(last_zone_location-1);
+					//array_add =(last_zone_location-1);
+					array_add =(last_zone_location-2);
+					OUT_D1EBUG(textBuf,"array_add=%d \r\n",array_add);
+					zone_address_mem=JRM_zone_array[array_add];
+					OUT_D1EBUG(textBuf,"zone_address_mem 27=%d \r\n",zone_address_mem);
+					//curr_zone_address=(last_zone_location-1);
+					curr_zone_address=(last_zone_location-1);
+					//detected_POID=0;
+					//CurrZone=0;
+					//mOverSpeedLimit=65;
+					//JRM_GPIO_unsub();				
+					/*if(Zone_DV_Flag == FALSE)
+					{
+						//R_OUT_D1EBUG(textBuf,"Check zone deviation after zone change.curr_zone_address == 1..Return\r\n");
+						Jrm_Zone_Deviation();
+					}
+					else if((Zone_DV_Flag==TRUE) &&(detected_POID != DvZone))
+					{
+						//R_OUT_D1EBUG(textBuf,"Check zone deviation after zone change.curr_zone_address == 1.(curr_zone_address != DvZone).Return\r\n");
+						Zone_DV_Flag = FALSE;
+						Jrm_Zone_Deviation();
+					}*/
+
+				}
+				//////adl_tmrUnSubscribe (TIMER_DELYRIPIT, timer_handler_DelayRipit, ADL_TMR_TYPE_100MS);
+				////TIMER_DELYRIPIT =	adl_tmrSubscribe(FALSE,5,ADL_TMR_TYPE_100MS,timer_handler_DelayRipit );//15 dec 09 first it was 10/3
+				//R_OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 2\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);
+				OUT_D1EBUG(textBuf," Started jrm_delayripit2.....\r\n");
+			}
+		}
+		else if(Zone_Detection_Flag== FALSE)
+		{
+
+			if((array_add == 0)||(curr_zone_address==0))
+			{
+
+				//zone_address_mem=(last_zone_location-1);
+				//array_add =(last_zone_location-1);
+				array_add =(last_zone_location-1);
+				detected_POID=0;
+				CurrZone=0;
+				//mOverSpeedLimit=65;
+				OSRed=FALSE;
+				OSYellow=FALSE;
+				JRM_GPIO_unsub();	
+				//R_OUT_D1EBUG(textBuf," array_add=%d \r\n",array_add);
+				zone_address_mem=JRM_zone_array[array_add];
+				OUT_D1EBUG(textBuf,"file zone_address_mem(((28))) =%d \r\n",zone_address_mem);
+				//R_OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 3\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);
+				OUT_D1EBUG(textBuf," Started jrm_delayripit3.....\r\n");
+			}
+			else
+			{
+				//R_OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 4\r\n");
+				jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);	
+				OUT_D1EBUG(textBuf," Started jrm_delayripit4.....\r\n");
+			}
+		}
+		else
+		{
+			////adl_atSendResponse (ADL_AT_RSP,"\r\nr Default R");	
+			if((array_add == 0)||(curr_zone_address==1))///(last_zone_location-1)) shital 22 nov 
+			{
+
+				//curr_zone_address = 301;
+				//zone_address_mem=(last_zone_location-1);
+				//array_add =(last_zone_location-1);
+				array_add =(last_zone_location-1);
+				detected_POID=0;
+				CurrZone=0;
+				//mOverSpeedLimit=65;
+				OSRed=FALSE;
+				OSYellow=FALSE;
+				JRM_GPIO_unsub();
+				//R_OUT_D1EBUG(textBuf," array_add=%d \r\n",array_add);
+				zone_address_mem=JRM_zone_array[array_add];
+				OUT_D1EBUG(textBuf,"file zone_address_mem(((29))) =%d \r\n",zone_address_mem);
+				//R_OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 5\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);
+				OUT_D1EBUG(textBuf," Started jrm_delayripit5.....\r\n");
+
+			}
+			else
+			{
+				//R_OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 6\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);	
+				OUT_D1EBUG(textBuf," Started jrm_delayripit6.....\r\n");
+			}
+		}
+	}
+	else if(Forwardj == TRUE)
+	{	
+		if(Zone_Detection_Flag == TRUE)
+		{
+			OUT_D1EBUG(textBuf,"**in forword ***Start_count=%d\r\n",Start_count);
+			OUT_D1EBUG(textBuf,"Scan_count=%d\r\n",Scan_count);
+			//R_OUT_D1EBUG(textBuf,"curr_zone_address=%d\r\n",curr_zone_address);
+			//R_OUT_D1EBUG(textBuf,"last_zone_location=%d\r\n",last_zone_location);
+
+			if(Start_count >= Scan_count)		                                       
+			{	
+				OUT_D1EBUG(textBuf,"(Start_count >= Scan_count)	\r\n");
+
+				//curr_zone_address = 301;
+				//zone_address_mem = 0;
+				//array_add=detect_zone_addr-1;
+
+				array_add=CurrZone;
+				zone_address_mem=detected_zone_address_mem;
+				OUT_D1EBUG(textBuf,"file zone_address_mem(((30))) =%d \r\n",zone_address_mem);
+				curr_zone_address=array_add;
+
+				//R_OUT_D1EBUG(textBuf," array_add=%d \r\n",array_add);
+				//curr_zone_address = Start_Pt ; /// 29 May 201 Bhagyashri
+				JRM_Max_Count++;
+				Start_count=0;
+				//R_OUT_D1EBUG(textBuf,"DvZone=%d\r\n",DvZone);
+				//R_OUT_D1EBUG(textBuf,"curr_zone_address=%d\r\n",curr_zone_address);
+
+				if(Zone_DV_Flag == FALSE)
+				{
+					OUT_D1EBUG(textBuf,"First time zone deviation......Forward \r\n");
+					Jrm_Zone_Deviation();
+				}
+				else if((Zone_DV_Flag==TRUE) &&(detected_POID != DvZone))
+				{
+					OUT_D1EBUG(textBuf,"Check zone deviation after zone change...Forward\r\n");
+					Zone_DV_Flag = FALSE;
+					Jrm_Zone_Deviation();
+				}
+				else
+				{
+
+					//Ql_StartTimer(&jrm_nextstation);
+				}	
+				//R_OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 6\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);
+				OUT_D1EBUG(textBuf," Started jrm_delayripit7...using function..\r\n");
+				//Ql_Sleep(1000);
+				//new_delay();
+				//timer_handler_DelayRipit();
+
+				//Ql_StartTimer(&jrm_nextstation);
+
+			}
+			else 
+			{
+
+				if( curr_zone_address == (last_zone_location-2))
+				{
+
+					OUT_D1EBUG(textBuf,"( curr_zone_address == (last_zone_location-2))\r\n");
+
+
+					zone_address_mem=0;
+					array_add =0;
+					curr_zone_address=0;
+					//R_OUT_D1EBUG(textBuf," array_add=%d \r\n",array_add);
+					//detected_POID=0;
+					//CurrZone=0;
+					//mOverSpeedLimit=65;
+					//JRM_GPIO_unsub();
+					//jrm_rout_scanning();				   
+					/*if(Zone_DV_Flag == FALSE)
+					{
+						//R_OUT_D1EBUG(textBuf,"Check zone deviation after zone change..(Zone_DV_Flag == FALSE).Return\r\n");
+						Jrm_Zone_Deviation();
+					}
+					else if((Zone_DV_Flag==TRUE) &&(detected_POID != DvZone))
+					{
+						//R_OUT_D1EBUG(textBuf,"Check zone deviation after zone change.((Zone_DV_Flag==TRUE) &&(curr_zone_address != DvZone))..Return\r\n");
+						Zone_DV_Flag = FALSE;
+						Jrm_Zone_Deviation();
+
+					}*/
+
+
+				}
+
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);
+				OUT_D1EBUG(textBuf," Started jrm_delayripit8...using function..\r\n");
+				//Ql_Sleep(1000);
+				//new_delay();
+				//timer_handler_DelayRipit();
+
+
+			}	
+		}
+		else if(Zone_Detection_Flag== FALSE)
+		{
+
+			if((array_add ==(last_zone_location-2))||((curr_zone_address)==(last_zone_location-2)))
+			{
+				zone_address_mem=0;
+				array_add =0;
+				curr_zone_address=1;
+				//R_OUT_D1EBUG(textBuf," array_add=%d \r\n",array_add);
+				detected_POID=0;
+				CurrZone=0;
+				//mOverSpeedLimit=65;
+				OSRed=FALSE;
+				OSYellow=FALSE;
+				JRM_GPIO_unsub();
+				//jrm_rout_scanning();
+				//zone_address_mem = 0;
+				//R_OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 8\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);
+				OUT_D1EBUG(textBuf," Started jrm_delayripit9.....\r\n");
+			}
+			else
+			{
+				//R_OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 9\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);
+				OUT_D1EBUG(textBuf," Started jrm_delayripit10....using function.\r\n");
+				//Ql_Sleep(1000);
+				//new_delay();
+				//timer_handler_DelayRipit();
+				////R_OUT_D1EBUG(textBuf," Started jrm_delayripit10.....\r\n");
+			}
+		}
+		else
+		{
+			if((array_add ==(last_zone_location-2))||((curr_zone_address)==(last_zone_location-2)))
+			{
+				//curr_zone_address = 301;
+				zone_address_mem = 0;
+				array_add =0;
+				curr_zone_address=1;
+				//R_OUT_D1EBUG(textBuf," array_add=%d \r\n",array_add);
+				detected_POID=0;
+				CurrZone=0;
+				//mOverSpeedLimit=65;
+				OSRed=FALSE;
+				OSYellow=FALSE;
+				JRM_GPIO_unsub();
+				//R_OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 10\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);
+				OUT_D1EBUG(textBuf," Started jrm_delayripit11.....\r\n");
+			}
+			else
+			{
+				////adl_atSendResponse (ADL_AT_RSP,"\r\nFW RIPIT\r\n");
+				//////adl_tmrUnSubscribe (TIMER_DELYRIPIT, timer_handler_DelayRipit, ADL_TMR_TYPE_100MS);
+				////TIMER_DELYRIPIT = 	adl_tmrSubscribe(FALSE,5,ADL_TMR_TYPE_100MS,timer_handler_DelayRipit );//15 dec 09 first it was 10/3
+				//R_OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 11\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);
+				OUT_D1EBUG(textBuf," Started jrm_delayripit12.....\r\n");
+			}
+		}
+	}
+	else
+	{
+		//if(zone_address_mem == (last_zone_location-1))
+		if(Zone_Detection_Flag == TRUE)
+		{
+			//R_OUT_D1EBUG(textBuf,"Start_count=%d\r\n",Start_count);
+			//R_OUT_D1EBUG(textBuf,"Scan_count=%d\r\n",Scan_count);
+			//R_OUT_D1EBUG(textBuf,"curr_zone_address=%d\r\n",curr_zone_address);
+			//R_OUT_D1EBUG(textBuf,"last_zone_location=%d\r\n",last_zone_location);
+			////adl_atSendResponse (ADL_AT_RSP,"\r\n (Forwardj == TRUE)RIPIT LOOP");
+			if(Start_count >= Scan_count)		                                       
+			{	
+				OUT_D1EBUG(textBuf,"(Start_count >= Scan_count)	\r\n");
+				////adl_atSendResponse (ADL_AT_RSP,"\r\nRIPIT LOOP(Start_count >= 15)\r\n");
+				//curr_zone_address = 301;
+				//zone_address_mem = 0;
+				///array_add=detect_zone_addr-1;
+				array_add=CurrZone;
+				zone_address_mem=detected_zone_address_mem;
+				OUT_D1EBUG(textBuf,"file zone_address_mem(((31))) =%d \r\n",zone_address_mem);
+				curr_zone_address=array_add;
+
+				OUT_D1EBUG(textBuf," array_add=%d \r\n",array_add);
+				//curr_zone_address = Start_Pt ; /// 29 May 201 Bhagyashri
+				JRM_Max_Count++;
+				Start_count=0;
+				OUT_D1EBUG(textBuf,"DvZone=%d\r\n",DvZone);
+				OUT_D1EBUG(textBuf,"curr_zone_address=%d\r\n",curr_zone_address);
+
+				if(Zone_DV_Flag == FALSE)
+				{
+					OUT_D1EBUG(textBuf,"Check zone deviation after zone change111111...Forward\r\n");
+					Jrm_Zone_Deviation();
+				}
+				else if((Zone_DV_Flag==TRUE) &&(curr_zone_address != DvZone))
+				{
+					OUT_D1EBUG(textBuf,"Check zone deviation after zone change.222222..Forward\r\n");
+					Zone_DV_Flag = FALSE;
+					Jrm_Zone_Deviation();
+				}
+				else
+				{
+					////adl_atSendResponse (ADL_AT_RSP,"\r\nElse part of devation \r\n");
+					//Ql_StartTimer(&jrm_nextstation);
+				}	
+				OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 12\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);	
+				//Ql_StartTimer(&jrm_nextstation);
+				//////adl_tmrUnSubscribe (TIMER_DELYRIPIT, timer_handler_DelayRipit, ADL_TMR_TYPE_100MS);
+				////TIMER_DELYRIPIT = 	adl_tmrSubscribe(FALSE,5,ADL_TMR_TYPE_100MS,timer_handler_DelayRipit );//15 dec 09 first it was 10/3		
+			}
+			else
+
+			{
+				if( curr_zone_address == (last_zone_location-2))
+				{
+
+					OUT_D1EBUG(textBuf,"( curr_zone_address == (last_zone_location-2))\r\n");
+					////adl_atSendResponse (ADL_AT_RSP,"\r\nIn return J assigning...curr_zone_address = 301 ");
+					//curr_zone_address = 301;	
+					zone_address_mem=0;
+					array_add =0;	
+					OUT_D1EBUG(textBuf," array_add=%d \r\n",array_add);
+					detected_POID=0;
+					CurrZone=0;
+					//mOverSpeedLimit=65;
+					OSRed=FALSE;
+					OSYellow=FALSE;
+					JRM_GPIO_unsub();		   
+					/*if(Zone_DV_Flag == FALSE)
+						{
+							//R_OUT_D1EBUG(textBuf,"Check zone deviation after zone change...Return\r\n");
+							Jrm_Zone_Deviation();
+							//adl_tmrSubscribe(FALSE,100,ADL_TMR_TYPE_100MS, Jrm_Zone_Deviation); ///Check for zone deviation
+						}
+						else if((Zone_DV_Flag==TRUE) &&(curr_zone_address != DvZone))
+						{
+							////adl_atSendResponse (ADL_AT_RSP,"\r\n Check zone deviation after zone change......Return\r\n");
+							Zone_DV_Flag = FALSE;
+							//R_OUT_D1EBUG(textBuf,"Check zone deviation after zone change...Return\r\n");
+							Jrm_Zone_Deviation();
+							//adl_tmrSubscribe(FALSE,100,ADL_TMR_TYPE_100MS, Jrm_Zone_Deviation); ///Check for zone deviation
+						}*/
+				}
+
+				//timer_handler_DelayRipit();
+				OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 13\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);
+				//Ql_StartTimer(&jrm_nextstation);
+				//////adl_tmrUnSubscribe (TIMER_DELYRIPIT, timer_handler_DelayRipit, ADL_TMR_TYPE_100MS);
+			}	////TIMER_DELYRIPIT = 	adl_tmrSubscribe(FALSE,5,ADL_TMR_TYPE_100MS,timer_handler_DelayRipit );//15 dec 09 first it was 10/3
+
+
+
+		}
+		else if(Zone_Detection_Flag== FALSE)
+		{
+			////adl_atSendResponse (ADL_AT_RSP,"\r\n Defalut FLAG false");	
+			if((curr_zone_address ==(last_zone_location-2))||(((int)curr_zone_address)==(last_zone_location-2)))
+			{
+				////adl_atSendResponse (ADL_AT_RSP,"\r\n FLAG false****");
+				zone_address_mem=0;
+				array_add =0;
+				OUT_D1EBUG(textBuf," array_add=%d \r\n",array_add);
+				detected_POID=0;
+				CurrZone=0;
+				//mOverSpeedLimit=65;
+				OSRed=FALSE;
+				OSYellow=FALSE;
+				JRM_GPIO_unsub();
+				OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 14\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);
+				////adl_tmrUnSubscribe (TIMER_DELYRIPIT, timer_handler_DelayRipit, ADL_TMR_TYPE_100MS);
+				//TIMER_DELYRIPIT = 	adl_tmrSubscribe(FALSE,5,ADL_TMR_TYPE_100MS,timer_handler_DelayRipit );
+				//Ql_StartTimer(&jrm_delayripit);	
+			}
+			else
+			{
+				////adl_atSendResponse (ADL_AT_RSP,"\r\nFW RIPIT\r\n");
+				OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 15\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);
+				//////adl_tmrUnSubscribe (TIMER_DELYRIPIT, timer_handler_DelayRipit, ADL_TMR_TYPE_100MS);
+				////TIMER_DELYRIPIT = 	adl_tmrSubscribe(FALSE,5,ADL_TMR_TYPE_100MS,timer_handler_DelayRipit );//15 dec 09 first it was 10/3
+				//Ql_StartTimer(&jrm_delayripit);	
+			}
+		}
+		else
+		{ 
+			////adl_atSendResponse (ADL_AT_RSP,"\r\n Defalut else loop ");
+			if((curr_zone_address ==(last_zone_location-2))||(((int)curr_zone_address)==(last_zone_location-2)))
+			{
+				////adl_atSendResponse (ADL_AT_RSP,"\r\n Defalut else loop***** ");
+				zone_address_mem=0;
+				array_add =0;
+				OUT_D1EBUG(textBuf," array_add=%d \r\n",array_add);
+				detected_POID=0;
+				CurrZone=0;
+				//mOverSpeedLimit=65;
+				OSRed=FALSE;
+				OSYellow=FALSE;
+				JRM_GPIO_unsub();
+				OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 16\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);
+				//////adl_tmrUnSubscribe (TIMER_DELYRIPIT, timer_handler_DelayRipit, ADL_TMR_TYPE_100MS);
+				/////TIMER_DELYRIPIT = 	adl_tmrSubscribe(FALSE,5,ADL_TMR_TYPE_100MS,timer_handler_DelayRipit );
+				//Ql_StartTimer(&jrm_delayripit);	
+			}
+			else
+			{
+				////adl_atSendResponse (ADL_AT_RSP,"\r\nFW RIPIT\r\n");
+				OUT_D1EBUG(textBuf," jrm_delayripit from tw ripit 17\r\n");
+				//jrm_delayripit.timerId =0;
+				Ql_StartTimer(&jrm_delayripit);
+				//////adl_tmrUnSubscribe (TIMER_DELYRIPIT, timer_handler_DelayRipit, ADL_TMR_TYPE_100MS);
+				////TIMER_DELYRIPIT = 	adl_tmrSubscribe(FALSE,5,ADL_TMR_TYPE_100MS,timer_handler_DelayRipit );//15 dec 09 first it was 10/3
+				//Ql_StartTimer(&jrm_delayripit);	
+			}
+		}
+	}
+}
+
+void timer_handler_DelayRipit()
+{ 
+	//int Max_Count1;
+	//ascii Max_Count_1[5];
+	//////adl_tmrUnSubscribe (TIMER_DELYRIPIT, timer_handler_DelayRipit, ADL_TMR_TYPE_100MS);
+	OUT_D1EBUG(textBuf,"***in timer_handler_DelayRipit***\r\n");
+	OUT_D1EBUG(textBuf,"JRM_Max_Count=%d\r\n",JRM_Max_Count);
+	OUT_D1EBUG(textBuf,"Total_count=%d\r\n",Total_count);
+	OUT_D1EBUG(textBuf,"curr_zone_address=%d\r\n",curr_zone_address);
+	OUT_D1EBUG(textBuf,"last_zone_location=%d\r\n",last_zone_location);
+
+	if((JRM_Max_Count< Total_count)&&(Zone_Detection_Flag==TRUE))
+	{	
+		OUT_D1EBUG(textBuf,"**DelayRipit***(JRM_Max_Count< Total_count)&&(Zone_Detection_Flag==TRUE)**\r\n");
+		////adl_atSendResponse (ADL_AT_RSP,"\r\nMax_Cont<100 call tw_findcurrentpos \r\n");
+		//tw_findcurrentpos();
+		jrm_rout_scanning();
+		//Ql_StartTimer(&jrm_nextstation); 
+	}
+
+	else if(((JRM_Max_Count == Total_count)&&(Zone_Detection_Flag==TRUE)) || ((JRM_Max_Count == Total_count)&&(Zone_Detection_Flag==FALSE)))
+	{
+		OUT_D1EBUG(textBuf,"**DelayRipit***else if 2\r\n");
+		////adl_atSendResponse (ADL_AT_RSP,"\r\n call tw_findcurrentpos_once\r\n");
+		JRM_Max_Count=(Total_count+1);
+		if(Returnj==TRUE)
+		{
+			Zone_Detection_Flag=FALSE;
+			array_add = last_zone_location - 1;
+
+			OUT_D1EBUG(textBuf," array_add=%d \r\n",array_add);
+			zone_address_mem=JRM_zone_array[array_add];
+			OUT_D1EBUG(textBuf," zone_address_mem 32=%d \r\n",zone_address_mem);
+			detected_POID=0;
+			DvZone=0;
+			CurrZone=0;
+			//mOverSpeedLimit=65;
+			OSRed=FALSE;
+			OSYellow=FALSE;
+			JRM_GPIO_unsub();	
+			JRM_GPIO_reset();
+			jrm_rout_scanning();
+
+		}
+		else
+		{
+			OUT_D1EBUG(textBuf,"***in timer_handler_DelayRipit****in else***\r\n");
+			Zone_Detection_Flag=FALSE;
+			zone_address_mem=0;
+			array_add =0;
+			OUT_D1EBUG(textBuf," array_add=%d \r\n",array_add);
+			detected_POID=0;
+			DvZone=0;
+			CurrZone=0;
+			//mOverSpeedLimit=65;
+			OSRed=FALSE;
+			OSYellow=FALSE;
+			JRM_GPIO_unsub();	
+			JRM_GPIO_reset();
+			jrm_rout_scanning();
+		}
+	}
+	else
+	{
+		////adl_atSendResponse (ADL_AT_RSP,"\r\nElse part************\r\n");
+		jrm_rout_scanning();
+	}
+}
+
+//void Jrm_Zone_Deviation (u8 id)
+void Jrm_Zone_Deviation()
+{
+
+	OUT_D1EBUG(textBuf,"***Jrm_Zone_Deviation***\r\n");
+	double mDist11=0;
+	double mDist22=0;
+	double mDist33=0;
+	//float mDist11,mDist22, mDist33=0.000000;
+
+	double Area=0.000000, S=0.000000,jk=0;
+
+	//R_OUT_D1EBUG(textBuf,"mDataBaseLat11=%lf\r\n",mDataBaseLat11);
+	//R_OUT_D1EBUG(textBuf,"mDataBaseLong11=%lf\r\n",mDataBaseLong11);
+	//R_OUT_D1EBUG(textBuf,"mDataBaseLat22=%lf\r\n",mDataBaseLat22);
+	//R_OUT_D1EBUG(textBuf,"mDataBaseLong22=%lf\r\n",mDataBaseLong22);
+	OUT_D1EBUG(textBuf,"LO_CurrLat=%lf\r\n",LO_CurrLat);
+	OUT_D1EBUG(textBuf,"LO_CurrLong=%lf\r\n",LO_CurrLong);
+
+
+
+	//Calculate the distance by passing lat long
+	mDist11 =(double) (tw_DistFromLatAndLong(JRM_DM2DD(mDataBaseLat11),JRM_DM2DD(mDataBaseLong11),JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong)));	//AC
+
+	mDist22 =(double) (tw_DistFromLatAndLong(JRM_DM2DD(mDataBaseLat22),JRM_DM2DD(mDataBaseLong22),JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong)));	//BC
+
+	mDist33 =(double) (tw_DistFromLatAndLong(JRM_DM2DD(mDataBaseLat22),JRM_DM2DD(mDataBaseLong22),JRM_DM2DD(mDataBaseLat11),JRM_DM2DD(mDataBaseLong11)));	//AB
+
+	//mDist1 = tw_DistFromLatAndLong(JRM_DM2DD(mDataBaseLat1),JRM_DM2DD(mDataBaseLong1),JRM_DM2DD(LO_CurrLat),JRM_DM2DD(LO_CurrLong));
+	//R_OUT_D1EBUG(textBuf,"*before multiplication\r\n");
+	//R_OUT_D1EBUG(textBuf,"mDist11=%lf\r\n",mDist11);
+	//R_OUT_D1EBUG(textBuf,"mDist22=%lf\r\n",mDist22);
+	//R_OUT_D1EBUG(textBuf,"mDist33=%lf\r\n",mDist33);
+
+	mDist11 = (mDist11 * 1000);
+	mDist22 = (mDist22 * 1000);
+	mDist33 = (mDist33 * 1000);
+
+	S =(double) ((mDist11 + mDist22 + mDist33) / 2);
+
+	jk=(double)(S * (S - mDist11) * (S - mDist22) * (S - mDist33));
+	OUT_D1EBUG(textBuf,"jk=%lf\r\n",jk);
+
+	//Area = (sqrt(S * (S - mDist11) * (S - mDist22) * (S - mDist33)));
+
+	//Area = (tw_sqrt(S * (S - mDist11) * (S - mDist22) * (S - mDist33)));
+	Area = (sqrt(jk));
+
+	//R_OUT_D1EBUG(textBuf,"mDist11=%lf\r\n",mDist11);
+	//R_OUT_D1EBUG(textBuf,"mDist22=%lf\r\n",mDist22);
+	//R_OUT_D1EBUG(textBuf,"mDist33=%lf\r\n",mDist33);
+	//R_OUT_D1EBUG(textBuf,"S=%f\r\n",S);
+	//R_OUT_D1EBUG(textBuf,"dbdiArea=%f\r\n",Area);
+
+	Height = (int)((2 * Area) / mDist33);
+
+	OUT_D1EBUG(textBuf,"# Height=%d\r\n",Height);
+
+
+
+
+	if(((Height > 500) && (mCurrSpeed > 3.00000)) && (firstDV==0))
+	{
+		firstDV=1;
+		Jrm_Deviation_stamp();
+
+		OUT_D1EBUG(textBuf,"***  Incorrect route DV stamp  ***\r\n");
+
+
+	}
+	else if((Height > 500) && (firstDV==0))
+	{
+		OUT_D1EBUG(textBuf,"***  Incorrect route DV stamp  ***\r\n");
+		firstDV=1;
+		Jrm_Deviation_stamp();
+
+	}
+	else
+	{
+		OUT_D1EBUG(textBuf,"***  Correct Route  ***\r\n");
+	}
+
+}
+
+
+void Jrm_Deviation_stamp(void)
+{
+	if((Returnj == TRUE))
+	{
+		DvZone = rev_int_databasePOID;
+	}
+	else
+	{
+		DvZone = detected_POID;
+	}
+
+	OSYellow = FALSE;
+	OSRed = FALSE;
+	detected_POID=0;
+
+	rev_int_databasePOID=0;
+	JRM_GPIO_unsub();
+	JRM_GPIO_reset();
+
+	char DVStampString[110];
+	OUT_D1EBUG(textBuf,"Jrm_Deviation_stamp stamping\r\n");
+	Ql_memset((ascii *)DVStampString,0,sizeof(DVStampString));
+
+	Ql_strcpy(DVStampString,UID);
+	Ql_strncat(DVStampString,"_DV,",4);
+	Ql_strcat(DVStampString,GPRMC);
+
+	////R_OUT_D1EBUG(textBuf,"FtoaStr%s\r\n",FtoaStr);
+
+	ix_Itoa(mCurrSpeed);
+	//R_OUT_D1EBUG(textBuf,"FtoaStrcurre%s\r\n",ItoaStr);
+	Ql_strcat(DVStampString,(char *)ItoaStr);///mCurrSpeed speed
+
+	Ql_strncat(DVStampString,",",1);
+	Ql_strcat(DVStampString,(char *)(ix_Itoa(mTotDist)));
+	Ql_strncat(DVStampString,",",1);
+	Ql_strncat(DVStampString,"0.0",5);		//PDOP
+	Ql_strncat(DVStampString,",",1);
+	Ql_strncat(DVStampString,STAT,1);			//Status (A/V)
+	Ql_strncat(DVStampString,"\r\n",2);
+	OUT_D1EBUG(textBuf,"%s\r\n",DVStampString);
+	tw_filewrite((char *)DVStampString);	
+	//Ql_strcpy((ascii *)readbuffer,(ascii *)DVStampString);//copy SI stamp from DVStampString to readbuffer
+	////R_OUT_D1EBUG(textBuf,"readbuffer=%c\r\n",readbuffer);
+
+	Zone_DV_Flag = TRUE;
+
+	OUT_D1EBUG(textBuf,"LED ON yellow\r\n");
+	flagfr2=1;
+	JRM_GPIO_unsub();
+	JRM_YELLOW_led();
+	deviation_tmr.timeoutPeriod = Ql_MillisecondToTicks(2000);				//start two sec timer
+	Ql_StartTimer(&deviation_tmr);
+	//DvZone = detected_POID;
+	//tw_ripit();   ////removed to check JRM DV stamping
+
+}
+/*
+void Deviation_LED(void)
+{
+	OUT_D1EBUG(textBuf,"LED ON yellow\r\n");
+	JRM_GPIO_unsub();
+	JRM_YELLOW_led();
+	deviation_tmr.timeoutPeriod = Ql_MillisecondToTicks(2000);				//start two sec timer
+	Ql_StartTimer(&deviation_tmr);
+}*/
+void JRM_GPIO_BUZZER_high(void)
+{
+	int iret;
+	// onoff_buzz=TRUE;
+	QlPinParameter pinparameter;
+	pinparameter.pinconfigversion = QL_PIN_VERSION;
+	pinparameter.pinparameterunion.gpioparameter.pinpullenable = QL_PINPULLENABLE_ENABLE;
+	pinparameter.pinparameterunion.gpioparameter.pindirection = QL_PINDIRECTION_OUT;
+	if(((Ql_strstr((char *)Unit_Type,"BAT") != NULL) || (Ql_strstr((char *)Unit_Type,"bat") != NULL)) || ((Ql_strstr((char *)Unit_Type,"BATTERY") != NULL) || (Ql_strstr((char *)Unit_Type,"battery") != NULL)))
+	{
+		//OUT_D1EBUG(textBuf,"GPIO _ This is BATTERY device... \r\n");
+		//pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_LOW;
+		pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_HIGH;
+		iret = Ql_pinSubscribe(QL_PINNAME_GPIO4, QL_PINMODE_2, &pinparameter);
+	}
+	else
+	{
+		//OUT_D1EBUG(textBuf,"GPIO _ This is NOT BATTERY device... \r\n");
+		pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_LOW;
+		//pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_HIGH;
+		iret = Ql_pinSubscribe(QL_PINNAME_GPIO4, QL_PINMODE_2, &pinparameter);
+	}
+	////R_OUT_D1EBUG(textBuf,"\r\nSubscribe(%d),pin=%d,mod=%d,pul=%d,dir=%d,lev=%d\r\n",iret,QL_PINNAME_GPIO2,QL_PINMODE_1,QL_PINPULLENABLE_ENABLE,QL_PINDIRECTION_OUT,QL_PINLEVEL_HIGH);
+
+	return;
+}
+
+void JRM_GPIO_BUZZER_low(void)
+{
+	int iret;
+
+	QlPinParameter pinparameter;
+	pinparameter.pinconfigversion = QL_PIN_VERSION;
+	pinparameter.pinparameterunion.gpioparameter.pinpullenable = QL_PINPULLENABLE_ENABLE;
+	pinparameter.pinparameterunion.gpioparameter.pindirection = QL_PINDIRECTION_OUT;
+	if(((Ql_strstr((char *)Unit_Type,"BAT") != NULL) || (Ql_strstr((char *)Unit_Type,"bat") != NULL)) || ((Ql_strstr((char *)Unit_Type,"BATTERY") != NULL) || (Ql_strstr((char *)Unit_Type,"battery") != NULL)))
+	{
+		//OUT_D1EBUG(textBuf,"GPIO _ This is  BATTERY device... \r\n");
+		//pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_HIGH;
+		pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_LOW;
+		iret = Ql_pinSubscribe(QL_PINNAME_GPIO4, QL_PINMODE_2, &pinparameter);
+	}
+	else
+	{
+		//OUT_D1EBUG(textBuf,"GPIO _ This is NOT BATTERY device... \r\n");
+		pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_HIGH;
+		//pinparameter.pinparameterunion.gpioparameter.pinlevel = QL_PINLEVEL_LOW;
+		iret = Ql_pinSubscribe(QL_PINNAME_GPIO4, QL_PINMODE_2, &pinparameter);
+	}
+	////R_OUT_D1EBUG(textBuf,"\r\nSubscribe(%d),pin=%d,mod=%d,pul=%d,dir=%d,lev=%d\r\n",iret,QL_PINNAME_GPIO2,QL_PINMODE_1,QL_PINPULLENABLE_ENABLE,QL_PINDIRECTION_OUT,QL_PINLEVEL_HIGH);
+
+	return;
+}
+
+void OS_buzzer(void)
+{
+	if(((OSRed == TRUE)&&(mCurrSpeed > mOverSpeedLimit1))||((OSYellow == TRUE)&&(mCurrSpeed > mOverSpeedLimit2))||(mCurrSpeed > mOverSpeedLimit))
+		//if(mCurrSpeed > mOverSpeedLimit)
+	{
+		if(buzzflg==0)
+		{
+			os_buzz_unsb_flg=0;
+			JRM_GPIO_buzzer_unsub();
+			JRM_GPIO_BUZZER_high();
+			//JRM_GPIO_buzzer_unsub();
+			//JRM_GPIO_BUZZER_low();
+			buzzflg=1;
+		}
+		else if(buzzflg==1)
+		{
+			os_buzz_unsb_flg=0;
+			JRM_GPIO_buzzer_unsub();
+			JRM_GPIO_BUZZER_low();
+			//JRM_GPIO_buzzer_unsub();
+			//JRM_GPIO_BUZZER_high();
+			buzzflg=0;
+		}
+	}
+	else
+	{
+		Ql_StopTimer(&osbuzzer);
+		//osbuzzer.timerId =0;
+		osbuzzer_flg=0;
+		if(os_buzz_unsb_flg==0)
+		{
+			//Ql_StartTimer(&osbuzzer);
+			os_buzz_unsb_flg=1;
+			JRM_GPIO_buzzer_unsub();
+			JRM_GPIO_BUZZER_low();
+		}
+	}
+}
+
+void zone_buzzer(void)
+{
+
+	OUT_D1EBUG(textBuf,"***  zone_buzzer  ***\r\n");
+	OUT_D1EBUG(textBuf,"prev_LED:::::%s\r\n",prev_LED);
+	OUT_D1EBUG(textBuf,"curr_LED:::::%s\r\n",curr_LED);
+	if(!(((OSRed == TRUE)&&(mCurrSpeed > mOverSpeedLimit1))||((OSYellow == TRUE)&&(mCurrSpeed > mOverSpeedLimit2))||(mCurrSpeed > mOverSpeedLimit)))
+		//	if(!(mCurrSpeed > mOverSpeedLimit))
+	{
+		if(prev_LED[0]=='G')
+		{
+			if((curr_LED[0]=='R')||(curr_LED[0]=='Y'))
+			{
+				GPIO_zone_buzz();
+			}
+		}
+		else if(prev_LED[0]=='Y')
+		{
+			if(curr_LED[0]=='R')
+			{
+				GPIO_zone_buzz();
+			}
+		}
+		//Ql_memset(prev_LED,'\0',3);
+		//Ql_memset(curr_LED,'\0',3);
+
+	}
+
+	Ql_strcpy((char *)prev_LED,(char *)curr_LED);
+	fn_finddirection();
+}
+
+void Pre_zone_detection(void)
+{
+	OUT_D1EBUG(textBuf,"***  Pre_zone_detection  ***\r\n");
+	OUT_D1EBUG(textBuf,"prev_LED:::::%s\r\n",prev_LED);
+	OUT_D1EBUG(textBuf,"curr_LED:::::%s\r\n",curr_LED);
+	OUT_D1EBUG(textBuf,"next_LED:::::%s\r\n",next_LED);
+
+	if((!(((OSRed == TRUE)&&(mCurrSpeed > mOverSpeedLimit1))||((OSYellow == TRUE)&&(mCurrSpeed > mOverSpeedLimit2))||(mCurrSpeed > mOverSpeedLimit))) && (preZoneflg == 0))
+		//if((!(mCurrSpeed > mOverSpeedLimit)) && (preZoneflg == 0))
+	{
+		preZoneflg=1;
+		if(curr_LED[0]=='G')
+		{
+			if((next_LED[0]=='R')||(next_LED[0]=='Y'))
+			{
+				GPIO_zone_buzz();
+			}
+		}
+		else if(curr_LED[0]=='Y')
+		{
+			if(next_LED[0]=='R')
+			{
+				GPIO_zone_buzz();
+			}
+		}
+		//Ql_memset(prev_LED,'\0',3);
+		//Ql_memset(curr_LED,'\0',3);
+	}
+	//Ql_strcpy((char *)prev_LED,(char *)curr_LED);
+	//fn_finddirection();
+}
+
+void GPIO_zone_buzz(void)
+{	
+	OUT_D1EBUG(textBuf,"***  GPIO_zone_buzz  ***\r\n");
+	onoff.timeoutPeriod = Ql_MillisecondToTicks(2000);
+	BUZZ_COUNTER=0;
+	onoff_buzz=FALSE;
+	//onoff.timerId =0;
+	Ql_StartTimer(&onoff);
+	OUT_D1EBUG(textBuf," Started onoff1.....\r\n");
+
+	/*
+
+ int i;
+ for(i=0;i<6;i++)
+ {	
+ 	JRM_GPIO_buzzer_unsub();
+	JRM_GPIO_BUZZER_high();
+	jrm_delay(500);//500ms delay
+	JRM_GPIO_buzzer_unsub();
+	JRM_GPIO_BUZZER_low();
+	if(i==2)
+	{
+		jrm_delay(1000);//1000ms delay
+	}
+	else
+	{
+		jrm_delay(500);//500ms delay
+	}
+ }
+	 */
+}
+
+void jrm_delay(int kl)
+{
+	int j,i;
+	for(j=0;j<=kl;j++)
+	{
+		for(i=0;i<=18754;i++);
+	}
+}
+
+
+int POID_LED(int addr_loc)
+{
+	int i=0,x=0,j=0,k=0,l=0,n=0,m=0,img=0;
+	int int_fun_POID=0; 
+
+	s32 ret_r=0,f_RE_read_len=0;
+	s32 ret_refl=0,fileret=0;
+	//char *ptr1;
+	u32 filehandle_readfl=0;
+	char JRM_extraPOID_readbuffer[50];
+	char FUNC_POID[6];
+	u32 size=0;
+	u32 freespace=0;
+	int POID_address_mem=0;
+
+	u32 writeedlen=0;
+	u32 readedlen=0;
+
+
+
+
+	OUT_D1EBUG(textBuf,"*** in POID_LED ***\r\n");
+
+	OUT_D1EBUG(textBuf," addr_loc POID_LED=%d\r\n",addr_loc);
+
+	//R_OUT_D1EBUG(textBuf,"file read dump_cam_wrt_cnt=%d\r\n",dump_cam_wrt_cnt);
+
+	POID_address_mem=JRM_zone_array[addr_loc];
+
+	OUT_D1EBUG(textBuf," addr_loc POID_address_mem=%d\r\n",POID_address_mem);
+
+	ret_refl = Ql_FileOpenEx(PATH_JRM,QL_FS_READ_ONLY);
+	//ret_refl = Ql_FileOpenEx((u8*)pfile_imgdata,QL_FS_CREATE);
+	/////R_OUT_D1EBUG(textBuf,"JRM Readfile open ret=%d: \r\n",ret_refl);
+	////R_OUT_D1EBUG(textBuf,"JRM curr_zone_address=%d: \r\n",curr_zone_address);
+	if(ret_refl >= QL_RET_OK)
+	{
+		filehandle_readfl = ret_refl;  
+
+		//Ql_memset(JRM_temp_readbuffer,'\0',55);
+		//Ql_memset(JRM_extra_readbuffer,'\0',55);
+		//Ql_memset(JRM_extra_readbuffer2,'\0',55);
+		Ql_memset(JRM_extraPOID_readbuffer,'\0',50);
+
+		//  Ql_memset(JRM_strbuffer,'\0',55);
+		ret_refl = Ql_FileSeek(filehandle_readfl, POID_address_mem, QL_FS_FILE_BEGIN);
+		//curr_zone_address=zone_address_mem;
+		////R_OUT_D1EBUG(textBuf,"JRM_Readfile_seek_ret=%d: \r\n",ret_refl);
+		ret_refl = Ql_FileRead(filehandle_readfl,(unsigned char *)JRM_extraPOID_readbuffer,45, &readedlen);
+		////R_OUT_D1EBUG(textBuf,"\r\n JRM_Ql_FileRead()=%d: readedlen=%d\r\n",ret_refl, readedlen);
+
+		f_RE_read_len=Ql_strlen((char *)JRM_extraPOID_readbuffer);
+		////R_OUT_D1EBUG(textBuf,"JRM JRM_extra_readbuffer length=%d: \r\n",f_RE_read_len);
+
+		OUT_D1EBUG(textBuf,"JRM_extraPOID_readbuffer=%s \r\n",JRM_extraPOID_readbuffer);
+
+
+		Ql_FileClose(filehandle_readfl);
+		filehandle_readfl = -1;
+
+
+
+		for(i;JRM_extraPOID_readbuffer[i]!=',';i++);
+		i++;
+		OUT_D1EBUG(textBuf,"i1 buffer=%d \r\n",i);
+
+		for(i;JRM_extraPOID_readbuffer[i]!=',';i++);
+		i++;
+		OUT_D1EBUG(textBuf,"i2 buffer=%d \r\n",i);
+
+		for(i;JRM_extraPOID_readbuffer[i]!=',';i++);
+		i++;
+		OUT_D1EBUG(textBuf,"i3 buffer=%d \r\n",i);
+
+		for(i;JRM_extraPOID_readbuffer[i]!=',';i++);	
+		i++;
+		OUT_D1EBUG(textBuf,"i4 buffer=%d \r\n",i);
+
+		OUT_D1EBUG(textBuf,"i last buffer=%d \r\n",i);
+
+		n=i+4;
+		for(i,m=0;i<n;i++,m++)
+		{
+			FUNC_POID[m]=JRM_extraPOID_readbuffer[i];
+		}
+		FUNC_POID[m]='\0';
+
+		OUT_D1EBUG(textBuf,"FUNC_POID buffer=%s \r\n",FUNC_POID);
+
+		int_fun_POID=Ql_atoi(FUNC_POID);
+
+		OUT_D1EBUG(textBuf," int_fun_POID POID_LED=%d\r\n",int_fun_POID);
+
+		//return int_fun_POID;
+	}
+	return int_fun_POID;
+}
+
+
+
+void stop_jrm_timer(void)
+{
+	//extern QlTimer JRM_timer,jrm,jrm_delayripit,onoff;
+	//extern QlTimer zone_scanning,jrm_nextstation,osbuzzer;
+	Ql_StopTimer(&JRM_timer);
+	//JRM_timer.timerId =0;
+	Ql_StopTimer(&jrm);
+	//jrm.timerId =0;
+	Ql_StopTimer(&jrm_delayripit);
+	//jrm_delayripit.timerId =0;
+	//jrm_nextstation.timeoutPeriod = Ql_MillisecondToTicks(500);
+	Ql_StopTimer(&jrm_nextstation);
+	//jrm_nextstation.timerId =0;
+	Ql_StopTimer(&zone_scanning);
+	//zone_scanning.timerId =0;
+	Ql_StopTimer(&osbuzzer);
+	//osbuzzer.timerId =0;
+	Ql_StopTimer(&onoff);
+	//onoff.timerId =0;
+}
+
+void Rev_zone_file_sepration(char *jrm_sepr_buffer)
+{
+	int i,j,k,l,m,n;
+	int iz,jz,kz,lz,mz,nz;
+
+	for(i=0;jrm_sepr_buffer[i]!=',';i++)
+	{
+		rev_databaseLAT[i]=jrm_sepr_buffer[i];
+	}
+	rev_databaseLAT[i]='\0';
+	i++;
+
+	mDataBaseLat1=JRM_atofd((char *)databaseLAT);
+
+	for(i,j=0;jrm_sepr_buffer[i]!=',';i++,j++)
+	{
+		rev_databaseLOG[j]=jrm_sepr_buffer[i];
+	}
+	rev_databaseLOG[j]='\0';
+	i++;
+
+	mDataBaseLong1=JRM_atofd((char *)databaseLOG);
+
+	for(i,k=0;jrm_sepr_buffer[i]!=',';i++,k++)
+	{
+		rev_databaseDIST[k]=jrm_sepr_buffer[i];
+	}
+	rev_databaseDIST[k]='\0';
+	i++;
+
+	dbdist1=JRM_atofd((char *)databaseDIST);
+
+
+	for(i,l=0;jrm_sepr_buffer[i]!=',';i++,l++)
+	{
+		rev_databaseLED[l]=jrm_sepr_buffer[i];
+	}
+	rev_databaseLED[l]='\0';
+
+	OUT_D1EBUG(textBuf,"rev_databaseLED_6=%s\r\n",rev_databaseLED);
+	//OUT_D1EBUG(textBuf,"curr_LED_1=%s\r\n",curr_LED);
+	i++;
+	n=i+4;
+	for(i,m=0;i<n;i++,m++)
+	{
+		rev_databasePOID[m]=jrm_sepr_buffer[i];
+	}
+	rev_databasePOID[m]='\0';
+	// db_databasePOID=JRM_atofd((char *)databasePOID);
+	//  i++;
+
+	////R_OUT_D1EBUG(textBuf,"iiiiiiiiiiiii====%d: \r\n",i);
+	////R_OUT_D1EBUG(textBuf,"databaseLAT buffer=%s \r\n",databaseLAT);
+	////R_OUT_D1EBUG(textBuf,"mDataBaseLat1=%lf\r\n",mDataBaseLat1);
+	////R_OUT_D1EBUG(textBuf,"databaseLOG buffer=%s \r\n",databaseLOG);
+	////R_OUT_D1EBUG(textBuf,"mDataBaseLong1=%lf\r\n",mDataBaseLong1);
+	////R_OUT_D1EBUG(textBuf,"databaseDIST buffer=%s \r\n",databaseDIST);
+	////R_OUT_D1EBUG(textBuf,"dbdist1=%lf\r\n",dbdist1);
+	OUT_D1EBUG(textBuf,"rev_databaseLED buffer=%s \r\n",rev_databaseLED);
+	OUT_D1EBUG(textBuf,"rev_databasePOID buffer=%s \r\n",rev_databasePOID);
+	rev_int_databasePOID=Ql_atoi(rev_databasePOID);
+	OUT_D1EBUG(textBuf,"###########   rev_int_databasePOID=%d \r\n",rev_int_databasePOID);
+	OUT_D1EBUG(textBuf,"################## Rev_zone_file_sepration done  ##################### \r\n");
+
+}
+
+void Rev_zone_seperation(int rev_add)
+{
+	int i=0,x=0,j=0,k,l,img;
+
+	s32 ret_r=0,f_RE_read_len=0;
+	s32 ret_refl=0,fileret=0;
+	//char *ptr1;
+	u32 filehandle_readfl=0;
+
+	u32 size=0;
+	u32 freespace=0;
+
+
+	u32 writeedlen=0;
+	u32 readedlen=0;
+	OUT_D1EBUG(textBuf,"*** in Rev_zone_seperation ***\r\n");
+
+	//R_OUT_D1EBUG(textBuf,"file read dump_cam_wrt_cnt=%d\r\n",dump_cam_wrt_cnt);
+
+	ret_refl = Ql_FileOpenEx(PATH_JRM,QL_FS_READ_ONLY);
+	//ret_refl = Ql_FileOpenEx((u8*)pfile_imgdata,QL_FS_CREATE);
+	/////R_OUT_D1EBUG(textBuf,"JRM Readfile open ret=%d: \r\n",ret_refl);
+	////R_OUT_D1EBUG(textBuf,"JRM curr_zone_address=%d: \r\n",curr_zone_address);
+	if(ret_refl >= QL_RET_OK)
+	{
+		filehandle_readfl = ret_refl;  
+		Ql_memset(rev_zone_readbuffer,'\0',50);
+
+		ret_refl = Ql_FileSeek(filehandle_readfl, rev_add, QL_FS_FILE_BEGIN);
+		//curr_zone_address=zone_address_mem;
+
+		////R_OUT_D1EBUG(textBuf,"JRM_Readfile_seek_ret=%d: \r\n",ret_refl);
+
+		ret_refl = Ql_FileRead(filehandle_readfl, (unsigned char *)rev_zone_readbuffer,50, &readedlen);
+		rev_zone_readbuffer[50]='\0';
+		////R_OUT_D1EBUG(textBuf,"\r\n JRM_Ql_FileRead()=%d: readedlen=%d\r\n",ret_refl, readedlen);
+		////R_OUT_D1EBUG(textBuf,"+++ rev_zone_readbuffer=%s: \r\n",rev_zone_readbuffer);
+		f_RE_read_len=Ql_strlen((char *)rev_zone_readbuffer);
+		OUT_D1EBUG(textBuf,"JRM rev_zone_readbuffer length=%d \r\n",f_RE_read_len);
+
+		OUT_D1EBUG(textBuf,"rev_zone_readbuffer  ++++++=%s \r\n",rev_zone_readbuffer);
+
+
+		Ql_FileClose(filehandle_readfl);
+		filehandle_readfl = -1;
+
+		if(rev_zone_readbuffer[0]=='#' && rev_zone_readbuffer[1]=='D')						//used to read single zone data
+		{
+			////R_OUT_D1EBUG(textBuf,"iiiiiiiiiiiii====%d: \r\n",i);
+			//for(i=1;((JRM_extra_readbuffer[i]!='#') ||(JRM_extra_readbuffer[i]!='$')) ;i++);
+			//for(i=1;(JRM_extra_readbuffer[i]!='$'|| JRM_extra_readbuffer[i+1]!='#');i++);
+			for(i=1;rev_zone_readbuffer[i]!='#';i++);
+			////R_OUT_D1EBUG(textBuf,"iiiiiiiiiiiii====%d: \r\n",i);
+
+			if(i>50)																				//used for last zone data
+			{
+				for(i=1;rev_zone_readbuffer[i]!='$';i++);
+				i++;
+				////R_OUT_D1EBUG(textBuf,"iiiiiiiiiiiii====%d: \r\n",i);
+			}
+
+			for(k=3,l=0;k<(i-1);k++,l++)															//used to store only lat,long and data required
+			{
+
+				rev_temp_readbuffer[l]=rev_zone_readbuffer[k];
+				// //R_OUT_D1EBUG(textBuf,"JRM_temp_readbuffer in for=%s,i=%d,,j=%d: \r\n",JRM_temp_readbuffer,i,l);
+				// //R_OUT_D1EBUG(textBuf,"JRM_extra_readbuffer in for=%s,i=%d,,j=%d: \r\n",JRM_extra_readbuffer,i,l);
+
+				//j++;
+			}
+			rev_temp_readbuffer[l]='\0';
+			//  JRM_readcount=JRM_readcount+i;
+			////R_OUT_D1EBUG(textBuf,"JRM_temp_readbuffer in for=%s,i=%d,,j=%d: \r\n",JRM_temp_readbuffer,i,l);
+			OUT_D1EBUG(textBuf,"rev_temp_readbuffer Scanned from memory in for=%s\r\n",rev_temp_readbuffer);
+
+		}
+
+
+		//JRM_file_sepration((char *)JRM_temp_readbuffer);
+		Rev_zone_file_sepration((char *)rev_temp_readbuffer);
+		Ql_memset(rev_temp_readbuffer,'\0',50);
+
+
+	}
+}
+
+
+void JRM_DATA_READ(void)
+{
+	s32 ret=0,JRMmemwcnt=0;
+	u32 readedlen1=0;
+	u32 filehandle=0;
+	char JRM_temp_read_Status[10];
+	char JRM_temp__Rout[10];
+	char temp_dir_buff[10];
+
+	ret = Ql_FileOpenEx((u8*)JRM_status_file,QL_FS_CREATE);
+
+	OUT_D1EBUG(textBuf,"\r\n###### JRM parameters  ######\r\n");
+
+	if(ret >= QL_RET_OK)
+	{
+		filehandle = ret;
+		JRMmemwcnt=1;
+		///// JRM status read
+		Ql_memset((ascii *)jrmstatus,0,sizeof(jrmstatus));
+		ret = Ql_FileSeek(filehandle,JRMmemwcnt, QL_FS_FILE_BEGIN);  
+		ret = Ql_FileRead(filehandle, (u8 *)jrmstatus,8, &readedlen1);
+		//OUT_D1EBUG(textBuf,"jrmstatus Ql_FileRead() = %d: readedlenfl = %d\r\n",ret, readedlen1);
+		if((!(Ql_strncmp(jrmstatus,"\0",1))) || (!(Ql_strncmp(jrmstatus,"JRMOF",5))) )
+		{
+			JRM_ON_Flg=0;
+		}
+		else
+		{
+			JRM_ON_Flg=1;
+		}
+		OUT_D1EBUG(textBuf,"\tJRM status \t\t\t= %s\r\n",jrmstatus);
+		OUT_D1EBUG(textBuf,"\tJRM Flag \t\t\t= %d\r\n",JRM_ON_Flg);
+
+		///// JRM rout ID read
+		JRMmemwcnt=10;
+		Ql_memset((ascii *)route_id,0,sizeof(route_id));
+		ret = Ql_FileSeek(filehandle,JRMmemwcnt, QL_FS_FILE_BEGIN);  
+		ret = Ql_FileRead(filehandle, (u8 *)route_id,8, &readedlen1);
+		// OUT_D1EBUG(textBuf,"route_id Ql_FileRead() = %d: readedlenfl = %d\r\n",ret, readedlen1);
+		OUT_D1EBUG(textBuf,"\tRouteID \t\t\t= %s\r\n",route_id);
+
+		///// JRM rout PATH read
+		JRMmemwcnt=20;
+		Ql_memset((ascii *)PATH_JRM,0,sizeof(PATH_JRM));
+		ret = Ql_FileSeek(filehandle,JRMmemwcnt, QL_FS_FILE_BEGIN);  
+		ret = Ql_FileRead(filehandle, (u8 *)PATH_JRM,30, &readedlen1);
+		//OUT_D1EBUG(textBuf,"PATH_JRM Ql_FileRead() = %d: readedlenfl = %d\r\n",ret, readedlen1);
+		OUT_D1EBUG(textBuf,"\tPATH JRM file \t\t\t= %s\r\n",PATH_JRM);
+
+		JRMmemwcnt=65;
+		Ql_memset((ascii *)temp_dir_buff,0,sizeof(temp_dir_buff));
+		ret = Ql_FileSeek(filehandle,JRMmemwcnt, QL_FS_FILE_BEGIN);
+		ret = Ql_FileRead(filehandle, (u8 *)temp_dir_buff,1, &readedlen1);
+		Returnj=Ql_atoi(temp_dir_buff);
+		//OUT_D1EBUG(textBuf,"Returnj Direction buffer in JRM file = %s\r\n",temp_dir_buff);
+		OUT_D1EBUG(textBuf,"\tReturn journey Direction \t\t= %d\r\n",Returnj);
+		if(Returnj==0)
+		{
+			OUT_D1EBUG(textBuf,"\tIn Return Journey.\r\n");
+		}
+		else
+		{
+			OUT_D1EBUG(textBuf,"\tIn Forward Journey.\r\n");
+		}
+
+
+		Ql_FileClose(filehandle);
+		filehandle = -1;
+	}
+	else
+	{
+		OUT_D1EBUG(textBuf,"Error in JRM_DATA reading**1\r\n");
+	}
+}
+
+void JRM_Staus_write(char *STATUS)
+{
+
+	s32 ret1,JRMmemwcnt;
+	char *ptr;
+	u32 writeedlen;
+	u32 filehandle;
+
+	ret1 = Ql_FileOpenEx((u8*)JRM_status_file,QL_FS_CREATE);
+	//R_OUT_D1EBUG(textBuf,"ret=%d\r\n",ret1);
+	JRMmemwcnt=1;
+	if(ret1 >= QL_RET_OK)
+	{
+		filehandle = ret1;
+		// ptr=ix_Itoa(cam_wrt_cnt);
+		//R_OUT_D1EBUG(textBuf,"WRITEwrtcnt1=%s\r\n",ptr);
+		//R_OUT_D1EBUG(textBuf,"Ql_FileOpenEx Create (%s,%08x)=%d\r\n",pfile1,QL_FS_CREATE,ret);
+		//R_OUT_D1EBUG(textBuf," In Write write cnt\r\n");
+		if(Ql_strstr((char *)STATUS,"-") == NULL)
+		{
+			ret1 = Ql_FileSeek(filehandle,JRMmemwcnt,QL_FS_FILE_BEGIN);
+			ret1 = Ql_FileWrite(filehandle, (u8*)STATUS,8,&writeedlen);
+			OUT_D1EBUG(textBuf,"\r\n Ql_Filecam_wrt_cnt()=%d: writeedlen=%d\r\n",ret1, writeedlen);
+		}
+		OUT_D1EBUG(textBuf,"STATUS=%s\r\n",STATUS);
+		Ql_FileClose(filehandle);
+		filehandle = -1;
+	}
+	else
+	{
+		OUT_D1EBUG(textBuf,"error in JRM_Staus_write write\r\n");
+	}
+
+
+}
+
+void fun_JRM_Dir_Write(void)
+{
+	s32 ret1;
+	char *ptr;
+	u32 writeedlen;
+	u32 filehandle;
+
+
+	ret1 = Ql_FileOpenEx((u8*)JRM_status_file,QL_FS_CREATE);
+
+	if(ret1 >= QL_RET_OK)
+	{
+		filehandle = ret1;
+		ptr=ix_Itoa(Returnj);
+		ret1 = Ql_FileSeek(filehandle,65,QL_FS_FILE_BEGIN);
+		ret1 = Ql_FileWrite(filehandle, (u8*)ptr,1,&writeedlen);
+		// OUT_D1EBUG(textBuf,"Returnj in JRM file=%s\r\n",ptr);
+		Ql_FileClose(filehandle);
+		filehandle = -1;
+	}
+	else
+	{
+		//R_OUT_D1EBUG(textBuf,"error in JRM_Staus_write write\r\n");
+	}
+}
+
+
+void JRM_Rout_no_write(char *ROUT_ID)
+{
+
+	s32 ret1,JRMmemwcnt;
+	char *ptr;
+	u32 writeedlen;
+	u32 filehandle;
+
+	ret1 = Ql_FileOpenEx((u8*)JRM_status_file,QL_FS_CREATE);
+	//R_OUT_D1EBUG(textBuf,"ret=%d\r\n",ret1);
+	JRMmemwcnt=10;
+
+	if(ret1 >= QL_RET_OK)
+	{
+		filehandle = ret1;
+		//ptr=ix_Itoa(cam_wrt_cnt);
+		//R_OUT_D1EBUG(textBuf,"WRITEwrtcnt1=%s\r\n",ptr);
+		//R_OUT_D1EBUG(textBuf,"Ql_FileOpenEx Create (%s,%08x)=%d\r\n",pfile1,QL_FS_CREATE,ret);
+		//R_OUT_D1EBUG(textBuf," In Write write cnt\r\n");
+		if(Ql_strstr((char *)ROUT_ID,"-") == NULL)
+		{
+			ret1 = Ql_FileSeek(filehandle,JRMmemwcnt,QL_FS_FILE_BEGIN);
+			ret1 = Ql_FileWrite(filehandle, (u8*)ROUT_ID,8,&writeedlen);
+			OUT_D1EBUG(textBuf,"\r\n Ql_Filecam_wrt_cnt()=%d: writeedlen=%d\r\n",ret1, writeedlen);
+		}
+		OUT_D1EBUG(textBuf,"ROUT_ID=%s\r\n",ROUT_ID);
+		Ql_FileClose(filehandle);
+		filehandle = -1;
+	}
+	else
+	{
+		OUT_D1EBUG(textBuf,"error in JRM_Rout_no_write write\r\n");
+	}
+
+
+}
+void JRM_PATH_write(char *JRM_PATH)             ///To store the path of scanning rout file
+{
+	s32 ret1,JRMmemwcnt;
+	char *ptr;
+	u32 writeedlen;
+	u32 filehandle;
+
+	ret1 = Ql_FileOpenEx((u8*)JRM_status_file,QL_FS_CREATE);
+	//R_OUT_D1EBUG(textBuf,"ret=%d\r\n",ret1);
+	JRMmemwcnt=20;
+	if(ret1 >= QL_RET_OK)
+	{
+		filehandle = ret1;
+		//ptr=ix_Itoa(cam_wrt_cnt);
+		//R_OUT_D1EBUG(textBuf,"WRITEwrtcnt1=%s\r\n",ptr);
+		//R_OUT_D1EBUG(textBuf,"Ql_FileOpenEx Create (%s,%08x)=%d\r\n",pfile1,QL_FS_CREATE,ret);
+		//R_OUT_D1EBUG(textBuf," In Write write cnt\r\n");
+		ret1 = Ql_FileSeek(filehandle,JRMmemwcnt,QL_FS_FILE_BEGIN);
+		ret1 = Ql_FileWrite(filehandle, (u8*)JRM_PATH,30,&writeedlen);
+		OUT_D1EBUG(textBuf,"\r\n Ql_Filecam_wrt_cnt()=%d: writeedlen=%d\r\n",ret1, writeedlen);
+		OUT_D1EBUG(textBuf,"JRM_PATH=%s\r\n",JRM_PATH);
+		Ql_FileClose(filehandle);
+		filehandle = -1;
+	}
+	else
+	{
+		OUT_D1EBUG(textBuf,"error in JRM_PATH write\r\n");
+	}
+
+
+}
+
+u8 chk_file_compltn(void)
+{
+
+	s32 ret,size_ret;
+	u32 filehandle,filesize = 0,scan_file_size = 0,readedlen1 = 0,rd_locn = 0;
+	char *ptr1,ptr2;
+
+
+	char temp_read[90];
+
+	OUT_D1EBUG(textBuf,"IN read JRM scan file NAME = %s\r\n",FTPFILENAME);
+
+	size_ret = Ql_FileGetSize((u8*)FTPFILENAME, &scan_file_size);
+	OUT_D1EBUG(textBuf,"JRM present scan file size =%d\r\n",scan_file_size);
+
+	rd_locn = scan_file_size - 40;
+
+	ret = Ql_FileOpenEx((u8 *)FTPFILENAME,QL_FS_READ_ONLY);
+
+
+	if(ret >= QL_RET_OK)
+	{
+		filehandle = ret;
+
+		Ql_memset((ascii *)temp_read,0,sizeof(temp_read));
+
+		ret = Ql_FileSeek(filehandle,rd_locn, QL_FS_FILE_BEGIN);
+		ret = Ql_FileRead(filehandle, (u8 *)temp_read,45, &readedlen1);
+
+		Ql_FileClose(filehandle);
+		filehandle = -1;
+
+		Ql_strcat((char *)temp_read,"\0");
+		OUT_D1EBUG(textBuf,"READDED::= %s\r\n",temp_read);
+
+		ptr1 = Ql_strchr((char *)temp_read,'@');
+		if(ptr1 != NULL)
+		{
+
+			OUT_D1EBUG(textBuf,"Here @ Found Route is complete\r\n");
+			return 1;
+		}
+		else
+		{
+			OUT_D1EBUG(textBuf,"Here @ Not Found Route IINCOMPLTE\r\n");
+			return 2;
+		}
+	}
+	else
+	{
+		OUT_D1EBUG(textBuf,"Error in reading route scan file\r\n");
+	}
+}
+
+u8 chk_file_compltnV2(char *routeID)
+{
+	s32 ret,size_ret;
+	u32 filehandle,filesize = 0,scan_file_size = 0,readedlen1 = 0,rd_locn = 0;
+	char *ptr1,ptr2;
+	char temp_read[90];
+
+	Ql_memset(FTPFILENAME,'\0',sizeof(FTPFILENAME));
+	Ql_strncat((char *)FTPFILENAME,(char *)"Route",5);
+	Ql_strncat((char *)FTPFILENAME,(char *)routeID,sizeof(routeID));
+	// Ql_strcat(FTPFILENAME,(char *)(ix_Itoa( route_id)));
+	Ql_strncat((char *)FTPFILENAME,(char *)".txt",4);
+	OUT_D1EBUG(textBuf," ROUTE NAME   =%s\r\n",FTPFILENAME);
+
+	OUT_D1EBUG(textBuf,"IN read JRM scan file NAME = %s\r\n",FTPFILENAME);
+	size_ret = Ql_FileGetSize((u8*)FTPFILENAME, &scan_file_size);
+	OUT_D1EBUG(textBuf,"JRM present scan file size =%d\r\n",scan_file_size);
+	rd_locn = scan_file_size - 40;
+	ret = Ql_FileOpenEx((u8 *)FTPFILENAME,QL_FS_READ_ONLY);
+
+	if(ret >= QL_RET_OK)
+	{
+		filehandle = ret;
+		Ql_memset((ascii *)temp_read,0,sizeof(temp_read));
+		ret = Ql_FileSeek(filehandle,rd_locn, QL_FS_FILE_BEGIN);
+		ret = Ql_FileRead(filehandle, (u8 *)temp_read,45, &readedlen1);
+		Ql_FileClose(filehandle);
+		filehandle = -1;
+		Ql_strcat((char *)temp_read,"\0");
+		OUT_D1EBUG(textBuf,"READDED::= %s\r\n",temp_read);
+		ptr1 = Ql_strchr((char *)temp_read,'@');
+		if(ptr1 != NULL)
+		{
+			OUT_D1EBUG(textBuf,"Here @ Found Route is complete\r\n");
+			return 1;
+		}
+		else
+		{
+			OUT_D1EBUG(textBuf,"Here @ Not Found Route IINCOMPLTE\r\n");
+			return 2;
+		}
+	}
+	else
+	{
+		OUT_D1EBUG(textBuf,"Error in reading route scan file\r\n");
+	}
+
+}
+
+void JRM_ROUT_chk(void)
+{
+	s32 ret4=0;
+	u8 fun_ret = 0;
+	//read_route_id_only();
+	OUT_D1EBUG(textBuf,"JRM route_id in JRM_ROUT_chk=%s\r\n",route_id);
+
+	Ql_memset(FTPFILENAME,'\0',sizeof(FTPFILENAME));
+	Ql_strncat((char *)FTPFILENAME,(char *)"Route",5);
+	Ql_strncat((char *)FTPFILENAME,(char *)route_id,sizeof(route_id));
+	// Ql_strcat(FTPFILENAME,(char *)(ix_Itoa( route_id)));
+	Ql_strncat((char *)FTPFILENAME,(char *)".txt",4);
+
+	OUT_D1EBUG(textBuf," ROUTE NAME   =%s\r\n",FTPFILENAME);
+
+	ret4 = Ql_FileCheck((u8*)FTPFILENAME);
+
+
+	if ( QL_RET_OK == ret4)
+	{
+
+		fun_ret = chk_file_compltn();
+
+		OUT_D1EBUG(textBuf,"chk_file_compltn returns fun_ret  =%d\r\n",fun_ret);
+
+		if(fun_ret == 1)
+		{
+			OUT_D1EBUG(textBuf," YES file exist Do not download  \r\n");
+
+			rt_jrm_incmp_flag = 0;
+
+			JRM_Staus_write((char *)"JRMON");
+			stop_jrm_timer();				///stop JRM scanning
+			Ql_memset(PATH_JRM,'\0',sizeof(PATH_JRM));
+			Ql_strncat((char *)PATH_JRM,(char *)"Route",5);
+			Ql_strncat((char *)PATH_JRM,(char *)route_id,sizeof(route_id));
+			Ql_strncat((char *)PATH_JRM,(char *)".txt",4);
+			JRM_PATH_write((char *)PATH_JRM);
+
+			OUT_D1EBUG(textBuf," ROUTE PATH_JRM=%s\r\n",PATH_JRM);
+			JRM_JD_stamp();
+			JRM_Rout_no_write((char *)route_id);
+			Ql_Sleep(500);
+			Ql_Reset(0);
+			//read_current_rt_scan();
+			// //R_OUT_D1EBUG(textBuf,"Presently route scanning = %s\r\n",current_rt_scan);
+		}
+		else
+		{
+			OUT_D1EBUG(textBuf," Need to do retry Things  \r\n");
+
+			if(rt_retry_cnt >= 5 )
+			{
+				rt_retry_cnt = 1;
+				stop_jrm_timer();
+				JRM_Staus_write((char *)"JRMOF");
+				gen_rt_dwnld_fail_stamp();
+				OUT_D1EBUG(textBuf," Unable to download gen stamp\r\n");
+
+			}
+			else
+			{
+
+				rt_jrm_incmp_flag = 1;
+
+				stop_jrm_timer();
+				JRM_Staus_write((char *)"JRMOF");
+
+				ftp_rt_data  = 1;
+				ftp_rt_cmd_idx = 1;
+				JRM_FTP_DL();
+
+				rt_dwnld_fail_flag = 1;
+			}
+		}
+	}
+	else if (QL_RET_ERR_FILENOTFOUND == ret4)
+	{
+
+		OUT_D1EBUG(textBuf," FILE doesn't exist download the file  \r\n");
+		ftp_rt_data  = 1;
+		ftp_rt_cmd_idx = 1;
+		JRM_FTP_DL();
+		//   route_ftp_cases();
+	}
+}
+
+void JRM_ROUT_chk_V2(void)
+{
+	s32 ret4=0;
+	u8 fun_ret = 0;
+
+	//read_route_id_only();
+	OUT_D1EBUG(textBuf,"JRM route_id in JRM_ROUT_chk_V2=%s\r\n",route_id);
+	/*Ql_memset(FTPFILENAME,'\0',sizeof(FTPFILENAME));
+	Ql_strncat((char *)FTPFILENAME,(char *)"Route",5);
+	Ql_strncat((char *)FTPFILENAME,(char *)route_id,sizeof(route_id));
+	// Ql_strcat(FTPFILENAME,(char *)(ix_Itoa( route_id)));
+	Ql_strncat((char *)FTPFILENAME,(char *)".txt",4);
+	OUT_D1EBUG(textBuf," ROUTE NAME   =%s\r\n",FTPFILENAME);
+
+	ret4 = Ql_FileCheck((u8*)FTPFILENAME);
+	if ( QL_RET_OK == ret4)
+	{
+		fun_ret = chk_file_compltn();
+		OUT_D1EBUG(textBuf,"chk_file_compltn returns fun_ret  =%d\r\n",fun_ret);
+		/*if(fun_ret == 1)
+		{
+			OUT_D1EBUG(textBuf," YES file exist Do not download  \r\n");
+			rt_jrm_incmp_flag = 0;
+			JRM_Staus_write((char *)"JRMON");
+			stop_jrm_timer();				///stop JRM scanning
+			Ql_memset(PATH_JRM,'\0',sizeof(PATH_JRM));
+			Ql_strncat((char *)PATH_JRM,(char *)"Route",5);
+			Ql_strncat((char *)PATH_JRM,(char *)route_id,sizeof(route_id));
+			Ql_strncat((char *)PATH_JRM,(char *)".txt",4);
+			JRM_PATH_write((char *)PATH_JRM);
+			OUT_D1EBUG(textBuf," ROUTE PATH_JRM=%s\r\n",PATH_JRM);
+			JRM_JD_stamp();
+			//Ql_Sleep(500);
+		//	Ql_Reset(0);
+			//read_current_rt_scan();
+			// //R_//OUT_D1EBUG(textBuf,"Presently route scanning = %s\r\n",current_rt_scan);
+		}
+		else
+		{
+			OUT_D1EBUG(textBuf," Need to do retry Things  \r\n");
+			if(rt_retry_cnt >= 5 )
+			{
+				rt_retry_cnt = 1;
+				stop_jrm_timer();
+				JRM_Staus_write((char *)"JRMOF");
+				gen_rt_dwnld_fail_stamp();
+				OUT_D1EBUG(textBuf," Unable to download gen stamp\r\n");
+			}
+			else
+			{
+				rt_jrm_incmp_flag = 1;
+				stop_jrm_timer();
+				JRM_Staus_write((char *)"JRMOF");
+				ftp_rt_data  = 1;
+				ftp_rt_cmd_idx = 1;
+				JRM_FTP_DL();
+				rt_dwnld_fail_flag = 1;
+			}
+		}
+	}*/
+	//else if (QL_RET_ERR_FILENOTFOUND == ret4)
+	//{
+	OUT_D1EBUG(textBuf," FILE doesnt exist download the file  \r\n");
+	ftp_rt_data  = 1;
+	ftp_rt_cmd_idx = 1;
+	JRM_FTP_DL();
+	//   route_ftp_cases();
+	//}
+}
+
+void new_delay(void)
+{
+	/*int i=0,j=0;
+
+	while(i>=100)
+	{
+		for(j=0;j<2500000;j++);
+		i++;
+	}*/
+
+	Ql_SendToUart(ql_uart_port1,(u8 *)"$PSRF103,00,00,00,01*24\r\n",25);
+	Ql_SendToUart(ql_uart_port1,(u8 *)"$PSRF103,01,00,00,01*25\r\n",25);
+	Ql_SendToUart(ql_uart_port1,(u8 *)"$PSRF103,03,00,00,01*27\r\n",25);
+	Ql_SendToUart(ql_uart_port1,(u8 *)"$PSRF103,05,00,00,01*21\r\n",25);
+	Ql_SendToUart(ql_uart_port1,(u8 *)"$PSRF103,06,00,00,01*22\r\n",25);
+	Ql_SendToUart(ql_uart_port1,(u8 *)"$PSRF103,08,00,00,01*2C\r\n",25);
+	Ql_SendToUart(ql_uart_port1,(u8 *)"$PMTK397,0.7*3A\r\n",17);
+	Ql_SendToUart(ql_uart_port1,(u8 *)"$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n",53);   
+}

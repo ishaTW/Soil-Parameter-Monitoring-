@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<item value="false" key="LexicalSortingAction.sort"/>
+	<section name="org.eclipse.cdt.ui.OPEN_ACTION_SELECTION_DIALOG_SECTION">
+		<item value="398" key="DIALOG_WIDTH"/>
+		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
+		<item value="435" key="DIALOG_HEIGHT"/>
+		<item value="103" key="DIALOG_Y_ORIGIN"/>
+		<item value="449" key="DIALOG_X_ORIGIN"/>
+	</section>
+	<section name="PDOMSearchPage">
+		<item value="false" key="caseSensitive"/>
+		<item value="227191" key="searchFlags"/>
+		<list key="previousPatterns">
+			<item value="rev_int_databasePOID"/>
+			<item value="TD2"/>
+			<item value="timerId"/>
+			<item value="Flag_Writebuffer"/>
+			<item value="itoa"/>
+			<item value="ix_Itoa"/>
+			<item value="readcount"/>
+			<item value="Ql_StartTimercam_tx"/>
+			<item value="dump_cam_wrt_cnt"/>
+			<item value="onesecdummy"/>
+			<item value="stop_acc_capt"/>
+			<item value="in_cam_rou2"/>
+			<item value="rd_cam_image_location_C"/>
+			<item value="cam2dump"/>
+			<item value="readedlen2"/>
+			<item value="FTPFILENAME2"/>
+			<item value="chkftpcloseflg"/>
+			<item value="cam_timer2"/>
+			<item value="image_os"/>
+			<item value="mspeed_send_ex"/>
+			<item value="mCurrSpeed"/>
+			<item value="cam_timer"/>
+			<item value="cam_tw_filewrite"/>
+			<item value="cam_date_time"/>
+			<item value="clrcam2flags"/>
+			<item value="Camera"/>
+			<item value="Cameragotstucked_C22"/>
+			<item value="cam_image_location"/>
+			<item value="PATH_EX_FLAGS"/>
+			<item value="cam_wrt_cnt"/>
+			<item value="cam1memwcnt"/>
+			<item value="fun_cam2_wrt_cnt"/>
+			<item value="fun_cam_wrt_cnt"/>
+			<item value="cam_mem_loc_read"/>
+			<item value="cam1_mem_loc"/>
+			<item value="boolsen_fl0"/>
+			<item value="sen_fl"/>
+			<item value="Ql_StartTimerwrite_os_after_image"/>
+			<item value="write_os_after_image"/>
+			<item value="copy_after_flag"/>
+			<item value="os_first"/>
+			<item value="ex_started"/>
+			<item value="date_time_buf"/>
+			<item value="readbuffer_cam"/>
+			<item value="readbuffer_cam_temp"/>
+			<item value="read_loc_image"/>
+			<item value="rd_cam_image_location"/>
+			<item value="img_overwrt_flag"/>
+			<item value="flag_ex_sending"/>
+			<item value="in_cam_rou"/>
+			<item value="fileposition"/>
+		</list>
+	</section>
+	<section name="org.eclipse.cdt.ui.text.hover.CMacroExpansionExploration">
+		<item value="368" key="size.height"/>
+		<item value="88" key="location.y"/>
+		<item value="426" key="size.width"/>
+		<item value="487" key="location.x"/>
+	</section>
+	<section name="completion_proposal_size">
+	</section>
+</section>

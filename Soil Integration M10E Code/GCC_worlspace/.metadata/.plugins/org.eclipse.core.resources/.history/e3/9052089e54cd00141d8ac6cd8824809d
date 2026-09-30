@@ -1,0 +1,1002 @@
+//#ifdef __EXAMPLE_SMS__
+ /***************************************************************************************************
+ 	 Example:
+ 		 
+ 			 SMS Routine
+ 		 
+ ****************************************************************************************************/
+
+
+/*-------------------------------------------------------------------------*/
+/*  File       : sms_handle.c
+                 
+                 16-Jun-2012
+                 Remote parameter change
+-------------------------------------------------------------------------*/
+
+/*-------------------------------------------------------------------------*/
+/*								Headers									   */
+/*-------------------------------------------------------------------------*/
+
+
+#include<stdio.h>
+#include<string.h>
+#include "ql_trace.h"
+#include "ql_timer.h"
+#include "ql_type.h"
+#include "ql_stdlib.h"
+#include "ql_appinit.h"
+#include "ql_interface.h"
+#include "ql_audio.h"
+#include "ql_pin.h"
+#include "Ql_multitask.h"
+#include "Ql_tcpip.h"
+#include "Ql_error.h"
+#include "Ql_sms.h"
+#include "ql_fcm.h"
+#include "MRW.h"  
+#include "para_read.h" 
+#include "ql_api_type.h"
+#include "GPRMC.h" 
+#include "Ql_filesystem.h"
+#include "sms_handle.h" 
+#include "fota.h" 
+#include "ACCSMTP.h"
+#include "JRM.h"
+#include "camera.h"
+#include "camera2.h"
+#include "canparareadwrt.h"
+/*-------------------------------------------------------------------------*/
+/*								Globals									   */
+/*-------------------------------------------------------------------------*/
+	
+#define MAX_LIST_NODE_COUNT     100
+
+#define DEBUG_BUFFER_SIZE   1000
+/*
+#define OUT_D1EBUG(x,...)  \
+    Ql_memset((void*)(x),0,DEBUG_BUFFER_SIZE);  \
+    Ql_sprintf((char*)(x),__VA_ARGS__);   \
+    Ql_SendToUart(ql_uart_port1,(u8*)(x),Ql_strlen((const char*)(x)));
+*/
+/*	
+
+#define OUT_D1EBUG(x,...)  \
+    Ql_memset((x),0,100);  \
+    Ql_sprintf((x),__VA_ARGS__);   \
+    Ql_SendToUart(ql_uart_port2,(u8 *)(x),Ql_strlen(x));
+
+*/
+void CallBack_NewSMS(u16 index,QlSMSStorage storage);
+void CallBack_SendSMS(bool result, s16 cause, u8 msg_ref);
+void CallBack_DeleteSMS(bool result, s16 cause,u16 index);
+void CallBack_ReadPDUSMS(bool result, s16 cause,u16 index, u8 status, u8* data, u16 length);
+void CallBack_NewFlashPDUSMS(u16 length, u8* pdu_string);
+void CallBack_PDUStatusReport(u16 length, u8* pdu_string);
+void CallBack_ReadTextSMS(bool result, s16 cause,u16 index, u8 status, QlSMSTextMsg* sms);
+void CallBack_NewFlashTextSMS(QlSMSTextMsg* sms);
+void CallBack_TextStatusReport(u8 fo,u8 msg_ref, u8* phone_num, QlSysTimer* scts, QlSysTimer* dt, u8 st);
+char debug_buffer[DEBUG_BUFFER_SIZE];
+extern char textBuf[];
+
+char buffer1[250];
+char sms_buffer[200];
+char sms_set[40];
+extern char UID[8];
+extern char TXI[8];
+extern char STI[8];
+extern u32 filehandle;
+extern char pfile2[15];
+u16 sms_index=0;
+extern u8 Fota_Flag;
+u8 Fota_http_Flag=0;
+extern PortData_Event* pPortEvt;
+bool camdumpflag=0;
+/////cam 1
+extern bool stop_img_capt;
+extern u32 readcount;
+extern u32 dump_cam_wrt_cnt;
+extern u32 cam_wrt_cnt;
+///////cam 2
+//extern bool stop_img_capt2;
+extern u32 readcount22;
+extern u32 dump_cam_wrt_cnt2;
+extern u32 cam_wrt_cnt2;
+extern QlTimer onesectimer,get_img,get_img2;
+extern bool cam1dump;
+extern bool cam2dump;
+//////gps
+extern bool camcaptureflag;
+extern int camindicatorflag;
+extern int doing_fota;
+/////acc data
+extern u16 smtp_cmd_idx;
+extern int in_accsmtp_rou;
+extern bool smtp_bDoNexAT;
+ //extern bool stop_acc_capt;
+extern int trackflsent;
+extern int read_cnt;
+extern int wrt_cnt;
+extern u8 BackUp_Flag;
+extern bool in_cam_rou;
+extern QlTimer onesecdummy;
+extern bool camdumpflag;
+extern bool datareading;
+extern bool cam1dump;
+extern s32 tm_ret;						///onesec timer return value.
+extern bool send_accd_whole_data;
+extern bool stop_acc_capt;
+extern u32 dump_accd_wrtn_cnt,acc_rd_cnt;
+//QlEventBuffer flSignalBuffer; // Keep this variable a global variable due to its big size
+
+extern u8 current_mem;
+extern u8 used_mem;
+extern u8 total_mem;
+extern bool FTP_TX_Flag;
+extern QlTimer GC_ftp_stuck;
+
+
+
+extern char PATH_JRM[30];
+char jrmstatus[10];
+char no_files[3];
+char route_id[10];
+
+
+void CallBack_NewSMS(u16 index,QlSMSStorage storage)
+{
+    s16 ret;
+    //R_//OUT_D1EBUG(debug_buffer,"\r\nCB_NewSMS: index=%d,storage=%d\r\n",index,storage);
+// you can read it right now
+	ret=Ql_SetSMSFormat(1);
+    //R_//OUT_D1EBUG(debug_buffer,"\r\nQl_SetSMSFormat()=%d\r\n",ret);
+    ret=Ql_ReadSMS(index,0);
+    //R_//OUT_D1EBUG(debug_buffer,"\r\nQl_ReadSMS(index=%d,mode=%d)=%d\r\n",index,0,ret);
+    sms_index=index;
+    //R_//OUT_D1EBUG(debug_buffer,"\r\n sms_index=%d\r\n",sms_index);
+}
+
+void CallBack_SendSMS(bool result, s16 cause, u8 msg_ref)
+{
+    //R_//OUT_D1EBUG(debug_buffer,"\r\nCB_SendSMS: result=%d,cause=%d,msg_ref=%d\r\n",result,cause,msg_ref);
+}
+
+void  CallBack_DeleteSMS(bool result, s16 cause,u16 index)
+{
+    //R_//OUT_D1EBUG(debug_buffer,"\r\nCB_DeleteSMS: result=%d,cause=%d,index=%d\r\n",result,cause,index);
+}
+
+void CallBack_ReadPDUSMS(bool result, s16 cause,u16 index, u8 status, u8* data, u16 length)
+{
+    //R_//OUT_D1EBUG(debug_buffer,"\r\nCB_ReadPDUSMS: result=%d,cause=%d,index=%d,status=%d,length=%d\r\n",result,cause,index,status,length);
+    if(result)
+    {
+        if(length)
+        {
+            int i;
+            for(i=0;i<length;i++)
+            {
+                //R_//OUT_D1EBUG(debug_buffer,"%02X",data[i]);
+            }
+            //R_//OUT_D1EBUG(debug_buffer,"\r\n");
+        }
+    }
+}
+
+void CallBack_NewFlashPDUSMS(u16 length, u8* pdu_string)
+{
+    //R_//OUT_D1EBUG(debug_buffer,"\r\nCB_NewFlashPDUSMS: length=%d\r\n",length);
+    
+    if(pdu_string)
+    {
+        int i;
+        for(i=0;i<length;i++)
+        {
+            //R_//OUT_D1EBUG(debug_buffer,"%02X",pdu_string[i]);
+        }
+        //R_//OUT_D1EBUG(debug_buffer,"\r\n");
+    }
+}
+
+void CallBack_PDUStatusReport(u16 length, u8* pdu_string)
+{
+    //R_//OUT_D1EBUG(debug_buffer,"\r\nCB_PDUStatusReport: length=%d\r\n",length);
+    if(length)
+    {
+        int i;
+        for(i=0;i<length;i++)
+        {
+            //R_//OUT_D1EBUG(debug_buffer,"%02X",pdu_string[i]);
+        }
+        //R_//OUT_D1EBUG(debug_buffer,"\r\n");
+    }
+}
+
+void CallBack_ReadTextSMS(bool result, s16 cause,u16 index, u8 status, QlSMSTextMsg* sms)
+{
+	u16 swap_v;
+	//swap_v = result;
+	//Ql_Sleep(1000);
+    //R_//OUT_D1EBUG(debug_buffer,"\r\nCB_ReadTextSMS: result=%d,cause=%d,index=%d,status=%d\r\n",result,cause,index,status);
+	Ql_Sleep(1000);
+    if(result)
+    {
+        if(sms)
+        {
+            int i;
+			//Ql_Sleep(1000);
+            //R_//OUT_D1EBUG(debug_buffer,"phone_num=\"%s\",num_type=%d,chset=%d\r\n",sms->phone_num,sms->num_type,sms->chset);
+            Ql_Sleep(200);
+			if(sms->scts.year != 0)
+            {
+				//Ql_Sleep(1000);
+                //R_//OUT_D1EBUG(debug_buffer,"scts=20%d-%d-%d %d:%d:%d\r\n",sms->scts.year,sms->scts.month,sms->scts.day,sms->scts.hour,sms->scts.minute,sms->scts.second);				//Ql_Sleep(1000);
+            }
+            
+            if(sms->udh_len)
+            {
+                for(i=0;i<sms->udh_len;i++)
+                {
+                    //R_//OUT_D1EBUG(debug_buffer,"%02X", sms->data_len);
+                }
+                //R_//OUT_D1EBUG(debug_buffer,"\r\n");
+            }
+            
+            if(sms->data)
+            {
+                s16 ret;
+                Ql_SMS_DCS_ToCSCS(sms,CSCS_CHSET_GSM);
+				//Ql_Sleep(200);
+                //R_//OUT_D1EBUG(debug_buffer,"CallBack_ReadTextSMS data_len=%d\r",sms->data_len);
+                //Ql_Sleep(200);
+				//R_//OUT_D1EBUG(debug_buffer,"\nCallBack_ReadTextSMS data=%s\r",sms->data);
+                Ql_Sleep(200);
+                read_sms(sms->data,sms->data_len);
+                
+                for(i=0;i<sms->data_len;i++)
+                {
+                ////R_//OUT_D1EBUG(debug_buffer,"sms data:\r\n");
+                    if(QL_SMS_CHSET_GSM == sms->chset)
+                    {
+                        //R_//OUT_D1EBUG(debug_buffer,"%c",(sms->data)[i]);
+                    }
+                    else
+                    {
+                        //R_//OUT_D1EBUG(debug_buffer,"%02X",(sms->data)[i]);
+                    }
+                }   
+
+                ret=Ql_GetSMSStorageInfo(current_mem,used_mem,total_mem);
+                //R_//OUT_D1EBUG(textBuf,"Ql_GetSMSStorageInfo=%d\r\n",ret);
+                //R_//OUT_D1EBUG(textBuf,"Device SMS Memory Details: Cutrrent memory=%d,Used memory=%d,Total memory=%d\r\n",ret,current_mem,used_mem,total_mem);
+
+
+                //R_//OUT_D1EBUG(debug_buffer,"\r\n");
+//you can send message right now
+/* 
+                ret = Ql_SendTextSMS(sms->phone_num, sms->data_len, sms->data);
+                //R_//OUT_D1EBUG(debug_buffer, "\r\nQl_SendTextSMS(phone_num=\"%s\")=%d\r\n",sms->phone_num,ret);
+*/
+            }
+        }
+    }
+}
+
+void CallBack_NewFlashTextSMS(QlSMSTextMsg* sms)
+{
+    if(sms)
+    {
+        int i;
+        //R_//OUT_D1EBUG(debug_buffer,"\r\nCB_NewFlashTextSMS: phone_num=%s,num_type=%d,chset=%d\r\n",sms->phone_num,sms->num_type,sms->chset);
+        //R_//OUT_D1EBUG(debug_buffer,"scts=20%d-%d-%d  %d:%d:%d\r\n",sms->scts.year,sms->scts.month,sms->scts.day,sms->scts.hour,sms->scts.minute,sms->scts.second);
+        if(sms->udh)
+        {
+            for(i=0;i<sms->udh_len;i++)
+            {
+                //R_//OUT_D1EBUG(debug_buffer,"%02X",(sms->udh)[i]);
+            }
+            //R_//OUT_D1EBUG(debug_buffer,"\r\n");
+        }
+        
+        if(sms->data)
+        {
+            for(i=0;i<sms->data_len;i++)
+            {
+                if(QL_SMS_CHSET_GSM == sms->chset)
+                {
+                    //R_//OUT_D1EBUG(debug_buffer,"%c",(sms->data)[i]);
+                }
+                else
+                {
+                    //R_//OUT_D1EBUG(debug_buffer,"%02X",(sms->data)[i]);
+                }
+            }   
+            //R_//OUT_D1EBUG(debug_buffer,"\r\n");
+        }
+    }
+}
+
+void CallBack_TextStatusReport(u8 fo,u8 msg_ref, u8* phone_num, QlSysTimer* scts, QlSysTimer* dt, u8 st)
+{
+    //R_//OUT_D1EBUG(debug_buffer,"\r\nCB_TextStatusReport: fo=%d,msg_ref=%d,phone_num=%s,st=%d\r\n",fo,msg_ref,phone_num,st);
+    //R_//OUT_D1EBUG(debug_buffer,"scts=20%d-%d-%d %d:%d:%d\r\n",scts->year,scts->month,scts->day,scts->hour,scts->minute,scts->second);
+    //R_//OUT_D1EBUG(debug_buffer,"dt=20%d-%d-%d %d:%d:%d\r\n",scts->year,scts->month,scts->day,scts->hour,scts->minute,scts->second);
+}
+
+void read_sms(u8* buffer, u16 smslength)
+{
+    char *ptr;
+//    char *ptr1;
+	s32 ret;
+    u8 k;
+	k=0;
+	//RR////R_//OUT_D1EBUG(textBuf,"_____read_sms___\r\n");
+	//RR////R_//OUT_D1EBUG(textBuf,"Callback buffer==\r\n%s\r\n", buffer);
+	Ql_Sleep(500);
+    if (smslength==0)
+    {
+//	    //RR////R_//OUT_D1EBUG(textBuf,"Callback:smslength==0\r\n%s\r\n", buffer);
+	    //RR////R_//OUT_D1EBUG(textBuf,"Callback:smslength==0\r\n%s\r\n", buffer);
+	    //Ql_SMSUnInitialize(); 
+        return;
+	}
+    
+    if (buffer != NULL)
+    {
+		//Ql_Sleep(1000);
+	    	//RR////R_//OUT_D1EBUG(textBuf,"Callback:\r\n%s\r\n", buffer);
+//   		Ql_strcpy((char *)sms_buffer,(char *)buffer);
+			//Ql_Sleep(1000);
+//	    	//RR////R_//OUT_D1EBUG(textBuf,"sms_buffer:\r\n%s\r\n",sms_buffer);
+	    	ptr=Ql_strstr((char *)buffer,(char *)UID);
+// 			if(Ql_strstr((char *)sms_buffer,(char *)UID) != NULL)
+//  	    //RR////R_//OUT_D1EBUG(textBuf,"ptr:\r\n%s\r\n",ptr);
+            Ql_Sleep(500);
+			
+			if(ptr != NULL)
+     		{
+	    		//RR////R_//OUT_D1EBUG(textBuf,"Unit id matched\r\n");
+//   		ptr1=ptr;
+	    		
+ 	    		while(*ptr !=':')
+                {
+//          		Ql_strcpy((char *)sms_buffer,(char *)ptr);
+					sms_set[k]=*ptr;
+                    ptr++;
+                    k++;
+                }
+				sms_set[k]='\0';
+	    	    //RR////R_//OUT_D1EBUG(textBuf,"sms_set:\r\n%s\r\n",sms_set);
+	    		 Ql_Sleep(500);
+		        Change_RemoteParameter(ptr);    
+     	
+     		}
+	 		else
+	 		{
+//////////////////////////////////////////////////////////////////////////////////////////////
+///////----------------------Fota App----------------------------------//////////////////////
+	 		
+	 		    if(Ql_strstr((char *)buffer,(char *)"#DOTA") !=NULL)
+	 		    {
+	 		    //RR////R_//OUT_D1EBUG(textBuf,"Do dota\r\n");
+//	 		       tw_DofotaUpgrade();	 		    
+                   Fota_http_Flag=1;
+                   	FTP_TX_Flag=0;
+					doing_fota=1;
+                   	clrcam1flags();
+					clrcam2flags();
+					camcaptureflag=0;
+					camindicatorflag=0;
+					stop_acc_capt=1;
+					stop_jrm_timer();
+                   fota_Set_url();	//fota initial function
+         	     ret=Ql_DeleteSMS(sms_index,4);
+	    	     //R_//OUT_D1EBUG(textBuf,"Ql_DeleteSMS=%d\r\n",ret);
+  			      //Ql_SMSUnInitialize(); 
+
+
+
+	 		    }
+//////////////////////////////////////////////////////////////////////////////////////////////
+///////----------------------Fota ACC DATA---------------------------------//////////////////////
+	 		
+				else if(Ql_strstr((char *)buffer,(char *)"#ACCD") !=NULL)
+	 		    {
+	 		    //R_//OUT_D1EBUG(textBuf,"SEND ACC DATA\r\n");
+	 		  
+			   ret=Ql_DeleteSMS(sms_index,4);
+			   //R_//OUT_D1EBUG(textBuf,"ACCD Ql_DeleteSMS=%d\r\n",ret);
+			  
+	 		     #if 0
+	 		       smtp_cmd_idx=1;
+					in_accsmtp_rou=1;
+					stop_acc_capt=1;
+					SMTP_connect();									//fota initial function
+  	    	      ret=Ql_DeleteSMS(sms_index,4);
+	    	      //R_//OUT_D1EBUG(textBuf,"Ql_DeleteSMS=%d\r\n",ret);
+  			      //Ql_SMSUnInitialize(); 
+				#endif
+				
+				
+
+	    	    trackflsent=0;
+
+
+
+				send_accd_whole_data = 1;
+				send_accd_whole_data_wrt();
+
+				stop_acc_capt=1; 
+				write_stop_acc_capt();
+				
+			    Ql_FileGetSize((u8*)"ACC_data.txt", &dump_accd_wrtn_cnt);
+			    //R_//OUT_D1EBUG(textBuf,"GCC full size of 4hr incd file =%d\r\n",dump_accd_wrtn_cnt);
+				wrt_dump_accd_wrtn_cnt();  //RAHMAN_TODO
+
+
+				acc_rd_cnt = 0;
+			    Accdata_wrtrdcnt();
+
+
+
+				tw_read_accd_file();
+				ret=Ql_DeleteSMS(sms_index,1);
+	    	     //R_//OUT_D1EBUG(textBuf,"Ql_DeleteSMS=%d\r\n",ret);
+	 		    }
+	 		    
+	 		    /////////to erase read and write count//////////////////
+	    		else if(Ql_strstr((char *)buffer,(char *)"#ERRRW") !=NULL)
+	 		    {
+	 		    //RR////R_//OUT_D1EBUG(textBuf,"erase memory count\r\n");
+//	 		       tw_DofotaUpgrade();	 		    
+                  wrt_cnt=0;
+                  tw_writewrt_cnt();
+	   			  read_cnt=0; 
+              	   tw_writeread_cnt(); 
+                  BackUp_Flag=0;
+                  tw_writeBackUpFlag(); 
+ 	    	      ret=Ql_DeleteSMS(sms_index,4);
+	    	      //R_//OUT_D1EBUG(textBuf,"Ql_DeleteSMS=%d\r\n",ret);
+
+  			     // Ql_SMSUnInitialize(); 
+  			      //delay();
+           	   	  //Ql_Reset(2);
+
+	 		    }
+	 		    /////////to erase CAMERA COUNTS //////////////////
+	    		else if(Ql_strstr((char *)buffer,(char *)"#CEREASECAM") !=NULL)
+	 		    {
+	    			//RR////R_//OUT_D1EBUG(textBuf,"erase CAMERA memory count\r\n");
+					in_cam_rou=0;
+					camdumpflag=0;
+ 					fun_camdumpflag(); 	////camera dumpflag
+ 					datareading=0;
+ 					fun_datareading();
+ 					cam1dump=0;
+					fun_cam1dump();
+					Ql_StopTimer(&GC_ftp_stuck);
+					ret=Ql_DeleteSMS(sms_index,4);
+ 	    	      	  //R_//OUT_D1EBUG(textBuf,"Ql_DeleteSMS=%d\r\n",ret);
+	    	      	//delay();   
+					Ql_Sleep(500);
+       	   			Ql_Reset(0);
+       	   			// Ql_SMSUnInitialize();
+       	   			//delay();
+       	   			//Ql_Reset(2);
+
+	 		    }
+	 		    
+////////////////////////////////////////////////////////////////////////////////////////////////
+ /////////to erase CAMERA COUNTS //////////////////
+	    		else if(Ql_strstr((char *)buffer,(char *)"#CAMREDERS") !=NULL)
+	 		    {
+	 		    //RR////R_//OUT_D1EBUG(textBuf,"erase CAMERA read count\r\n");
+
+					
+                 
+ 	    	      ret=Ql_DeleteSMS(sms_index,4);
+	    	      //R_//OUT_D1EBUG(textBuf,"Ql_DeleteSMS=%d\r\n",ret);
+	    	      readcount =0;
+	    	      fun_cam_read_cnt();
+	    	    //  	delay();  
+				  Ql_Sleep(500);
+       	   			Ql_Reset(0);
+  			     
+	 		    }
+////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////-----------------------CAMDUMP------------------------------------////////////
+				else if(Ql_strstr((char *)buffer,(char *)"#CMDO") !=NULL)
+	 		    {
+	 		    //RR////R_//OUT_D1EBUG(textBuf,"#CAMDUMP FIRED\r\n");
+//	 		       tw_DofotaUpgrade();	 		    
+           //        Fota_Flag=1;
+			//	 onesectimer.timeoutPeriod = Ql_SecondToTicks(2);
+				 Ql_StopTimer(&onesecdummy);
+				// onesecdummy.timerId =0;
+				 Ql_StopTimer(&get_img);
+				// get_img.timerId =0;
+				 Ql_StopTimer(&get_img2);
+				// get_img2.timerId =0;
+				 Ql_Sleep(500);
+				 camdumpflag=1;
+				 fun_camdumpflag();
+				 Ql_Sleep(200);
+  	    	      ret=Ql_DeleteSMS(sms_index,4);
+	    	      //R_//OUT_D1EBUG(textBuf,"Ql_DeleteSMS=%d\r\n",ret);
+	    	      stop_img_capt=1;
+	    	 //     stop_img_capt2=1;
+                 //     Ql_StopTimer(&timer_stuck); 
+                 //    open_ftp_flg = 1;
+                   //  readcount =0;
+                  
+                     if(dump_cam_wrt_cnt == 0)
+  						  {
+  						   readcount =0;
+  						   dump_cam_wrt_cnt = cam_wrt_cnt;
+						   //RR////R_//OUT_D1EBUG(textBuf,"dump_cam_wrt_cnt == 0\r\n");
+  						   fun_dump_cam_wrt_cnt();
+  						   /////save dump_cam_wrt_cnt
+  						  } 
+  					//cam 2
+  				//	 readcount22 =0;
+                     if(dump_cam_wrt_cnt2 == 0)
+  						  {
+  						   readcount22 =0;
+  						   dump_cam_wrt_cnt2 = cam_wrt_cnt2;
+						   //RR////R_//OUT_D1EBUG(textBuf,"dump_cam_wrt_cnt2 == 0\r\n");
+						   fun_dump_cam2_wrt_cnt();
+  						 //  fun_dump_cam_wrt_cnt();
+  						   /////save dump_cam_wrt_cnt
+  						  } 
+  						  
+  						  
+						 // Ql_Sleep(500);
+						  //RR////R_//OUT_D1EBUG(textBuf,"fun_camdumpflag\r\n");
+  						//  cam1dump=1;
+  						//  fun_cam1dump();
+						//  //RR////R_//OUT_D1EBUG(textBuf,"fun_cam1dump\r\n");
+  						 // cam2dump=1;
+  						//  fun_cam2dump();
+  						//Generate CA stamp.......date,time,cam1_read_cnt,cam1_dump,cam2read,came2_dump,A.
+						  Gen_CA();
+
+  						//   tw_fileread2();
+  							trackflsent=0;	  
+							Ql_Sleep(500);
+  						   tw_fileread();
+  			   //   //Ql_SMSUnInitialize(); 
+	 		    }
+	 			 		
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////-----------------------CAM2 DUMP------------------------------------////////////
+				else if(Ql_strstr((char *)buffer,(char *)"#2CMDO") !=NULL)
+	 		    {
+	 		    //RR////R_//OUT_D1EBUG(textBuf,"#CAM2 DUMP FIRED\r\n");
+//	 		       tw_DofotaUpgrade();	 		    
+           //        Fota_Flag=1;
+  	    	      ret=Ql_DeleteSMS(sms_index,4);
+	    	      //R_//OUT_D1EBUG(textBuf,"Ql_DeleteSMS=%d\r\n",ret);
+	    	  //    stop_img_capt2=1;
+                 //     Ql_StopTimer(&timer_stuck); 
+                 //    open_ftp_flg = 1;
+                     readcount22 =0;
+                     if(dump_cam_wrt_cnt2 == 0)
+  						  {
+  						   readcount22 =0;
+  						   dump_cam_wrt_cnt2 = cam_wrt_cnt2;
+  						 //  fun_dump_cam_wrt_cnt();
+  						   /////save dump_cam_wrt_cnt
+  						  } 
+  						  
+  						   tw_SD_fileread2();
+  			   //   //Ql_SMSUnInitialize(); 
+
+
+
+	 		    }
+	 			 		
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+                else
+                {
+	    		  //RR////R_//OUT_D1EBUG(textBuf,"do nothing......exit\r\n");
+  	    	      ret=Ql_DeleteSMS(sms_index,4);
+	    	      //R_//OUT_D1EBUG(textBuf,"Ql_DeleteSMS=%d\r\n",ret);
+  			      //Ql_SMSUnInitialize(); 
+	    		  return;
+	    		}
+	 		}	    	    
+	    	
+	}
+	else
+	{
+
+	    //RR////R_//OUT_D1EBUG(textBuf,"Callback: No content.\r\n");
+	    //Ql_SMSUnInitialize(); 
+	}
+}
+
+
+void Change_RemoteParameter(char *ptr)
+{       
+	//if(!(Ql_strcmp((char *)sms_set,(char *)(Ql_strncat((char *)UID,(char *)"\0",1)))))
+	char *ptr1;
+	char rTXI[8];
+	char rSTI[8];
+	char rTrans[8];
+	char rCapt[8];
+	char rUID[8];
+	s32 ret;
+	u32 writeedlen;
+	u16 CanCount;
+	u8 k;
+
+	//RR////R_//OUT_D1EBUG(textBuf,"IN Change_RemoteParameter\r\n");
+	//RR////R_//OUT_D1EBUG(textBuf,"ptr_b:%s\r\n",ptr);
+
+	ptr1=sms_set;
+	//   ptr1=ptr1+6;
+	Ql_Sleep(500);
+	while(*ptr1 !='#') ptr1++;
+	//RR////R_//OUT_D1EBUG(textBuf,"ptr:%s\r\n",ptr);
+	//Ql_Sleep(1000);
+	//RR////R_//OUT_D1EBUG(textBuf,"ptr1:%s\r\n",ptr1);
+	// Ql_Sleep(1000);
+	//   if(!(Ql_strcmp((char *)sms_set),(char *)(Ql_strncat((char *)UID,(char *)"\0",1)))))
+	if((!(Ql_strncmp((char *)sms_set,(char *)UID,Ql_strlen((char *)UID)))) && (!(Ql_strncmp((char *)ptr1,(char *)"#SET0003",8))))
+	{
+         
+		// 		//RR////R_//OUT_D1EBUG(textBuf,"change stamping and transmission\r\n");
+        ptr++;
+        k=0;
+
+        if(!(Ql_strncmp((char *)ptr,(char *)"0000",4)))
+        //	if(!(Ql_strcmp((char *)ptr,(char *)"0000")))
+        {
+    		//RR////R_//OUT_D1EBUG(textBuf,"routine for changing tx and st\r\n");
+    		ptr=ptr+5;
+	        //RR////R_//OUT_D1EBUG(textBuf,"ptr tx:%s\r\n",ptr);
+    		while(*ptr !=',')
+    		{
+    			//Ql_strcpy((char *)rTXI,(char *)ptr);
+				rTXI[k]=*ptr;
+    		    ptr++;
+    		    k++;
+    		}
+    		rTXI[k]='\0';
+  		    //RR////R_//OUT_D1EBUG(textBuf,"rTXI:%s\r\n",rTXI);
+  		    ptr++;
+  		    k=0;   
+  		    while(*ptr != ',') ptr++;
+  		    ptr++;
+  		    while(*ptr !=',')
+  		    {
+				rSTI[k]=*ptr;
+    		    ptr++;
+    		    k++; 
+  		    }
+  		    rSTI[k]='\0';
+  		    //RR////R_//OUT_D1EBUG(textBuf,"rSTI:%s\r\n",rSTI);
+		    //////////////////////////////////////////////////////////////////////////////////////////////////
+		    /////-----------------------Write Remote TX in to memory-------------------------------------/////
+    	    
+    	    SI_TI((char *)rSTI,(char *)rTXI);
+    	    delay();
+    	   // Ql_Sleep(500);
+           	Ql_Reset(0);
+        }
+        else
+        {
+    		//RR////R_//OUT_D1EBUG(textBuf,"ooh wrong password.....exit\r\n");
+            return;
+        }
+     
+     }
+
+     ////change image Tx and capture interval of camera
+
+     if((!(Ql_strncmp((char *)sms_set,(char *)UID,Ql_strlen((char *)UID)))) && (!(Ql_strncmp((char *)ptr1,(char *)"#SET0013",8))))
+     {
+
+    	 ptr++;
+    	 k=0;
+
+    	 if(!(Ql_strncmp((char *)ptr,(char *)"0000",4)))
+    	 //	if(!(Ql_strcmp((char *)ptr,(char *)"0000")))
+    	 {
+    		 //RR////R_//OUT_D1EBUG(textBuf,"routine for changing tx and st\r\n");
+    		 ptr=ptr+5;
+    		 while(*ptr != ',') ptr++;
+    		 ptr++;
+    		 //RR////R_//OUT_D1EBUG(textBuf,"ptr tx:%s\r\n",ptr);
+    		 while(*ptr !=',')
+    		 {
+    			 //Ql_strcpy((char *)rTXI,(char *)ptr);
+    			 rTrans[k]=*ptr;
+    			 ptr++;
+    			 k++;
+    		 }
+    		 rTrans[k]='\0';
+    		 //R_//OUT_D1EBUG(textBuf,"rTXI:%s\r\n",rTrans);
+    		 ptr++;
+    		 k=0;
+    	//	 while(*ptr != ',') ptr++;
+    	//	 ptr++;
+    		 while(*ptr !=',')
+    		 {
+    			 rCapt[k]=*ptr;
+    			 ptr++;
+    			 k++;
+    		 }
+    		 rCapt[k]='\0';
+    		 //R_//OUT_D1EBUG(textBuf,"rSTI:%s\r\n",rCapt);
+    		 //////////////////////////////////////////////////////////////////////////////////////////////////
+    		 /////-----------------------Write Remote TX in to memory-------------------------------------/////
+
+    		 Cam_Tx_Rx((char *)rTrans,(char *)rCapt);
+    		 delay();
+    		 //   Ql_Sleep(500);
+    		 Ql_Reset(0);
+
+    	 }
+    	 else
+    	 {
+    		 //RR////R_//OUT_D1EBUG(textBuf,"ooh wrong password.....exit\r\n");
+    		 return;
+    	 }
+
+     }
+	 /////////////////////////////////////////////////////////////////////////////////////////////////////////////     
+	 //-----------------------------Unit Reset-------------------------------------------------------------------
+	 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     else if((!(Ql_strncmp((char *)sms_set,(char *)UID,Ql_strlen((char *)UID)))) && (!(Ql_strncmp((char *)ptr1,(char *)"#SET0001",8))))
+     {
+     //RR////R_//OUT_D1EBUG(textBuf,"Ql_strncmp.....#SET0001:chnfheg0000\r\n");
+	 Ql_Sleep(500);
+        ptr++;
+//      k=0;
+        if(!(Ql_strncmp((char *)ptr,(char *)"0000",4)))
+        {
+			//Ql_Sleep(1000);
+			//RR////R_//OUT_D1EBUG(textBuf,"Ql_strncmp.....#SET0001:0000\r\n");
+			Ql_Sleep(200);    	   
+			ret=Ql_DeleteSMS(sms_index,4);
+    	   //R_//OUT_D1EBUG(textBuf,"Ql_DeleteSMS=%d\r\n",ret);
+		   //Ql_SMSUnInitialize();
+
+    	  // if(ret == sms_index )
+    	  // {
+    		   //R_//OUT_D1EBUG(textBuf," DELTED MSG RST\r\n");
+    		   Ql_Sleep(500);
+    		   delay();
+    		   Ql_Reset(0);
+    	  // }
+    	  // else
+    	  // {
+    		 //  //R_//OUT_D1EBUG(textBuf," MSG NOT DLTD\r\n");
+    	//   }
+     
+        }
+        else
+        {
+    		//RR////R_//OUT_D1EBUG(textBuf,"ooh wrong password.....exit\r\n");
+            return;
+        }
+        
+     
+     }
+
+	  /////////////////////////////////////////////////////////////////////////////////////////////////////////////     
+	 //-----------------------------JRM rout download-------------------------------------------------------------------
+	 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+    else  if((!(Ql_strncmp((char *)sms_set,(char *)UID,Ql_strlen((char *)UID)))) && (!(Ql_strncmp((char *)ptr1,(char *)"#SET0010",8))))
+     {
+         
+ 		//R_//OUT_D1EBUG(textBuf," JRM route ID & no. of route files\r\n");
+        ptr++;
+        k=0;
+        if(!(Ql_strncmp((char *)ptr,(char *)"0000",4)))
+        {
+    		//R_//OUT_D1EBUG(textBuf," Password for JRM ROUT download matched\r\n");
+       		ptr=ptr+5;
+	        //R_//OUT_D1EBUG(textBuf,"Unit id:%s\r\n",ptr);
+
+	       Ql_memset(jrmstatus,'\0',sizeof(jrmstatus));
+	       Ql_memset(no_files,'\0',sizeof(no_files));
+	       Ql_memset(route_id,'\0',sizeof(route_id));
+	        
+	        k=0;  		
+    		while(*ptr !=',')
+    		{
+				 
+				jrmstatus[k]=*ptr;
+    		    ptr++;
+    		    k++;
+    		}
+    		jrmstatus[k]='\0';
+  		    //R_//OUT_D1EBUG(textBuf,"JRM status %s\r\n",jrmstatus);
+  		    ptr++;
+  		    k=0;  
+  		    
+  		    while(*ptr !=',')
+    		{
+				 
+				no_files[k]=*ptr;
+    		    ptr++;
+    		    k++;
+    		}
+    		
+    		no_files[k]='\0';
+  		    //R_//OUT_D1EBUG(textBuf,"JRM no of files  %s\r\n",no_files);
+  		    ptr++;
+  		    k=0;
+
+    		while(*ptr !='\0')
+    		{
+				 
+				route_id[k]=*ptr;
+    		    ptr++;
+    		    k++;
+    		}
+    		 Ql_strncat(route_id,"\0",1); 
+  		    //R_//OUT_D1EBUG(textBuf,"JRM route_id=%s\r\n",route_id);
+
+  		    ret=Ql_DeleteSMS(sms_index,4);
+	        //R_//OUT_D1EBUG(textBuf,"Ql_DeleteSM Route SMS=%d\r\n",ret);
+
+			if(Ql_strstr((char *)jrmstatus,"JRMON") != NULL)
+			{
+			 stop_jrm_timer();
+			 JRM_Staus_write((char *)jrmstatus);
+			// write_no_files((char *)no_files);
+			 JRM_Rout_no_write((char *)route_id);
+			 JRM_ROUT_chk();
+			}
+			else if(Ql_strstr((char *)jrmstatus,"JRMOF") != NULL)
+			{
+			 
+				JRM_Staus_write((char *)jrmstatus);
+			// write_no_files((char *)no_files);
+			 JRM_Rout_no_write((char *)route_id);
+
+				 Ql_Sleep(200);     
+       			 Ql_Reset(0);	
+			
+			}
+			
+			 //Delete previous saved command file from memory
+			// fileret=Ql_FileDelete((u8*)"ftp_cmd_file.txt");
+			// //R_//OUT_D1EBUG(textBuf," In msg command file delete  =%d\r\n",fileret1);
+			 
+		//	 ftp_route_start.timeoutPeriod = Ql_SecondToTicks(30);   //RAHMAN
+			// ftp_route_start.timerId  = 0;
+            // Ql_StartTimer(&ftp_route_start);
+			 
+			 
+			 
+     	}  
+     }
+	 /////////////////////////////////////////////////////////////////////////////////////////////////////////////     
+	 //-----------------------------Unit Id-------------------------------------------------------------------
+	 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     
+//     unit id 
+     else if((!(Ql_strncmp((char *)sms_set,(char *)UID,Ql_strlen((char *)UID)))) && (!(Ql_strncmp((char *)ptr1,(char *)"#SET0004",8))))
+     {
+
+        ptr++;
+        k=0;
+        if(!(Ql_strncmp((char *)ptr,(char *)"0000",4)))
+        {
+    		//RR////R_//OUT_D1EBUG(textBuf,"routine for changing Unit id\r\n");
+    		ptr=ptr+5;
+	        //RR////R_//OUT_D1EBUG(textBuf,"ptr Unit id:%s\r\n",ptr);
+    		while(*ptr !=',')
+    		{
+// 				Ql_strcpy((char *)rTXI,(char *)ptr);    		   
+				rUID[k]=*ptr;
+    		    ptr++;
+    		    k++;
+    		}
+    		rUID[k]='\0';
+  		    //RR////R_//OUT_D1EBUG(textBuf,"rUID:%s\r\n",rUID);
+  		    ptr++;
+  		    k=0;   
+
+ //              delay();     
+ //      	   Ql_Reset(2);	 
+     
+        }
+        	newunit_id((char *)rUID);
+        	delay();
+           	Ql_Reset(0);
+	
+     }
+
+     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     //----------------------------Over Speed------------------------------------------------------------------
+     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     ////#SET0006:0000,60,60,15.000000,200.000000,200.000000,65.000000,03"
+     else if((!(Ql_strncmp((char *)sms_set,(char *)UID,Ql_strlen((char *)UID)))) && (!(Ql_strncmp((char *)ptr1,(char *)"#SET0006",8))))
+     {
+
+    	 ptr++;
+    	 k=0;
+
+    	 if(!(Ql_strncmp((char *)ptr,(char *)"0000",4)))
+    	 {
+    		 //RR////R_//OUT_D1EBUG(textBuf,"routine for changing Unit id\r\n");
+    		 ptr=ptr+5;
+    		 //RR////R_//OUT_D1EBUG(textBuf,"ptr Unit id:%s\r\n",ptr);
+    		 while(*ptr !=',')
+    		 {
+    			 ///  ST time
+    			 ptr++;
+    			 k++;
+    		 }
+    		 ptr++;
+    		 k=0;
+
+    		 while(*ptr !=',')
+    		 {
+    			 ///  SP time
+    			 ptr++;
+    			 k++;
+    		 }
+    		 ptr++;
+    		 k=0;
+
+    		 while(*ptr !=',')
+    		 {
+    			 ///  AC Limit in km/hr
+    			 ptr++;
+    			 k++;
+    		 }
+    		 ptr++;
+    		 k=0;
+
+    		 while(*ptr !=',')
+    		 {
+    			 ///  OS1 Limit in km/hr
+    			 ptr++;
+    			 k++;
+    		 }
+    		 ptr++;
+    		 k=0;
+
+    		 while(*ptr !=',')
+    		 {
+    			 ///  OS2 Limit in km/hr
+    			 ptr++;
+    			 k++;
+    		 }
+    		 ptr++;
+    		 k=0;
+
+    		 while(*ptr !=',')
+    		 {
+    			 ///  OS Limit in km/hr
+    			 ptr++;
+    			 k++;
+    		 }
+    		 ptr++;
+    		 k=0;
+
+    		 while(*ptr !=',')
+    		 {
+    			 ///  Start speed Limit in km/hr
+    			 ptr++;
+    			 k++;
+    		 }
+    		 ptr++;
+    		 k=0;
+    	 }
+
+    	 OS_Lmt_wrt((char *)rUID);
+    	 delay();
+    	 Ql_Reset(0);
+     }
+}

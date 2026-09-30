@@ -1,0 +1,578 @@
+example/ACCSMTP.c: In function 'SMTP_connect':
+example/ACCSMTP.c:151:14: warning: variable 'timeret' set but not used [-Wunused-but-set-variable]
+example/ACCSMTP.c:151:6: warning: unused variable 'fileret' [-Wunused-variable]
+example/ACCSMTP.c: In function 'tw_read_accd_file':
+example/ACCSMTP.c:636:6: warning: unused variable 'length_last' [-Wunused-variable]
+example/ACCSMTP.c: In function 'read_whole_incident_file':
+example/ACCSMTP.c:714:10: warning: variable 'size_ret' set but not used [-Wunused-but-set-variable]
+example/ACCSMTP.c: In function 'Gen_ICA':
+example/ACCSMTP.c:762:2: warning: pointer targets in passing argument 2 of 'Ql_strcpy' differ in signedness [-Wpointer-sign]
+In file included from qlinc/ql_api_type.h:5:0,
+                 from qlinc/ql_interface.h:24,
+                 from example/ACCSMTP.c:3:
+qlinc/ql_stdlib.h:26:7: note: expected 'const char *' but argument is of type 'unsigned char *'
+example/ACCSMTP.c:772:2: warning: implicit declaration of function 'tw_filewrite' [-Wimplicit-function-declaration]
+example/ACCSMTP.c: In function 'Gen_IDC':
+example/ACCSMTP.c:780:2: warning: pointer targets in passing argument 2 of 'Ql_strcpy' differ in signedness [-Wpointer-sign]
+In file included from qlinc/ql_api_type.h:5:0,
+                 from qlinc/ql_interface.h:24,
+                 from example/ACCSMTP.c:3:
+qlinc/ql_stdlib.h:26:7: note: expected 'const char *' but argument is of type 'unsigned char *'
+example/ACCSMTP.c: In function 'Gen_ICD':
+example/ACCSMTP.c:798:2: warning: pointer targets in passing argument 2 of 'Ql_strcpy' differ in signedness [-Wpointer-sign]
+In file included from qlinc/ql_api_type.h:5:0,
+                 from qlinc/ql_interface.h:24,
+                 from example/ACCSMTP.c:3:
+qlinc/ql_stdlib.h:26:7: note: expected 'const char *' but argument is of type 'unsigned char *'
+example/ACCSMTP.c: In function 'tw_read_accd_file':
+example/ACCSMTP.c:690:17: warning: 'accfilehandle_ACC' may be used uninitialized in this function [-Wuninitialized]
+example/Battery.c: In function 'BL_Stamp':
+example/Battery.c:98:7: warning: unused variable 'battper' [-Wunused-variable]
+example/Battery.c:97:7: warning: unused variable 'battvolt' [-Wunused-variable]
+example/Battery.c:96:15: warning: unused variable 'batt_prc' [-Wunused-variable]
+example/Battery.c:95:15: warning: unused variable 'in_batt_vltg' [-Wunused-variable]
+In file included from example/BulkFota.c:45:0:
+example/BulkFota.h:3:1: warning: function declaration isn't a prototype [-Wstrict-prototypes]
+example/BulkFota.c: In function 'bulk_fota_proccess':
+example/BulkFota.c:335:9: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+example/BulkFota.c:344:9: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+example/BulkFota.c:390:3: warning: pointer targets in passing argument 1 of 'read_sms' differ in signedness [-Wpointer-sign]
+In file included from example/BulkFota.c:21:0:
+example/sms_handle.h:2:6: note: expected 'u8 *' but argument is of type 'char *'
+example/BulkFota.c:318:27: warning: unused variable 'px' [-Wunused-variable]
+example/BulkFota.c:318:24: warning: unused variable 'ox' [-Wunused-variable]
+example/BulkFota.c:318:21: warning: unused variable 'nx' [-Wunused-variable]
+example/BulkFota.c:318:18: warning: unused variable 'mx' [-Wunused-variable]
+example/BulkFota.c:318:15: warning: unused variable 'lx' [-Wunused-variable]
+example/camera.c: In function 'cat_all':
+example/camera.c:378:22: warning: variable 'f_RE_read_len' set but not used [-Wunused-but-set-variable]
+example/camera.c:378:19: warning: unused variable 'k' [-Wunused-variable]
+example/camera.c:378:15: warning: unused variable 'j' [-Wunused-variable]
+example/camera.c:377:10: warning: unused variable 'fileret' [-Wunused-variable]
+example/camera.c:377:6: warning: unused variable 'len' [-Wunused-variable]
+example/camera.c: In function 'new_file':
+example/camera.c:462:21: warning: unused variable 'tp' [-Wunused-variable]
+example/camera.c:462:19: warning: unused variable 'k' [-Wunused-variable]
+example/camera.c:462:15: warning: unused variable 'j' [-Wunused-variable]
+example/camera.c:461:8: warning: unused variable 'modem_str' [-Wunused-variable]
+example/camera.c:460:11: warning: unused variable 'fileret' [-Wunused-variable]
+example/camera.c:460:7: warning: unused variable 'len' [-Wunused-variable]
+example/camera.c:456:6: warning: variable 'ret2' set but not used [-Wunused-but-set-variable]
+example/camera.c:455:6: warning: unused variable 'ret1' [-Wunused-variable]
+example/camera.c: In function 'spped_capt':
+example/camera.c:525:16: warning: unused variable 'Indexcam_length_buff' [-Wunused-variable]
+example/camera.c:524:19: warning: unused variable 'n_read_len' [-Wunused-variable]
+example/camera.c: In function 'cam_tw_filewrite':
+example/camera.c:616:16: warning: unused variable 'readbuf' [-Wunused-variable]
+example/camera.c:613:10: warning: unused variable 'k' [-Wunused-variable]
+example/camera.c:613:6: warning: unused variable 'j' [-Wunused-variable]
+example/camera.c:610:7: warning: unused variable 'filesize' [-Wunused-variable]
+example/camera.c:609:8: warning: unused variable 'ptr' [-Wunused-variable]
+example/camera.c:608:9: warning: unused variable 'readedlen' [-Wunused-variable]
+example/camera.c:606:6: warning: variable 'ret_flsk' set but not used [-Wunused-but-set-variable]
+example/camera.c:605:6: warning: variable 'retf' set but not used [-Wunused-but-set-variable]
+example/camera.c: In function 'tw_fileread':
+example/camera.c:679:9: warning: unused variable 'writeedlen' [-Wunused-variable]
+example/camera.c:677:9: warning: unused variable 'freespace' [-Wunused-variable]
+example/camera.c:676:9: warning: unused variable 'size' [-Wunused-variable]
+example/camera.c:674:18: warning: unused variable 'fileret' [-Wunused-variable]
+example/camera.c:673:9: warning: unused variable 'ret_r' [-Wunused-variable]
+example/camera.c:672:12: warning: unused variable 'k' [-Wunused-variable]
+example/camera.c:672:10: warning: unused variable 'j' [-Wunused-variable]
+example/camera.c: In function 'cam_mem_loc_readextra':
+example/camera.c:1189:11: warning: unused variable 'cam_temp_dumpflg_buff' [-Wunused-variable]
+example/camera2.c: In function 'cat_all2':
+example/camera2.c:383:22: warning: variable 'f_RE_read_len' set but not used [-Wunused-but-set-variable]
+example/camera2.c:383:19: warning: unused variable 'k' [-Wunused-variable]
+example/camera2.c:383:15: warning: unused variable 'j' [-Wunused-variable]
+example/camera2.c:382:12: warning: unused variable 'fileret' [-Wunused-variable]
+example/camera2.c:382:6: warning: unused variable 'len' [-Wunused-variable]
+example/camera2.c: In function 'new_file2':
+example/camera2.c:472:21: warning: unused variable 'tp' [-Wunused-variable]
+example/camera2.c:472:19: warning: unused variable 'k' [-Wunused-variable]
+example/camera2.c:472:15: warning: unused variable 'j' [-Wunused-variable]
+example/camera2.c:471:10: warning: unused variable 'modem_str' [-Wunused-variable]
+example/camera2.c:469:11: warning: unused variable 'fileret' [-Wunused-variable]
+example/camera2.c:469:7: warning: unused variable 'len' [-Wunused-variable]
+example/camera2.c:465:6: warning: variable 'ret2' set but not used [-Wunused-but-set-variable]
+example/camera2.c:464:6: warning: unused variable 'ret1' [-Wunused-variable]
+example/camera2.c: In function 'spped_capt2':
+example/camera2.c:539:7: warning: unused variable 'xxxxxx' [-Wunused-variable]
+example/camera2.c:538:19: warning: unused variable 'n_read_len' [-Wunused-variable]
+example/camera2.c: In function 'cam_tw_filewrite2':
+example/camera2.c:632:16: warning: unused variable 'readbuf' [-Wunused-variable]
+example/camera2.c:629:10: warning: unused variable 'k' [-Wunused-variable]
+example/camera2.c:629:6: warning: unused variable 'j' [-Wunused-variable]
+example/camera2.c:625:7: warning: unused variable 'filesize' [-Wunused-variable]
+example/camera2.c:624:8: warning: unused variable 'ptr' [-Wunused-variable]
+example/camera2.c:623:9: warning: unused variable 'readedlen2' [-Wunused-variable]
+example/camera2.c:621:6: warning: variable 'ret_flsk' set but not used [-Wunused-but-set-variable]
+example/camera2.c:620:6: warning: variable 'retf' set but not used [-Wunused-but-set-variable]
+example/camera2.c: In function 'tw_SD_fileread2':
+example/camera2.c:699:9: warning: unused variable 'writeedlen' [-Wunused-variable]
+example/camera2.c:698:9: warning: unused variable 'freespace' [-Wunused-variable]
+example/camera2.c:697:9: warning: unused variable 'size' [-Wunused-variable]
+example/camera2.c:694:18: warning: unused variable 'fileret' [-Wunused-variable]
+example/camera2.c:693:9: warning: unused variable 'ret_r' [-Wunused-variable]
+example/camera2.c:692:15: warning: unused variable 'k' [-Wunused-variable]
+example/camera2.c:692:13: warning: unused variable 'j' [-Wunused-variable]
+example/canparareadwrt.c: In function 'tw_updatedCanParaRead':
+example/canparareadwrt.c:142:6: warning: unused variable 'CanCount' [-Wunused-variable]
+example/canparareadwrt.c:138:6: warning: variable 'ret' set but not used [-Wunused-but-set-variable]
+example/canparareadwrt.c: In function 'newunit_id':
+example/canparareadwrt.c:344:5: warning: unused variable 'i' [-Wunused-variable]
+example/canparareadwrt.c: In function 'SI_TI':
+example/canparareadwrt.c:438:5: warning: unused variable 'k' [-Wunused-variable]
+example/canparareadwrt.c: In function 'Cam_Tx_Rx':
+example/canparareadwrt.c:478:5: warning: unused variable 'k' [-Wunused-variable]
+example/canparareadwrt.c: In function 'SIM_Apn':
+example/canparareadwrt.c:514:2: warning: pointer targets in passing argument 1 of 'Ql_FileOpenEx' differ in signedness [-Wpointer-sign]
+In file included from example/canparareadwrt.c:28:0:
+qlinc/Ql_filesystem.h:269:5: note: expected 'u8 *' but argument is of type 'char *'
+example/canparareadwrt.c:512:8: warning: unused variable 'ptr' [-Wunused-variable]
+example/canparareadwrt.c: In function 'remote_pararead':
+example/canparareadwrt.c:582:2: warning: pointer targets in passing argument 1 of 'Ql_FileOpenEx' differ in signedness [-Wpointer-sign]
+In file included from example/canparareadwrt.c:28:0:
+qlinc/Ql_filesystem.h:269:5: note: expected 'u8 *' but argument is of type 'char *'
+example/canparareadwrt.c:875:4: warning: implicit declaration of function 'OS_Lmt_wrt' [-Wimplicit-function-declaration]
+example/canparareadwrt.c:877:4: warning: implicit declaration of function 'TCP_para' [-Wimplicit-function-declaration]
+example/canparareadwrt.c:879:4: warning: implicit declaration of function 'SMTP_para' [-Wimplicit-function-declaration]
+example/canparareadwrt.c:881:4: warning: implicit declaration of function 'FTP_para' [-Wimplicit-function-declaration]
+example/canparareadwrt.c:563:6: warning: unused variable 'writeedlen' [-Wunused-variable]
+example/canparareadwrt.c:562:8: warning: unused variable 'ptr' [-Wunused-variable]
+example/canparareadwrt.c:561:11: warning: variable 'ret' set but not used [-Wunused-but-set-variable]
+example/canparareadwrt.c: At top level:
+example/canparareadwrt.c:892:6: warning: conflicting types for 'OS_Lmt_wrt' [enabled by default]
+example/canparareadwrt.c:875:4: note: previous implicit declaration of 'OS_Lmt_wrt' was here
+example/canparareadwrt.c: In function 'OS_Lmt_wrt':
+example/canparareadwrt.c:896:5: warning: unused variable 'k' [-Wunused-variable]
+example/canparareadwrt.c: At top level:
+example/canparareadwrt.c:945:6: warning: conflicting types for 'TCP_para' [enabled by default]
+example/canparareadwrt.c:877:4: note: previous implicit declaration of 'TCP_para' was here
+example/canparareadwrt.c: In function 'TCP_para':
+example/canparareadwrt.c:950:2: warning: pointer targets in passing argument 1 of 'Ql_FileOpenEx' differ in signedness [-Wpointer-sign]
+In file included from example/canparareadwrt.c:28:0:
+qlinc/Ql_filesystem.h:269:5: note: expected 'u8 *' but argument is of type 'char *'
+example/canparareadwrt.c:948:8: warning: unused variable 'ptr' [-Wunused-variable]
+example/canparareadwrt.c: At top level:
+example/canparareadwrt.c:981:6: warning: conflicting types for 'SMTP_para' [enabled by default]
+example/canparareadwrt.c:879:4: note: previous implicit declaration of 'SMTP_para' was here
+example/canparareadwrt.c: In function 'SMTP_para':
+example/canparareadwrt.c:986:2: warning: pointer targets in passing argument 1 of 'Ql_FileOpenEx' differ in signedness [-Wpointer-sign]
+In file included from example/canparareadwrt.c:28:0:
+qlinc/Ql_filesystem.h:269:5: note: expected 'u8 *' but argument is of type 'char *'
+example/canparareadwrt.c:984:8: warning: unused variable 'ptr' [-Wunused-variable]
+example/canparareadwrt.c: At top level:
+example/canparareadwrt.c:1033:6: warning: conflicting types for 'FTP_para' [enabled by default]
+example/canparareadwrt.c:881:4: note: previous implicit declaration of 'FTP_para' was here
+example/canparareadwrt.c: In function 'FTP_para':
+example/canparareadwrt.c:1038:2: warning: pointer targets in passing argument 1 of 'Ql_FileOpenEx' differ in signedness [-Wpointer-sign]
+In file included from example/canparareadwrt.c:28:0:
+qlinc/Ql_filesystem.h:269:5: note: expected 'u8 *' but argument is of type 'char *'
+example/canparareadwrt.c:1036:8: warning: unused variable 'ptr' [-Wunused-variable]
+example/canparareadwrt.c: In function 'CAN_Dump':
+example/canparareadwrt.c:1120:2: warning: implicit declaration of function 'JRM_DATA_READ' [-Wimplicit-function-declaration]
+example/canparareadwrt.c:1128:2: warning: implicit declaration of function 'read_Cell_ID_flg' [-Wimplicit-function-declaration]
+example/canparareadwrt.c:1130:2: warning: implicit declaration of function 'cam_mem_loc_read' [-Wimplicit-function-declaration]
+example/canparareadwrt.c:1132:2: warning: implicit declaration of function 'cam_mem_loc_readextra' [-Wimplicit-function-declaration]
+example/canparareadwrt.c:1134:2: warning: implicit declaration of function 'camR_EXCP_mem_loc_read' [-Wimplicit-function-declaration]
+example/canparareadwrt.c:1136:2: warning: implicit declaration of function 'cam_C_EXCP_mem_loc_read' [-Wimplicit-function-declaration]
+example/canparareadwrt.c:1138:2: warning: implicit declaration of function 'Accdata_wrtcnt_read' [-Wimplicit-function-declaration]
+example/canparareadwrt.c:1140:2: warning: implicit declaration of function 'Accdata_flags_read' [-Wimplicit-function-declaration]
+example/canparareadwrt.c:1142:2: warning: implicit declaration of function 'read_stop_acc_capt' [-Wimplicit-function-declaration]
+example/canparareadwrt.c:1144:2: warning: implicit declaration of function 'dump_cnt_read' [-Wimplicit-function-declaration]
+example/canparareadwrt.c: In function 'PO_STAT_WRITE':
+example/canparareadwrt.c:1157:2: warning: pointer targets in passing argument 1 of 'Ql_FileOpenEx' differ in signedness [-Wpointer-sign]
+In file included from example/canparareadwrt.c:28:0:
+qlinc/Ql_filesystem.h:269:5: note: expected 'u8 *' but argument is of type 'char *'
+example/canparareadwrt.c: In function 'PO_GEN_WRITE':
+example/canparareadwrt.c:1186:2: warning: pointer targets in passing argument 1 of 'Ql_FileOpenEx' differ in signedness [-Wpointer-sign]
+In file included from example/canparareadwrt.c:28:0:
+qlinc/Ql_filesystem.h:269:5: note: expected 'u8 *' but argument is of type 'char *'
+example/canparareadwrt.c: In function 'PF_GEN_WRITE':
+example/canparareadwrt.c:1214:2: warning: pointer targets in passing argument 1 of 'Ql_FileOpenEx' differ in signedness [-Wpointer-sign]
+In file included from example/canparareadwrt.c:28:0:
+qlinc/Ql_filesystem.h:269:5: note: expected 'u8 *' but argument is of type 'char *'
+example/canparareadwrt.c: In function 'PO_STAT_READ':
+example/canparareadwrt.c:1241:2: warning: pointer targets in passing argument 1 of 'Ql_FileOpenEx' differ in signedness [-Wpointer-sign]
+In file included from example/canparareadwrt.c:28:0:
+qlinc/Ql_filesystem.h:269:5: note: expected 'u8 *' but argument is of type 'char *'
+example/Cell_ID.c: In function 'ATResponse_Location_handler_CellID':
+example/Cell_ID.c:86:8: warning: unused variable 'p3' [-Wunused-variable]
+example/Cell_ID.c:85:8: warning: unused variable 'p2' [-Wunused-variable]
+example/Cell_ID.c:84:8: warning: unused variable 'p1' [-Wunused-variable]
+example/Cell_ID.c:83:8: warning: unused variable 'ptr' [-Wunused-variable]
+example/Cell_ID.c: In function 'wrt_Cell_ID_flg':
+example/Cell_ID.c:366:2: warning: pointer targets in passing argument 1 of 'Ql_FileOpenEx' differ in signedness [-Wpointer-sign]
+In file included from example/Cell_ID.c:33:0:
+qlinc/ql_filesystem.h:269:5: note: expected 'u8 *' but argument is of type 'char *'
+example/Cell_ID.c: In function 'read_Cell_ID_flg':
+example/Cell_ID.c:399:2: warning: pointer targets in passing argument 1 of 'Ql_FileOpenEx' differ in signedness [-Wpointer-sign]
+In file included from example/Cell_ID.c:33:0:
+qlinc/ql_filesystem.h:269:5: note: expected 'u8 *' but argument is of type 'char *'
+example/Cell_ID.c:395:5: warning: unused variable 'k' [-Wunused-variable]
+example/Cell_ID.c:394:6: warning: unused variable 'writeedlen' [-Wunused-variable]
+example/Cell_ID.c: In function 'ATResponse_Location_handler_CellID':
+example/Cell_ID.c:294:1: warning: control reaches end of non-void function [-Wreturn-type]
+example/exce_camera_C.c: In function 'cam_C_Excp_filewrite':
+example/exce_camera_C.c:123:16: warning: unused variable 'readbuf' [-Wunused-variable]
+example/exce_camera_C.c:122:10: warning: unused variable 'k' [-Wunused-variable]
+example/exce_camera_C.c:122:6: warning: unused variable 'j' [-Wunused-variable]
+example/exce_camera_C.c:119:7: warning: unused variable 'filesize' [-Wunused-variable]
+example/exce_camera_C.c:118:8: warning: unused variable 'ptr' [-Wunused-variable]
+example/exce_camera_C.c:117:6: warning: unused variable 'readedlen' [-Wunused-variable]
+example/exce_camera_C.c:115:6: warning: variable 'ret_flsk' set but not used [-Wunused-but-set-variable]
+example/exce_camera_C.c:114:6: warning: variable 'retf' set but not used [-Wunused-but-set-variable]
+example/exce_camera_C.c: In function 'cam_C_EXCP_mem_loc_read':
+example/exce_camera_C.c:246:7: warning: unused variable 'cam_temp_dumpflg_buff' [-Wunused-variable]
+example/exce_camera_C.c: In function 'tw_EX_CC_fileread':
+example/exce_camera_C.c:314:6: warning: unused variable 'writeedlen' [-Wunused-variable]
+example/exce_camera_C.c:312:6: warning: unused variable 'freespace' [-Wunused-variable]
+example/exce_camera_C.c:311:6: warning: unused variable 'size' [-Wunused-variable]
+example/exce_camera_C.c:308:15: warning: unused variable 'fileret' [-Wunused-variable]
+example/exce_camera_C.c:307:6: warning: unused variable 'ret_r' [-Wunused-variable]
+example/exce_camera_C.c:306:12: warning: unused variable 'k' [-Wunused-variable]
+example/exce_camera_C.c:306:10: warning: unused variable 'j' [-Wunused-variable]
+example/exce_camera_C.c: In function 'EXC_new_file':
+example/exce_camera_C.c:701:4: warning: implicit declaration of function 'ExC_SendAtCmd' [-Wimplicit-function-declaration]
+example/exce_camera_C.c:641:21: warning: unused variable 'tp' [-Wunused-variable]
+example/exce_camera_C.c:641:19: warning: unused variable 'k' [-Wunused-variable]
+example/exce_camera_C.c:641:15: warning: unused variable 'j' [-Wunused-variable]
+example/exce_camera_C.c:640:7: warning: unused variable 'modem_str' [-Wunused-variable]
+example/exce_camera_C.c:639:10: warning: unused variable 'fileret' [-Wunused-variable]
+example/exce_camera_C.c:639:6: warning: unused variable 'len' [-Wunused-variable]
+example/exce_camera_C.c:635:6: warning: variable 'ret2' set but not used [-Wunused-but-set-variable]
+example/exce_camera_C.c:634:6: warning: unused variable 'ret1' [-Wunused-variable]
+example/exce_camera_C.c: At top level:
+example/exce_camera_C.c:719:6: warning: conflicting types for 'ExC_SendAtCmd' [enabled by default]
+example/exce_camera_C.c:701:4: note: previous implicit declaration of 'ExC_SendAtCmd' was here
+example/exce_camera_C.c: In function 'ExC_SendAtCmd':
+example/exce_camera_C.c:725:7: warning: variable 'exec' set but not used [-Wunused-but-set-variable]
+example/exce_camera_C.c:724:14: warning: unused variable 'timeret' [-Wunused-variable]
+example/exce_camera_C.c:722:8: warning: unused variable 'j' [-Wunused-variable]
+example/exce_camera_C.c:722:6: warning: unused variable 'i' [-Wunused-variable]
+example/exce_camera_C.c:721:6: warning: unused variable 'fil_eret' [-Wunused-variable]
+example/exce_camera_R.c: In function 'camR_Excp_filewrite':
+example/exce_camera_R.c:117:16: warning: unused variable 'readbuf' [-Wunused-variable]
+example/exce_camera_R.c:116:10: warning: unused variable 'k' [-Wunused-variable]
+example/exce_camera_R.c:116:6: warning: unused variable 'j' [-Wunused-variable]
+example/exce_camera_R.c:113:7: warning: unused variable 'filesize' [-Wunused-variable]
+example/exce_camera_R.c:112:8: warning: unused variable 'ptr' [-Wunused-variable]
+example/exce_camera_R.c:111:9: warning: unused variable 'readedlen' [-Wunused-variable]
+example/exce_camera_R.c:109:6: warning: variable 'ret_flsk' set but not used [-Wunused-but-set-variable]
+example/exce_camera_R.c:108:6: warning: variable 'retf' set but not used [-Wunused-but-set-variable]
+example/exce_camera_R.c: In function 'camR_EXCP_mem_loc_read':
+example/exce_camera_R.c:239:11: warning: unused variable 'cam_temp_dumpflg_buff' [-Wunused-variable]
+example/exce_camera_R.c: In function 'tw_EX_C_fileread':
+example/exce_camera_R.c:589:4: warning: implicit declaration of function 'tw_EX_CC_fileread' [-Wimplicit-function-declaration]
+example/exce_camera_R.c:283:9: warning: unused variable 'writeedlen' [-Wunused-variable]
+example/exce_camera_R.c:281:9: warning: unused variable 'freespace' [-Wunused-variable]
+example/exce_camera_R.c:280:9: warning: unused variable 'size' [-Wunused-variable]
+example/exce_camera_R.c:277:18: warning: unused variable 'fileret' [-Wunused-variable]
+example/exce_camera_R.c:276:9: warning: unused variable 'ret_r' [-Wunused-variable]
+example/exce_camera_R.c:275:15: warning: unused variable 'k' [-Wunused-variable]
+example/exce_camera_R.c:275:13: warning: unused variable 'j' [-Wunused-variable]
+example/exce_camera_R.c: In function 'EXR_new_file':
+example/exce_camera_R.c:611:21: warning: unused variable 'tp' [-Wunused-variable]
+example/exce_camera_R.c:611:19: warning: unused variable 'k' [-Wunused-variable]
+example/exce_camera_R.c:611:15: warning: unused variable 'j' [-Wunused-variable]
+example/exce_camera_R.c:610:8: warning: unused variable 'modem_str' [-Wunused-variable]
+example/exce_camera_R.c:609:11: warning: unused variable 'fileret' [-Wunused-variable]
+example/exce_camera_R.c:609:7: warning: unused variable 'len' [-Wunused-variable]
+example/exce_camera_R.c:605:6: warning: variable 'ret2' set but not used [-Wunused-but-set-variable]
+example/exce_camera_R.c:604:6: warning: unused variable 'ret1' [-Wunused-variable]
+example/exce_camera_R.c: In function 'ExR_SendAtCmd':
+example/exce_camera_R.c:695:10: warning: variable 'exec' set but not used [-Wunused-but-set-variable]
+example/exce_camera_R.c:694:14: warning: unused variable 'timeret' [-Wunused-variable]
+example/exce_camera_R.c:692:8: warning: unused variable 'j' [-Wunused-variable]
+example/exce_camera_R.c:692:6: warning: unused variable 'i' [-Wunused-variable]
+example/exce_camera_R.c:691:6: warning: unused variable 'fil_eret' [-Wunused-variable]
+example/fota.c:38:17: warning: extra tokens at end of #ifdef directive [enabled by default]
+example/fota.c: In function 'H2F_StateMachine':
+example/fota.c:265:6: warning: unused variable 'iRet' [-Wunused-variable]
+example/fota.c: In function 'H2F_SendCMDCtrl':
+example/fota.c:575:7: warning: unused variable 'off' [-Wunused-variable]
+example/fota.c: At top level:
+example/fota.c:106:13: warning: 'APP_NAME' defined but not used [-Wunused-variable]
+example/ftp.c: In function 'SendAtCmd':
+example/ftp.c:121:7: warning: variable 'exec' set but not used [-Wunused-but-set-variable]
+example/ftp.c:120:14: warning: variable 'timeret' set but not used [-Wunused-but-set-variable]
+example/ftp.c:120:6: warning: variable 'fileret' set but not used [-Wunused-but-set-variable]
+example/ftp.c:119:8: warning: unused variable 'j' [-Wunused-variable]
+example/ftp.c:119:6: warning: unused variable 'i' [-Wunused-variable]
+example/ftp.c:118:6: warning: unused variable 'fil_eret' [-Wunused-variable]
+example/ftp2.c:95:9: warning: type defaults to 'int' in declaration of 'FTP_Stuck_cntr' [enabled by default]
+example/ftp2.c: In function 'SendAtCmd2':
+example/ftp2.c:107:8: warning: unused variable 'j' [-Wunused-variable]
+example/ftp2.c:107:6: warning: unused variable 'i' [-Wunused-variable]
+example/ftp2.c:106:6: warning: unused variable 'fil_eret' [-Wunused-variable]
+example/Fun.c: In function 'atofd':
+example/Fun.c:144:38: warning: value computed is not used [-Wunused-value]
+example/Fun.c:152:39: warning: value computed is not used [-Wunused-value]
+example/Fun.c:182:5: warning: statement with no effect [-Wunused-value]
+example/Fun.c:187:5: warning: statement with no effect [-Wunused-value]
+example/Fun.c: In function 'ix_Ftoa':
+example/Fun.c:209:6: warning: unused variable 'tot' [-Wunused-variable]
+example/Fun.c:206:6: warning: unused variable 'i' [-Wunused-variable]
+example/GPRMC.c: In function 'trackfile_gen':
+example/GPRMC.c:155:6: warning: unused variable 'TR_imei_len' [-Wunused-variable]
+example/GPRMC.c:153:7: warning: unused variable 'TR_ptr_imei' [-Wunused-variable]
+example/GPS.c: In function 'tw_AvgSpeed1':
+example/GPS.c:467:6: warning: pointer targets in passing argument 1 of 'tw_writeAccData' differ in signedness [-Wpointer-sign]
+In file included from example/GPS.c:36:0:
+example/ACCSMTP.h:1:6: note: expected 'char *' but argument is of type 'u8 *'
+example/GPS.c:196:8: warning: variable 'mpSpeed' set but not used [-Wunused-but-set-variable]
+example/GPS.c:195:7: warning: unused variable 'buffer' [-Wunused-variable]
+example/GPS.c:194:6: warning: unused variable 'readedlen1' [-Wunused-variable]
+example/GPS.c: In function 'fn_save1':
+example/GPS.c:1131:6: warning: unused variable 'writeedlen1' [-Wunused-variable]
+example/GPS.c:1130:6: warning: unused variable 'ret1' [-Wunused-variable]
+example/GPS.c: In function 'ReadLatLong':
+example/GPS.c:1208:31: warning: unused variable 'w' [-Wunused-variable]
+example/GPS.c:1208:13: warning: unused variable 'q' [-Wunused-variable]
+example/GPS.c: In function 'Data_Seperation_func1':
+example/GPS.c:1430:6: warning: unused variable 'j' [-Wunused-variable]
+example/GPS.c: At top level:
+example/GPS.c:126:12: warning: 'Flag_wrt_cnt' defined but not used [-Wunused-variable]
+example/GPS.c:127:12: warning: 'Flag_read_cnt' defined but not used [-Wunused-variable]
+example/GSM_GPRS.c: In function 'CallBack_network_deactived':
+example/GSM_GPRS.c:100:5: warning: unused variable 'g_count' [-Wunused-variable]
+example/GSM_GPRS.c: In function 'CallBack_GprsAPNSet':
+example/GSM_GPRS.c:118:5: warning: unused variable 'ip_addr' [-Wunused-variable]
+example/GSM_GPRS.c: In function 'GSMGPRS':
+example/GSM_GPRS.c:170:6: warning: unused variable 'GSM' [-Wunused-variable]
+example/JRM.c: In function 'jrm_rout_readcount':
+example/JRM.c:222:6: warning: unused variable 'writeedlen' [-Wunused-variable]
+example/JRM.c:220:6: warning: unused variable 'freespace' [-Wunused-variable]
+example/JRM.c:219:6: warning: unused variable 'size' [-Wunused-variable]
+example/JRM.c:215:15: warning: unused variable 'fileret' [-Wunused-variable]
+example/JRM.c:214:6: warning: unused variable 'ret_r' [-Wunused-variable]
+example/JRM.c:212:30: warning: unused variable 'img' [-Wunused-variable]
+example/JRM.c:212:22: warning: unused variable 's' [-Wunused-variable]
+example/JRM.c:212:18: warning: unused variable 'k' [-Wunused-variable]
+example/JRM.c:212:14: warning: unused variable 'j' [-Wunused-variable]
+example/JRM.c:212:10: warning: unused variable 'x' [-Wunused-variable]
+example/JRM.c: In function 'multiple_calls':
+example/JRM.c:321:17: warning: unused variable 'll' [-Wunused-variable]
+example/JRM.c:321:12: warning: unused variable 'kk' [-Wunused-variable]
+example/JRM.c:321:6: warning: unused variable 'ijk' [-Wunused-variable]
+example/JRM.c: In function 'temp_delay':
+example/JRM.c:334:11: warning: unused variable 'll' [-Wunused-variable]
+example/JRM.c: In function 'jrm_rout_scanning':
+example/JRM.c:384:6: warning: unused variable 'writeedlen' [-Wunused-variable]
+example/JRM.c:382:6: warning: unused variable 'freespace' [-Wunused-variable]
+example/JRM.c:381:6: warning: unused variable 'size' [-Wunused-variable]
+example/JRM.c:377:15: warning: unused variable 'fileret' [-Wunused-variable]
+example/JRM.c:376:12: warning: variable 'f_RE_read_len' set but not used [-Wunused-but-set-variable]
+example/JRM.c:376:6: warning: unused variable 'ret_r' [-Wunused-variable]
+example/JRM.c:374:22: warning: unused variable 'img' [-Wunused-variable]
+example/JRM.c:374:14: warning: unused variable 'j' [-Wunused-variable]
+example/JRM.c:374:10: warning: unused variable 'x' [-Wunused-variable]
+example/JRM.c: In function 'JRM_file_sepration':
+example/JRM.c:557:7: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+example/JRM.c:569:7: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+example/JRM.c:579:7: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+example/JRM.c:586:7: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+example/JRM.c:622:8: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+example/JRM.c:631:8: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+example/JRM.c:641:8: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+example/JRM.c:648:8: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+example/JRM.c: In function 'tw_DistFromLatAndLong':
+example/JRM.c:692:9: warning: unused variable 'roundedValue' [-Wunused-variable]
+example/JRM.c: In function 'JRM_atofd':
+example/JRM.c:727:38: warning: value computed is not used [-Wunused-value]
+example/JRM.c:735:38: warning: value computed is not used [-Wunused-value]
+example/JRM.c:765:2: warning: statement with no effect [-Wunused-value]
+example/JRM.c:770:2: warning: statement with no effect [-Wunused-value]
+example/JRM.c: In function 'JRM_GPIO_reset':
+example/JRM.c:1578:6: warning: variable 'iret' set but not used [-Wunused-but-set-variable]
+example/JRM.c: In function 'JRM_GREEN_led':
+example/JRM.c:1611:6: warning: variable 'iret' set but not used [-Wunused-but-set-variable]
+example/JRM.c: In function 'JRM_RED_led':
+example/JRM.c:1633:6: warning: variable 'iret' set but not used [-Wunused-but-set-variable]
+example/JRM.c: In function 'JRM_YELLOW_led':
+example/JRM.c:1654:6: warning: variable 'iret' set but not used [-Wunused-but-set-variable]
+example/JRM.c: In function 'JRM_GPIO_buzzer_unsub':
+example/JRM.c:1719:6: warning: variable 'iret' set but not used [-Wunused-but-set-variable]
+example/JRM.c: In function 'tw_findcurrentpos':
+example/JRM.c:1782:17: warning: unused variable 'return_500_1' [-Wunused-variable]
+example/JRM.c: In function 'JRM_GPIO_BUZZER_high':
+example/JRM.c:3460:6: warning: variable 'iret' set but not used [-Wunused-but-set-variable]
+example/JRM.c: In function 'JRM_GPIO_BUZZER_low':
+example/JRM.c:3487:6: warning: variable 'iret' set but not used [-Wunused-but-set-variable]
+example/JRM.c: In function 'POID_LED':
+example/JRM.c:3719:3: warning: statement with no effect [-Wunused-value]
+example/JRM.c:3723:3: warning: statement with no effect [-Wunused-value]
+example/JRM.c:3727:3: warning: statement with no effect [-Wunused-value]
+example/JRM.c:3731:3: warning: statement with no effect [-Wunused-value]
+example/JRM.c:3738:8: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+example/JRM.c:3672:6: warning: unused variable 'writeedlen' [-Wunused-variable]
+example/JRM.c:3669:6: warning: unused variable 'freespace' [-Wunused-variable]
+example/JRM.c:3668:6: warning: unused variable 'size' [-Wunused-variable]
+example/JRM.c:3663:17: warning: unused variable 'fileret' [-Wunused-variable]
+example/JRM.c:3662:14: warning: variable 'f_RE_read_len' set but not used [-Wunused-but-set-variable]
+example/JRM.c:3662:6: warning: unused variable 'ret_r' [-Wunused-variable]
+example/JRM.c:3659:34: warning: unused variable 'img' [-Wunused-variable]
+example/JRM.c:3659:22: warning: unused variable 'l' [-Wunused-variable]
+example/JRM.c:3659:18: warning: unused variable 'k' [-Wunused-variable]
+example/JRM.c:3659:14: warning: unused variable 'j' [-Wunused-variable]
+example/JRM.c:3659:10: warning: unused variable 'x' [-Wunused-variable]
+example/JRM.c: In function 'Rev_zone_file_sepration':
+example/JRM.c:3792:7: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+example/JRM.c:3801:7: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+example/JRM.c:3811:7: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+example/JRM.c:3821:7: warning: left-hand operand of comma expression has no effect [-Wunused-value]
+example/JRM.c:3781:21: warning: unused variable 'nz' [-Wunused-variable]
+example/JRM.c:3781:18: warning: unused variable 'mz' [-Wunused-variable]
+example/JRM.c:3781:15: warning: unused variable 'lz' [-Wunused-variable]
+example/JRM.c:3781:12: warning: unused variable 'kz' [-Wunused-variable]
+example/JRM.c:3781:9: warning: unused variable 'jz' [-Wunused-variable]
+example/JRM.c:3781:6: warning: unused variable 'iz' [-Wunused-variable]
+example/JRM.c: In function 'Rev_zone_seperation':
+example/JRM.c:3857:6: warning: unused variable 'writeedlen' [-Wunused-variable]
+example/JRM.c:3854:6: warning: unused variable 'freespace' [-Wunused-variable]
+example/JRM.c:3853:6: warning: unused variable 'size' [-Wunused-variable]
+example/JRM.c:3849:17: warning: unused variable 'fileret' [-Wunused-variable]
+example/JRM.c:3848:6: warning: unused variable 'ret_r' [-Wunused-variable]
+example/JRM.c:3846:22: warning: unused variable 'img' [-Wunused-variable]
+example/JRM.c:3846:14: warning: unused variable 'j' [-Wunused-variable]
+example/JRM.c:3846:10: warning: unused variable 'x' [-Wunused-variable]
+example/JRM.c: In function 'JRM_DATA_READ':
+example/JRM.c:3937:7: warning: unused variable 'JRM_temp__Rout' [-Wunused-variable]
+example/JRM.c:3936:7: warning: unused variable 'JRM_temp_read_Status' [-Wunused-variable]
+example/JRM.c: In function 'JRM_Staus_write':
+example/JRM.c:4010:8: warning: unused variable 'ptr' [-Wunused-variable]
+example/JRM.c: In function 'JRM_Rout_no_write':
+example/JRM.c:4073:8: warning: unused variable 'ptr' [-Wunused-variable]
+example/JRM.c: In function 'JRM_PATH_write':
+example/JRM.c:4108:8: warning: unused variable 'ptr' [-Wunused-variable]
+example/JRM.c: In function 'chk_file_compltn':
+example/JRM.c:4142:13: warning: unused variable 'ptr2' [-Wunused-variable]
+example/JRM.c:4141:17: warning: unused variable 'filesize' [-Wunused-variable]
+example/JRM.c:4140:10: warning: variable 'size_ret' set but not used [-Wunused-but-set-variable]
+example/JRM.c: In function 'chk_file_compltnV2':
+example/JRM.c:4195:13: warning: unused variable 'ptr2' [-Wunused-variable]
+example/JRM.c:4194:17: warning: unused variable 'filesize' [-Wunused-variable]
+example/JRM.c:4193:10: warning: variable 'size_ret' set but not used [-Wunused-but-set-variable]
+example/JRM.c: In function 'JRM_ROUT_chk_V2':
+example/JRM.c:4346:3: warning: "/*" within comment [-Wcomment]
+example/JRM.c:4330:5: warning: unused variable 'fun_ret' [-Wunused-variable]
+example/JRM.c:4329:6: warning: unused variable 'ret4' [-Wunused-variable]
+example/JRM.c: In function 'chk_file_compltnV2':
+example/JRM.c:4238:1: warning: control reaches end of non-void function [-Wreturn-type]
+example/JRM.c: In function 'chk_file_compltn':
+example/JRM.c:4189:1: warning: control reaches end of non-void function [-Wreturn-type]
+example/JRM_RD.c: In function 'JRM_FTP_DL':
+example/JRM_RD.c:283:4: warning: implicit declaration of function 'JRM_JD_stamp' [-Wimplicit-function-declaration]
+example/JRM_RD.c:293:4: warning: implicit declaration of function 'gen_rt_dwnld_fail_stamp' [-Wimplicit-function-declaration]
+example/JRM_RD.c:120:6: warning: variable 'timeret' set but not used [-Wunused-but-set-variable]
+example/JRM_RD.c: At top level:
+example/JRM_RD.c:378:6: warning: conflicting types for 'JRM_JD_stamp' [enabled by default]
+example/JRM_RD.c:283:4: note: previous implicit declaration of 'JRM_JD_stamp' was here
+example/JRM_RD.c:430:6: warning: conflicting types for 'gen_rt_dwnld_fail_stamp' [enabled by default]
+example/JRM_RD.c:293:4: note: previous implicit declaration of 'gen_rt_dwnld_fail_stamp' was here
+In file included from example/main.c:56:0:
+example/BulkFota.h:3:1: warning: function declaration isn't a prototype [-Wstrict-prototypes]
+example/main.c:149:1: warning: data definition has no type or storage class [enabled by default]
+example/main.c:149:1: warning: type defaults to 'int' in declaration of 'Ref_Voltage' [enabled by default]
+example/main.c:216:8: warning: type defaults to 'int' in declaration of 'route_id' [enabled by default]
+example/main.c: In function 'ql_entry':
+example/main.c:455:2: warning: implicit declaration of function 'Accdata_flags_read' [-Wimplicit-function-declaration]
+example/main.c:457:2: warning: implicit declaration of function 'dump_cnt_read' [-Wimplicit-function-declaration]
+example/main.c:484:2: warning: passing argument 2 of 'Ql_FileSys_GetSpaceInfo' from incompatible pointer type [enabled by default]
+In file included from example/main.c:23:0:
+qlinc/ql_filesystem.h:731:5: note: expected 'u64 *' but argument is of type 'u32 *'
+example/main.c:484:2: warning: passing argument 3 of 'Ql_FileSys_GetSpaceInfo' from incompatible pointer type [enabled by default]
+In file included from example/main.c:23:0:
+qlinc/ql_filesystem.h:731:5: note: expected 'u64 *' but argument is of type 'u32 *'
+example/main.c:625:6: warning: pointer targets in passing argument 1 of 'read_sms' differ in signedness [-Wpointer-sign]
+In file included from example/main.c:44:0:
+example/sms_handle.h:2:6: note: expected 'u8 *' but argument is of type 'char *'
+example/main.c:1011:8: warning: unused variable 'Pw' [-Wunused-variable]
+example/main.c:1170:4: warning: pointer targets in passing argument 1 of 'Ql_strstr' differ in signedness [-Wpointer-sign]
+In file included from example/main.c:16:0:
+qlinc/ql_stdlib.h:38:7: note: expected 'const char *' but argument is of type 'u8 *'
+example/main.c:328:12: warning: unused variable 'retRes' [-Wunused-variable]
+example/main.c:327:16: warning: variable 'Power_event' set but not used [-Wunused-but-set-variable]
+example/main.c:325:8: warning: unused variable 'SIStampString' [-Wunused-variable]
+example/MRW.c: In function 'tw_filewrite':
+example/MRW.c:102:7: warning: unused variable 'filesize' [-Wunused-variable]
+example/MRW.c:101:8: warning: unused variable 'ptr' [-Wunused-variable]
+example/MRW.c:99:6: warning: unused variable 'ret1' [-Wunused-variable]
+example/MRW.c: In function 'tw_fileread_mrw':
+example/MRW.c:183:8: warning: unused variable 'ptr1' [-Wunused-variable]
+example/MRW.c: In function 'tw_checkconnection':
+example/MRW.c:396:6: warning: variable 'ret' set but not used [-Wunused-but-set-variable]
+example/Panic.c: In function 'PANIC_STAMP':
+example/Panic.c:75:6: warning: unused variable 'diff' [-Wunused-variable]
+example/Panic.c: At top level:
+example/Panic.c:112:6: warning: function declaration isn't a prototype [-Wstrict-prototypes]
+example/Panic.c:122:6: warning: function declaration isn't a prototype [-Wstrict-prototypes]
+example/Panic.c:167:6: warning: function declaration isn't a prototype [-Wstrict-prototypes]
+example/Panic.c: In function 'PANIC_TIMER_INIT':
+example/Panic.c:169:10: warning: variable 'Panic' set but not used [-Wunused-but-set-variable]
+example/para_read.c: In function 'tw_para_read':
+example/para_read.c:147:7: warning: unused variable 'myUARTdata' [-Wunused-variable]
+example/para_read.c:144:7: warning: unused variable 'muwritecnt' [-Wunused-variable]
+example/para_read.c:140:8: warning: unused variable 'mpSpeed' [-Wunused-variable]
+example/para_read.c:134:7: warning: unused variable 'mSpeed' [-Wunused-variable]
+example/para_read.c:154:5: warning: 'filesize' is used uninitialized in this function [-Wuninitialized]
+example/ReadOldData.c: In function 'twoldfrmmemory':
+example/ReadOldData.c:109:2: warning: pointer targets in passing argument 1 of 'Ql_FileOpenEx' differ in signedness [-Wpointer-sign]
+In file included from example/ReadOldData.c:20:0:
+qlinc/Ql_filesystem.h:269:5: note: expected 'u8 *' but argument is of type 'char *'
+example/ReadOldData.c:100:6: warning: variable 'fun_ret' set but not used [-Wunused-but-set-variable]
+example/ReadOldData.c:170:1: warning: control reaches end of non-void function [-Wreturn-type]
+example/ReadOldData.c: In function 'chkoldavailable':
+example/ReadOldData.c:93:1: warning: control reaches end of non-void function [-Wreturn-type]
+example/SEND_DATA.c: In function 'timer_handler_stamping':
+example/SEND_DATA.c:102:5: warning: unused variable 'chgStat' [-Wunused-variable]
+example/SEND_DATA.c:101:7: warning: unused variable 'poid' [-Wunused-variable]
+example/SEND_DATA.c:98:8: warning: unused variable 'Rxbuffer' [-Wunused-variable]
+example/SIM_lock.c: In function 'WriteSimPin':
+example/SIM_lock.c:116:6: warning: unused variable 'CanCount' [-Wunused-variable]
+example/SIM_lock.c: In function 'ReadSimPin':
+example/SIM_lock.c:158:6: warning: unused variable 'CanCount' [-Wunused-variable]
+example/SIM_lock.c:189:2: warning: 'val' may be used uninitialized in this function [-Wmaybe-uninitialized]
+example/sms_handle.c:142:8: warning: type defaults to 'int' in declaration of 'Excp_cam_wrt_cntR' [enabled by default]
+example/sms_handle.c:143:8: warning: type defaults to 'int' in declaration of 'EXCP_R_readcount' [enabled by default]
+example/sms_handle.c:144:8: warning: type defaults to 'int' in declaration of 'Excp_cam_wrt_cnt_C' [enabled by default]
+example/sms_handle.c:145:8: warning: type defaults to 'int' in declaration of 'EXCP_C_readcount' [enabled by default]
+example/sms_handle.c: In function 'CallBack_ReadTextSMS':
+example/sms_handle.c:295:5: warning: passing argument 1 of 'Ql_GetSMSStorageInfo' makes pointer from integer without a cast [enabled by default]
+In file included from example/sms_handle.c:35:0:
+qlinc/Ql_sms.h:226:6: note: expected 'u8 *' but argument is of type 'u8'
+example/sms_handle.c:295:5: warning: passing argument 2 of 'Ql_GetSMSStorageInfo' makes pointer from integer without a cast [enabled by default]
+In file included from example/sms_handle.c:35:0:
+qlinc/Ql_sms.h:226:6: note: expected 'u8 *' but argument is of type 'u8'
+example/sms_handle.c:295:5: warning: passing argument 3 of 'Ql_GetSMSStorageInfo' makes pointer from integer without a cast [enabled by default]
+In file included from example/sms_handle.c:35:0:
+qlinc/Ql_sms.h:226:6: note: expected 'u8 *' but argument is of type 'u8'
+example/sms_handle.c:228:6: warning: unused variable 'swap_v' [-Wunused-variable]
+example/sms_handle.c: In function 'read_sms':
+example/sms_handle.c:474:5: warning: implicit declaration of function 'wrt_dump_accd_wrtn_cnt' [-Wimplicit-function-declaration]
+example/sms_handle.c:561:5: warning: implicit declaration of function 'fun_Excp_cam_read_cntR' [-Wimplicit-function-declaration]
+example/sms_handle.c:562:5: warning: implicit declaration of function 'fun_Excp_cam_wrt_cntR' [-Wimplicit-function-declaration]
+example/sms_handle.c:563:5: warning: implicit declaration of function 'fun_Excp_cam_C_wrt_cntC' [-Wimplicit-function-declaration]
+example/sms_handle.c:564:5: warning: implicit declaration of function 'fun_Excp_cam_read_cntC' [-Wimplicit-function-declaration]
+example/sms_handle.c: In function 'Change_RemoteParameter':
+example/sms_handle.c:864:4: warning: implicit declaration of function 'Cam_Tx_Rx' [-Wimplicit-function-declaration]
+example/sms_handle.c:981:5: warning: implicit declaration of function 'gen_rt_SMS_stamp' [-Wimplicit-function-declaration]
+example/sms_handle.c:758:6: warning: unused variable 'CanCount' [-Wunused-variable]
+example/sms_handle.c:757:6: warning: unused variable 'writeedlen' [-Wunused-variable]
+example/Stamps.c: In function 'read_whole_STAMP_file':
+example/Stamps.c:118:10: warning: variable 'size_ret' set but not used [-Wunused-but-set-variable]
+example/TCP_IP.c: In function 'CallBack_socket_close':
+example/TCP_IP.c:191:6: warning: unused variable 'ret' [-Wunused-variable]
+example/TCP_IP.c: In function 'CallBack_socket_read':
+example/TCP_IP.c:268:6: warning: unused variable 'port_peer' [-Wunused-variable]
+example/TCP_IP.c:267:5: warning: unused variable 'address_peer' [-Wunused-variable]
+example/TCP_IP.c:266:6: warning: unused variable 'dataLen' [-Wunused-variable]
+example/TCP_IP.c: In function 'transfer_tcp_data':
+example/TCP_IP.c:585:4: warning: implicit declaration of function 'Ql_DeleteSMS' [-Wimplicit-function-declaration]
+example/TCP_IP.c:594:5: warning: implicit declaration of function 'gen_File_NA_stamp' [-Wimplicit-function-declaration]
+example/TCP_IP.c:595:5: warning: implicit declaration of function 'JRM_ROUT_chk_V2' [-Wimplicit-function-declaration]
+example/TCP_IP.c:549:6: warning: unused variable 'writeedlen' [-Wunused-variable]
+example/TCP_IP.c:548:6: warning: unused variable 'filehandle' [-Wunused-variable]
+example/TCP_IP.c:547:7: warning: unused variable 'str1' [-Wunused-variable]
+example/TCP_IP.c:546:7: warning: variable 'str' set but not used [-Wunused-but-set-variable]

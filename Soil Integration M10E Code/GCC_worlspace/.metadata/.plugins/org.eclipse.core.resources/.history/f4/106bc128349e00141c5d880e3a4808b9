@@ -1,0 +1,289 @@
+
+/***************************************************************************************************
+FTP for camera image data
+****************************************************************************************************/ 
+#include "ql_appinit.h"
+#include "ql_interface.h"
+#include "ql_type.h"
+#include "ql_trace.h"
+#include "ql_audio.h"
+#include "ql_timer.h"
+#include "ql_stdlib.h"
+#include "ql_error.h"
+#include "ql_fcm.h"
+#include "ql_filesystem.h"
+#include "ql_fota.h"
+#include "ftp.h"
+#include "camera.h"
+#include "MRW.h"  
+#include "para_read.h" 
+#include "camera2.h"
+
+#define OUT_D1EBUG(x,...)  \
+    Ql_memset((x),0,100);  \
+    Ql_sprintf((x),__VA_ARGS__);   \
+    Ql_SendToUart(ql_uart_port2,(u8 *)(x),Ql_strlen(x));
+
+
+typedef enum tagATCmdType {
+    AT_General,
+    AT_QISTAT,
+    AT_QFTPOPEN,
+    AT_QFTPCFG,
+    AT_QFTPPATH,
+    AT_QFTPPUT,
+    AT_QFTPCLOSE,
+    AT_QIDEACT
+}ATCmdType;
+
+//FEED_DOG Q_t_Watch_dog;
+//void DoFOTAUpgrade();
+
+#define FTP_SVR_ADDR   "203.199.134.131"
+#define FTP_SVR_PORT   "21"
+//#define FTP_SVR_PATH   "/GOLD_C/"
+#define FTP_SVR_PATH   "/TestBulk/"
+#define FTP_SVR_PATH   "/FTPTESTFOLDER/"
+//#define FTP_SVR_PATH   "/ImageTrack/"
+#define FTP_USER_NAME  "cameraimages"
+#define FTP_PASSWORD   "Cimages@123"
+
+extern bool sen_fl;
+extern int img_taken;
+
+extern PortData_Event* pPortEvt;
+extern bool in_cam_rou;
+extern QlTimer  timer,tm;
+
+extern char cam_buffer[100];
+#define UA_DATA_BUfFER_LEN 128
+//u8 dataBuf[UA_DATA_BUfFER_LEN];
+
+u8 cam_cmd_type=0;
+extern u16  cam_cmd_idx;
+
+extern bool cam_bDoNexAT;
+
+extern char textBuf[100];
+extern char pfile_new[20];
+//char cam_pfile_FTP[20] ="8011_002736A.txt";
+extern bool cam_fl_up_flag;
+extern bool cam_connect_success;
+
+extern u32 cam_wrt_cnt;
+extern u32 readcount;
+extern u32 dump_cam_wrt_cnt;
+
+extern bool open_ftp_flg;
+extern bool send_ftp_flg;
+extern bool close_ftp_flg;
+extern bool stop_img_capt;
+
+extern bool FTP_TX_Flag;
+extern u32 readedlen2;
+extern char readbuffer_cam[25000];
+// s32 retf;    
+extern u32 FTP_Stuck_cntr;
+extern bool takepic_cmd;
+//extern  QlTimer tm;
+extern QlTimer tm;
+extern u32 x;
+extern char FTPFILENAME[];
+char cam_modem_readbuffer[100];
+extern int ftpcamsendflag;
+int chkftpcloseflg=0;
+extern QlTimer GC_ftp_stuck;
+void SendAtCmd()
+{
+	int fil_eret;
+	int i,j;
+	s32 fileret,timeret;
+    bool exec = TRUE;
+
+    switch (cam_cmd_idx)
+    {
+    	//OUT_D1EBUG(textBuf,"In FTP switch\r\n");
+    case 1:// Echo mode off
+    	Ql_sprintf((char *)cam_buffer, "ATE0\n");
+    	cam_cmd_type = AT_General;
+    	//OUT_D1EBUG(textBuf,"\r\nStarting FTP 1 stuck Timer...\r\n");
+    	Ql_StopTimer(&GC_ftp_stuck);
+    	timeret=Ql_StartTimer(&GC_ftp_stuck);    ///timer for ftp stuck
+    	OUT_D1EBUG(textBuf,"\r\nStarting FTP 1 stuck Timer...=%d\r\n",timeret);
+    	Ql_SendToModem(ql_md_port1, (u8*)cam_buffer, Ql_strlen(cam_buffer));
+    	//check_AT_res();
+        break;
+        
+    case 2:// Select a foreground context
+        Ql_sprintf((char *)cam_buffer, "AT+QIFGCNT=0\n");
+        cam_cmd_type = AT_General;
+        OUT_D1EBUG(textBuf,"Select a foreground context AT+QIFGCNT=1 case 2\r\n");
+        //RR//OUT_D1EBUG(textBuf,(char *)cam_buffer);
+        Ql_SendToModem(ql_md_port1, (u8*)cam_buffer, Ql_strlen(cam_buffer));
+        //check_AT_res();
+        break;
+        
+    case 3:// Select a bearer (0=CSD, 1=GPRS), if 'GPRS', set APN
+        Ql_sprintf((char *)cam_buffer, "AT+QICSGP=1,\"WWW\"\n");
+        cam_cmd_type = AT_General;
+        OUT_D1EBUG(textBuf,"Select a GPRS AT+QICSGP=1 case 3\n");
+        //RR//OUT_D1EBUG(textBuf,(char *)cam_buffer);
+        Ql_SendToModem(ql_md_port1, (u8*)cam_buffer, Ql_strlen(cam_buffer));
+        //check_AT_res();
+        break;
+        
+    case 4:// Set user name
+        Ql_sprintf((char *)cam_buffer, "AT+QFTPUSER=\"%s\"\n", FTP_USER_NAME);
+        cam_cmd_type = AT_General;
+        OUT_D1EBUG(textBuf,"Set user name AT+QFTPUSER case 4\r\n");
+        //RR//OUT_D1EBUG(textBuf,(char *)cam_buffer);
+        Ql_SendToModem(ql_md_port1, (u8*)cam_buffer, Ql_strlen(cam_buffer));
+        //check_AT_res();
+        break;
+        
+    case 5:// Set password
+        Ql_sprintf((char *)cam_buffer, "AT+QFTPPASS=\"%s\"\n", FTP_PASSWORD);
+        cam_cmd_type = AT_General;
+        OUT_D1EBUG(textBuf,"Set password AT+QFTPPASS=1 case 5\r\n");
+        //RR//OUT_D1EBUG(textBuf,(char *)cam_buffer);
+        Ql_SendToModem(ql_md_port1, (u8*)cam_buffer, Ql_strlen(cam_buffer));
+        //check_AT_res();
+        break;
+        
+    case 6:// Open FTP
+        Ql_sprintf((char *)cam_buffer, "AT+QFTPOPEN=\"%s\",\"%s\"\n", FTP_SVR_ADDR, FTP_SVR_PORT);
+        cam_cmd_type = AT_QFTPOPEN;
+        OUT_D1EBUG(textBuf,"Open FTP AT+QFTPOPEN=1 case 6\r\n");
+        //check_AT_res();
+        cam_bDoNexAT = FALSE;
+        //RR//OUT_D1EBUG(textBuf,(char *)cam_buffer);
+        Ql_SendToModem(ql_md_port1, (u8*)cam_buffer, Ql_strlen(cam_buffer));
+        break;
+        
+    case 7:// Set local path
+        Ql_sprintf((char *)cam_buffer, "AT+QFTPCFG=4,\"/UFS/swap_file.txt\"\n");
+        cam_cmd_type = AT_QFTPCFG;
+        OUT_D1EBUG(textBuf,"Set local path AT+QFTPCFG=4 case 7\r\n");
+        //check_AT_res();
+        cam_bDoNexAT = FALSE;
+        //RR//OUT_D1EBUG(textBuf,(char *)cam_buffer);
+        Ql_SendToModem(ql_md_port1, (u8*)cam_buffer, Ql_strlen(cam_buffer));
+        break;
+        
+    case 8:// Set server path
+        Ql_sprintf((char *)cam_buffer, "AT+QFTPPATH=\"%s\"\n", FTP_SVR_PATH);
+        cam_cmd_type = AT_QFTPPATH;
+        OUT_D1EBUG(textBuf,"Set server path AT+QFTPPATH=1 case 8\r\n");
+        //check_AT_res();
+        cam_bDoNexAT = FALSE;
+        //RR//OUT_D1EBUG(textBuf,(char *)cam_buffer);
+        Ql_SendToModem(ql_md_port1, (u8*)cam_buffer, Ql_strlen(cam_buffer));
+        break;
+   
+     case 9:// Start to upload file
+    	++img_taken;
+        Ql_sprintf((char *)cam_buffer, "AT+QFTPPUT=\"%s\",%d,500\n",FTPFILENAME,readedlen2);
+        cam_cmd_type = AT_QFTPPUT;
+        OUT_D1EBUG(textBuf,"Total images sent=%d\r\n",img_taken);
+        OUT_D1EBUG(textBuf,"Start to upload file AT+QFTPPUT=1 case 9\r\n");
+        cam_bDoNexAT = FALSE;
+        //RR//OUT_D1EBUG(textBuf,(char *)cam_buffer);
+        Ql_SendToModem(ql_md_port1, (u8*)cam_buffer, Ql_strlen(cam_buffer));
+        break;
+            
+    case 10:// List files
+        Ql_sprintf((char *)cam_buffer, "AT+QFLST\n");
+        cam_cmd_type = AT_General;
+        //OUT_D1EBUG(textBuf,"List files AT+QFLST case 10\r\n");
+        //RR//OUT_D1EBUG(textBuf,(char *)cam_buffer);
+        Ql_SendToModem(ql_md_port1, (u8*)cam_buffer, Ql_strlen(cam_buffer));
+        break;
+        
+    case 11:// Close FTP connection 
+        Ql_sprintf((char *)cam_buffer, "AT+QFTPCLOSE\n");
+        cam_cmd_type = AT_QFTPCLOSE;
+        OUT_D1EBUG(textBuf,"Close FTP AT+QFTPCLOSE case 11\r\n");
+        //check_AT_res();
+        cam_bDoNexAT = FALSE;
+		chkftpcloseflg=0;
+        //RR//OUT_D1EBUG(textBuf,(char *)cam_buffer);
+		Ql_SendToModem(ql_md_port1, (u8*)cam_buffer, Ql_strlen(cam_buffer));
+		//Ql_StopTimer(&timer_ftp);
+        break;
+        
+    case 12:// Deactivate GPRS PDP context
+        Ql_sprintf((char *)cam_buffer, "AT+QIDEACT\n");
+        cam_cmd_type = AT_General;
+        OUT_D1EBUG(textBuf,"Deactivate GPRS AT+QIDEACT case 12\r\n");
+        //check_AT_res();
+    	fileret=Ql_FileDelete((u8*)"swap_file.txt");
+ 		OUT_D1EBUG(textBuf,"file delete fileret=%d\r\n",fileret);
+ 		//FTP_TX_Flag=0;
+ 		cam_fl_up_flag=0;
+ 		//RR//OUT_D1EBUG(textBuf,(char *)cam_buffer);
+ 		Ql_SendToModem(ql_md_port1, (u8*)cam_buffer, Ql_strlen(cam_buffer));
+        break;
+
+    default:
+    	//OUT_D1EBUG(textBuf,"at commands finished.\r\n");
+        cam_cmd_type = AT_General;
+        exec = FALSE;
+        cam_bDoNexAT = TRUE;
+        FTP_Stuck_cntr=0;
+        Ql_StopTimer(&GC_ftp_stuck);
+		//OUT_D1EBUG(textBuf,"at commands finished default_1\r\n\n");
+        sen_fl=1;
+
+        if(chkftpcloseflg==0)
+        {
+        	readcount=readcount+x;
+        	fun_cam_read_cnt();
+        }
+		// OUT_D1EBUG(textBuf,"at commands finished default_2\r\n\n");
+		readedlen2=0;
+		FTP_TX_Flag=0;
+		OUT_D1EBUG(textBuf,"at commands finished default\r\n");
+		tw_fileread();
+        break;	
+    }
+    return;
+}
+
+
+void cam_modemdata(char *cam_modem_readbuffer)
+{
+	if(FTP_TX_Flag==1)
+	{
+		stop_img_capt=1;
+		//OUT_D1EBUG(textBuf,"IN cam_modemdata FTP_TX_Flag==1 \r\n");
+
+		if (Ql_strstr((char *)cam_modem_readbuffer, "Call Ready") != NULL)
+		{
+			OUT_D1EBUG(textBuf,"IN Callready  and  FTP_TX_Flag=%d \r\n",FTP_TX_Flag);
+		}
+		else if ((cam_cmd_type == AT_QFTPOPEN  && Ql_strstr((char*)cam_modem_readbuffer,"+QFTPOPEN:0") != NULL)
+				|| (cam_cmd_type == AT_QFTPCFG  && Ql_strstr((char*)cam_modem_readbuffer, "+QFTPCFG:0")   != NULL)
+				|| (cam_cmd_type == AT_QFTPPATH && Ql_strstr((char*)cam_modem_readbuffer, "+QFTPPATH:0") != NULL)
+				|| (cam_cmd_type == AT_QFTPPUT  && Ql_strstr((char*)cam_modem_readbuffer, "+QFTPPUT:")   != NULL)
+				|| (cam_cmd_type == AT_QFTPCLOSE && Ql_strstr((char*)cam_modem_readbuffer, "+QFTPCLOSE:0") != NULL)
+		)
+		{
+			OUT_D1EBUG(textBuf,"IN cam_modemdata cam_cmd_type==1 \r\n");
+			cam_cmd_idx++;
+			cam_bDoNexAT = TRUE;
+			SendAtCmd();
+		}
+		else if ((  Ql_strstr((char*)cam_modem_readbuffer, "\r\nOK") != NULL
+				|| Ql_strstr((char*)cam_modem_readbuffer, "OK\r\n") != NULL
+				|| Ql_strstr((char*)cam_modem_readbuffer, "ERROR") != NULL)
+				&& cam_bDoNexAT != FALSE)
+		{
+			OUT_D1EBUG(textBuf,"IN cam_modemdata cam_cmd_idx==2 \r\n");
+			cam_cmd_idx++;
+			SendAtCmd();
+		}
+	}
+	return;
+ }
+   
+   
